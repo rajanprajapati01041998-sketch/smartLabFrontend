@@ -11,8 +11,8 @@ import {
 
 import { createDrawerNavigator, DrawerContentScrollView } from '@react-navigation/drawer';
 import tw from 'twrnc';
-import Dashboard from '../Dashborad';
-import Profile from '../Profile';
+import Dashboard from '../DashboardData/Dashborad';
+import Profile from '../Profile/Profile';
 import Registration from '../PatientRegistration/Registration';
 import PatientInformation from '../PatientRegistration/PatinetInformation';
 import ColorMaster from '../../ColorMaster';

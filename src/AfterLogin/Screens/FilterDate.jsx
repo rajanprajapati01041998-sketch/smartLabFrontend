@@ -5,6 +5,7 @@ import CustomStyles from '../../../Custom.styles'
 import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import ButtonStyles from '../../utils/ButtonStyle'
 
 const FilterDate = ({ onClose, onSave }) => {
 
@@ -31,8 +32,7 @@ const FilterDate = ({ onClose, onSave }) => {
     }
 
     return (
-        <View>
-
+        <View style={tw`p-4`}>
             {/* Header */}
             <View style={tw`flex-row justify-between items-center`}>
                 <Text style={tw`text-lg font-bold`}>Filter</Text>
@@ -70,7 +70,7 @@ const FilterDate = ({ onClose, onSave }) => {
                 <View style={tw`flex-row gap-2 justify-end items-center mt-5`}>
 
                     <TouchableOpacity
-                        style={CustomStyles.saveButton}
+                        style={ButtonStyles.button}
                         onPress={() =>
                             onSave({
                                 fromDate: formatDate(fromDate),

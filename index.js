@@ -10,13 +10,16 @@ import App from './App';
 import { name as appName } from './app.json';
 import { AuthProvider } from './Authorization/AuthContext';
 import { ThemeProvider } from './Authorization/ThemeContext';
+import { ToastProvider } from './Authorization/ToastContext';
 
 const Root = () => {
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <App />
-      </ThemeProvider>
+      <ToastProvider>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 };

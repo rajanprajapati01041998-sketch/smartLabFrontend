@@ -1,28 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    ImageBackground,
-    KeyboardAvoidingView,
-    Platform,
-    Dimensions,
-    StatusBar,
-    Image,
-} from "react-native";
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
-    withSequence,
-    FadeInDown,
-    FadeInUp,
-    SlideInRight,
-    SlideInLeft,
-    BounceIn,
-} from 'react-native-reanimated';
+import { View, Text, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image, } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, FadeInDown, FadeInUp, SlideInRight, SlideInLeft, BounceIn, } from 'react-native-reanimated';
 import tw from "twrnc";
 import { SelectList } from "react-native-dropdown-select-list";
 import LoginBgImg from "../Assets/Login/login.jpg";
@@ -33,11 +11,16 @@ import { useTheme } from '../Authorization/ThemeContext';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import axiosInstance from '../Authorization/AxiosInstance'
+import { useNavigation } from "@react-navigation/native";
+import api from "../Authorization/api";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
-    const { user, login, logout, isAuthenticated } = useAuth();
+    const { setSessionId,loadDeviceInfo, user, login, logout, isAuthenticated, setToken, setUserData, token, userData, setUserId, setLoginBranchId, deviceData } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [theme1, setTheme1] = useState(true);
     const [theme2, setTheme2] = useState(false);
@@ -45,9 +28,12 @@ export default function LoginScreen({ navigation }) {
     const [selected, setSelected] = useState("");
     const [togglePassword, setTogglePassword] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
-    const [username, setUsername] = useState("qwert");
-    const [password, setPassword] = useState("sdfg");
+    const [username, setUsername] = useState("GWS");
+    const [password, setPassword] = useState("gravitys@0542");
     const [isLoading, setIsLoading] = useState(false);
+    const [branches, setBranches] = useState([])
+
+
 
     // Animation values
     const cardScale = useSharedValue(0.9);
@@ -63,11 +49,10 @@ export default function LoginScreen({ navigation }) {
 
     // Dropdown data function
     const getDropdownData = () => {
-        return [
-            { key: "1", value: "GRAVITY Bangalore" },
-            { key: "2", value: "GRAVITY Jaipur" },
-            { key: "3", value: "GRAVITY Varanasi" },
-        ];
+        return branches.map((branch) => ({
+            key: branch.branchId,
+            value: branch.branchName
+        }));
     };
 
     useEffect(() => {
@@ -118,35 +103,71 @@ export default function LoginScreen({ navigation }) {
 
     const colors = getThemeColors();
 
-    const handleLogin = () => {
-        // Validation
-        if (!username.trim()) {
-            alert('Please enter username');
-            return;
+
+
+    const handleLogin = async () => {
+        setIsLoading(true)
+        try {
+            const formData = {
+                userName: username,
+                userPassword: password
+            }
+            const response = await api.post(`Login/branch-list`, formData);
+            console.log("branch response", response)
+            setBranches(response.data)            // navigation.replace('Dashboard');
+        } catch (error) {
+            console.log("Branch error", error)
+
         }
-        if (!password.trim()) {
-            alert('Please enter password');
-            return;
+        finally {
+            setIsLoading(false)
         }
-        if (!selected) {
-            alert('Please select a branch');
-            return;
+    }
+
+    useEffect(() => {
+        if (selected) {
+            handleFinalLogin()
+        }
+    }, [selected])
+
+
+    const handleFinalLogin = async () => {
+        //    await loadDeviceInfo()
+        const formData = {
+            userName: username,
+            userPassword: password,
+            branchId: selected,
+            browser: deviceData.type,
+            device: deviceData.device,
+            os: deviceData.os
         }
 
-        // Button press animation
-        buttonScale.value = withSequence(
-            withTiming(0.95, { duration: 100 }),
-            withTiming(1, { duration: 100 })
-        );
+        try {
+            const response = await api.post(`Login/login`, formData)
+            console.log("final Login", response.data)
+            setUserId(response?.data?.user.id)
+            setLoginBranchId(response.data?.branchId)
+            setSessionId(response.data?.sessionId)
+            setUserData(response.data?.user?.name)
+            const token = response.data?.token
+            const userInfo = response.data
+            await AsyncStorage.setItem('AllBranch', JSON.stringify(branches))
+            console.log("branc", branches)
+            if (token) {
+                await login(token, userInfo);
+                navigation.replace('Dashboard');
+            } else {
+                Alert.alert("Error", "Invalid response from server");
+            }
 
-        setIsLoading(true);
-        
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
+
             navigation.replace('Dashboard');
-        }, 1500);
-    };
+
+        } catch (error) {
+            console.log("Final Login error", error)
+        }
+    }
+
 
     const handleMenuOption = (option) => {
         setMenuVisible(false);
@@ -155,7 +176,7 @@ export default function LoginScreen({ navigation }) {
             withTiming(0.95, { duration: 200 }),
             withTiming(1, { duration: 300 })
         );
-        
+
         switch (option) {
             case 'Theme 1':
                 setTheme1(true);
@@ -184,7 +205,7 @@ export default function LoginScreen({ navigation }) {
             style={tw`flex-1`}
         >
             <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-            
+
             {/* Gradient Overlay */}
             <View style={[tw`absolute inset-0`, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
 
@@ -199,7 +220,7 @@ export default function LoginScreen({ navigation }) {
                 </TouchableOpacity>
 
                 {menuVisible && (
-                    <View 
+                    <View
                         entering={SlideInRight.springify().damping(12)}
                         exiting={SlideInLeft}
                         style={tw`absolute top-12 right-0 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl py-2 w-44 border border-white/50`}
@@ -237,24 +258,24 @@ export default function LoginScreen({ navigation }) {
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={tw`flex-1`}
-             >
+            >
                 <View style={tw`flex-1 justify-center items-center px-4`}>
                     {/* Logo/Icon */}
                     <Animated.View style={[tw`mb-3 items-center`, animatedLogoStyle]}>
                         <Animated.View entering={BounceIn.delay(300).springify()}>
                             <Image
-                            style={tw`h-24 w-24 rounded-full border-2 border-white/80`}
-                            source={{uri:'https://media.licdn.com/dms/image/v2/C4D22AQG2a4AmCHUZ0Q/feedshare-shrink_800/feedshare-shrink_800/0/1651481432466?e=2147483647&v=beta&t=ZXn7Uc65tim6IpuhfXmxjeZznvJVynG64RRhX8ls0zc'}}/>
+                                style={tw`h-24 w-24 rounded-full border-2 border-white/80`}
+                                source={{ uri: 'https://media.licdn.com/dms/image/v2/C4D22AQG2a4AmCHUZ0Q/feedshare-shrink_800/feedshare-shrink_800/0/1651481432466?e=2147483647&v=beta&t=ZXn7Uc65tim6IpuhfXmxjeZznvJVynG64RRhX8ls0zc' }} />
                         </Animated.View>
-                        
-                        
+
+
                     </Animated.View>
 
                     {/* Login Card */}
                     <Animated.View style={[tw`w-full rounded-3xl overflow-hidden `, animatedCardStyle]}>
                         <View style={[
                             tw`px-6 pt-8 pb-8`,
-                            { 
+                            {
                                 backgroundColor: `rgba(255, 255, 255, 0.1)`,
                                 borderWidth: 1,
                                 borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -309,49 +330,55 @@ export default function LoginScreen({ navigation }) {
                             </Animated.View>
 
                             {/* Branch Dropdown */}
-                            <Animated.View entering={FadeInDown.delay(400).springify()}>
-                                <Text style={tw`text-white/90 mb-2 font-semibold text-base`}>
-                                    Select Branch
-                                </Text>
-                            </Animated.View>
 
-                            <Animated.View entering={SlideInRight.delay(450).springify()}>
-                                <SelectList
-                                    setSelected={(val) => setSelected(val)}
-                                    data={getDropdownData()}
-                                    save="value"
-                                    placeholder="Choose your branch"
-                                    boxStyles={{
-                                        borderRadius: 16,
-                                        borderColor: "rgba(255, 255, 255, 0.3)",
-                                        backgroundColor: "rgba(255, 255, 255, 0.2)",
-                                        paddingVertical: 14,
-                                        marginBottom: 25,
-                                        borderWidth: 1,
-                                    }}
-                                    dropdownStyles={{
-                                        backgroundColor: "rgba(255, 255, 255, 0.95)",
-                                        borderRadius: 12,
-                                        borderColor: "rgba(255, 255, 255, 0.3)",
-                                        marginTop: 5,
-                                    }}
-                                    inputStyles={{
-                                        color: "white",
-                                        fontSize: 16,
-                                    }}
-                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                />
-                            </Animated.View>
+                            {branches?.length > 0 && (
+                                <>
+                                    <Animated.View entering={FadeInDown.delay(400).springify()}>
+                                        <Text style={tw`text-white/90 mb-2 font-semibold text-base`}>
+                                            Select Branch
+                                        </Text>
+                                    </Animated.View>
+
+                                    <Animated.View entering={SlideInRight.delay(450).springify()}>
+                                        <SelectList
+                                            setSelected={(val) => setSelected(val)}
+                                            data={getDropdownData()}
+                                            save="id"
+                                            placeholder="Choose your branch"
+                                            boxStyles={{
+                                                borderRadius: 16,
+                                                borderColor: "rgba(255, 255, 255, 0.3)",
+                                                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                                                paddingVertical: 14,
+                                                marginBottom: 25,
+                                                borderWidth: 1,
+                                            }}
+                                            dropdownStyles={{
+                                                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                                borderRadius: 12,
+                                                borderColor: "rgba(255, 255, 255, 0.3)",
+                                                marginTop: 5,
+                                            }}
+                                            inputStyles={{
+                                                color: "white",
+                                                fontSize: 16,
+                                            }}
+                                            placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                                        />
+                                    </Animated.View>
+                                </>
+                            )}
 
                             {/* Login Button */}
-                            <Animated.View style={animatedButtonStyle}>
+                            {/* {console.log("check data",branches.length)} */}
+                            {branches?.length == 0 && <Animated.View style={animatedButtonStyle}>
                                 <TouchableOpacity
                                     onPress={handleLogin}
                                     disabled={isLoading}
                                     activeOpacity={0.8}
                                     style={[
                                         tw`py-4 rounded-2xl `,
-                                        { 
+                                        {
                                             backgroundColor: 'rgba(2, 37, 87, 0.55)',
                                             borderWidth: 1,
                                             borderColor: 'rgba(255, 255, 255, 0.3)',
@@ -371,10 +398,10 @@ export default function LoginScreen({ navigation }) {
                                         </Text>
                                     )}
                                 </TouchableOpacity>
-                            </Animated.View>
+                            </Animated.View>}
 
                             {/* Forgot Password */}
-                            
+
                         </View>
                     </Animated.View>
 
@@ -396,5 +423,5 @@ export default function LoginScreen({ navigation }) {
                 />
             )}
         </ImageBackground>
-    );
-}
+    )
+};
