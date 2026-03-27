@@ -93,7 +93,6 @@ export const AuthProvider = ({ children }) => {
         setSessionId(parsedUser?.sessionId)
       }
      
-
     } catch (error) {
       console.log('Error loading auth data:', error);
     } finally {
@@ -141,6 +140,7 @@ export const AuthProvider = ({ children }) => {
               setUserId(null);
               setCorporateId(null)
               setSessionId(null)
+              setAllBranchInfo(null)
               console.log("User Logged Out");
             } catch (error) {
               console.log('Error during logout:', error);

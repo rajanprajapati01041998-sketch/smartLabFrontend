@@ -6,9 +6,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import DashBoard from './AfterLogin/Screens/DashboardData/Dashborad';
 import HelpDeskHome from './AfterLogin/Screens/HelpDesk/HelpDeskHome';
 
-function PatientListScreen() {
-    return <View style={styles.screen} />;
-}
+
 
 export default function BottomTabNavigation({ navigation }) {
     const [index, setIndex] = useState(0);
@@ -46,8 +44,6 @@ export default function BottomTabNavigation({ navigation }) {
         switch (route.key) {
             case 'dashboard':
                 return <DashBoard navigation={navigation} />;
-            case 'patient':
-                return <PatientListScreen />;
             case 'helpdesk':
                 return <HelpDeskHome navigation={navigation} />;
             default:
@@ -101,7 +97,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#aecddd',
         // borderTopLeftRadius: 25,
         // borderTopRightRadius: 25,
-        height: 80,
+        height: 70,
         elevation: 10,
     },
 });

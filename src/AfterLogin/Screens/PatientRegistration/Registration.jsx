@@ -86,6 +86,7 @@ const Registration = () => {
   const [selectedFieldBoy, setSelectedFieldBoy] = useState(null);
   const [selectTitleModal, setSelectTitleModal] = useState(false)
   const [selectedTitle, setSelectedTitle] = useState(null)
+  const [showBillingInfo, setShowBillingInfo] = useState(false)
 
 
 
@@ -181,8 +182,12 @@ const Registration = () => {
       showToast('Select Gender', 'error');
       return;
     }
-    if (!selectedDoctor) {
-      showToast('Select Doctor', 'error');
+    // if (!selectedDoctor) {
+    //   showToast('Select Doctor', 'error');
+    //   return;
+    // }
+    if(!contactNumber){
+       showToast('Enter Contact number', 'error');
       return;
     }
 
@@ -601,10 +606,9 @@ const Registration = () => {
             </RadioButton.Group>
           </View>
 
-          <View style={tw`mt-2 flex flex-row justify-center items-center gap-2`}>
-            <View style={tw`flex flex-col w-[48%]`}>
+          <View style={tw`mt-2 flex flex-col justify-center items-center gap-2`}>
+            <View style={tw`flex flex-col w-full`}>
               <Text style={styles.labelText}>Referred Doctor</Text>
-
               <TouchableOpacity
                 onPress={() => setReferDoctorModal(true)}
                 style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
@@ -616,7 +620,7 @@ const Registration = () => {
                 <Icon name="chevron-down" size={18} color="gray" />
               </TouchableOpacity>
             </View>
-            <View style={tw`flex flex-col w-[48%]`}>
+            <View style={tw`flex flex-col w-full`}>
               <Text style={styles.labelText}>Referred Lab</Text>
 
               <TouchableOpacity
@@ -748,10 +752,9 @@ const Registration = () => {
         <View style={styles.cardShadow}>
           <Text style={styles.patientInfoText}>Invstigation Details:</Text>
 
-          <View style={tw`flex flex-row gap-3`}>
 
-            {/* Name Field */}
-            <View style={tw`flex-1`}>
+          {/* Name Field */}
+          {/* <View style={tw`flex-1`}>
               <View style={tw`flex flex-row items-center`}>
                 <Text style={styles.labelText}>Select Doctor</Text>
                 <Text style={tw`text-red-500 -mt-2`}>*</Text>
@@ -765,27 +768,27 @@ const Registration = () => {
                 </Text>
                 <Icon name="chevron-down" size={18} color="gray" />
               </TouchableOpacity>
+            </View> */}
+
+          {/* Search Service */}
+          <View style={tw`flex-1`}>
+            <View style={tw`flex flex-row items-center`}>
+              {/* {console.log("item",serviceItem)} */}
+              <Text style={styles.labelText}>Search Service</Text>
+              <Text style={tw`text-red-500 -mt-2`}>* </Text>
             </View>
 
-            {/* Search Service */}
-            <View style={tw`flex-1`}>
-              <View style={tw`flex flex-row items-center`}>
-                {/* {console.log("item",serviceItem)} */}
-                <Text style={styles.labelText}>Search Service</Text>
-                <Text style={tw`text-red-500 -mt-2`}>* </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setSearchSelectModal(true)}
-                style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-center`]}              >
-                <FontAwesome5 name="search" size={16} color="gray" style={tw`mr-2`} />
-                <Text style={styles.insideDropDownText}>
-                  Search Service
-                </Text>
-              </TouchableOpacity>
-            </View>
-
+            <TouchableOpacity
+              onPress={() => setSearchSelectModal(true)}
+              style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-start`]}              >
+              <FontAwesome5 name="search" size={16} color="gray" style={tw`mr-2`} />
+              <Text style={styles.insideDropDownText}>
+                Search Service
+              </Text>
+            </TouchableOpacity>
           </View>
+
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -815,107 +818,126 @@ const Registration = () => {
         </View>
 
         <View style={styles.cardShadow}>
-          <Text style={styles.patientInfoText}>Billing Info:</Text>
-
-          <View style={tw`flex-row items-center gap-2.5`}>
-            {/* Gross Amount */}
-            <View style={tw`w-[30%] mr-1`}>
-              <Text style={styles.labelText}>Gross Amount</Text>
-              <TextInput
-                editable={false}
-                value={grossAmount ? String(grossAmount) : ""}
-                style={[styles.inputBox]}
+          {/* Toggle Header for Billing Info */}
+          <TouchableOpacity
+            onPress={() => setShowBillingInfo(!showBillingInfo)}
+            activeOpacity={0.7}
+            style={tw`flex-row justify-between items-center mb-3`}
+          >
+            <Text style={styles.patientInfoText}>Billing Info:</Text>
+            <View style={tw`bg-gray-100 p-1 rounded-full`}>
+              <MaterialIcons
+                name={showBillingInfo ? "expand-less" : "expand-more"}
+                size={20}
+                color="#6B7280"
               />
             </View>
+          </TouchableOpacity>
 
-            {/* Discount % */}
-            <View style={tw`w-[30%] mx-1`}>
-              <Text style={styles.labelText}>Disc (%)</Text>
-              <TextInput
-                value={discountPercent ? String(discountPercent) : ""}
-                keyboardType="numeric"
-                onChangeText={setDiscountPercent}
-                style={[styles.inputBox]}
-              />
-            </View>
+          {showBillingInfo && (
+            <>
+              <View style={tw`flex-row items-center gap-2.5`}>
+                {/* Gross Amount */}
+                <View style={tw`w-[30%] mr-1`}>
+                  <Text style={styles.labelText}>Gross Amount</Text>
+                  <TextInput
+                    editable={false}
+                    value={grossAmount ? String(grossAmount) : ""}
+                    style={[styles.inputBox]}
+                  />
+                </View>
 
-            {/* Discount Amount */}
-            <View style={tw`w-[30%] ml-1`}>
-              <Text style={styles.labelText}>Disc Amt</Text>
-              <TextInput
-                value={discountAmount ? String(discountAmount) : ""}
-                editable={false}
-                style={[styles.inputBox]}
-              />
-            </View>
-          </View>
+                {/* Discount % */}
+                <View style={tw`w-[30%] mx-1`}>
+                  <Text style={styles.labelText}>Disc (%)</Text>
+                  <TextInput
+                    value={discountPercent ? String(discountPercent) : ""}
+                    keyboardType="numeric"
+                    onChangeText={setDiscountPercent}
+                    style={[styles.inputBox]}
+                  />
+                </View>
 
-          <View style={tw`flex-row items-center gap-2.5 mt-2`}>
-            {/* Round off Amount */}
-            <View style={tw`w-[30%] mr-1`}>
-              <Text style={styles.labelText}>Round off</Text>
-              <TextInput
-                readOnly
-                value={grossAmount ? String(grossAmount) : ""}
-                keyboardType="numeric"
-                style={[styles.inputBox]}
-              />
-            </View>
+                {/* Discount Amount */}
+                <View style={tw`w-[30%] ml-1`}>
+                  <Text style={styles.labelText}>Disc Amt</Text>
+                  <TextInput
+                    value={discountAmount ? String(discountAmount) : ""}
+                    editable={false}
+                    style={[styles.inputBox]}
+                  />
+                </View>
+              </View>
 
-            {/* Net Amount */}
-            <View style={tw`w-[30%] mx-1`}>
-              <Text style={styles.labelText}>Net Amount</Text>
-              <TextInput
-                value={netAmount ? String(netAmount) : ""}
-                editable={false}
-                style={[styles.inputBox]}
-              />
-            </View>
+              <View style={tw`flex-row items-center gap-2.5 mt-2`}>
+                {/* Round off Amount */}
+                <View style={tw`w-[30%] mr-1`}>
+                  <Text style={styles.labelText}>Round off</Text>
+                  <TextInput
+                    readOnly
+                    value={grossAmount ? String(grossAmount) : ""}
+                    keyboardType="numeric"
+                    style={[styles.inputBox]}
+                  />
+                </View>
 
-            {/* Balance Amount */}
-            <View style={tw`w-[30%] ml-1`}>
-              <Text style={styles.labelText}>Balance Amt</Text>
-              <TextInput
-                value={balanceAmount ? String(balanceAmount) : 0}
-                editable={false}
-                style={[styles.inputBox]}
-              />
-            </View>
-          </View>
+                {/* Net Amount */}
+                <View style={tw`w-[30%] mx-1`}>
+                  <Text style={styles.labelText}>Net Amount</Text>
+                  <TextInput
+                    value={netAmount ? String(netAmount) : ""}
+                    editable={false}
+                    style={[styles.inputBox]}
+                  />
+                </View>
 
-          {/* discount reason section */}
-          <View style={tw`flex-row items-center gap-2.5 mt-2`}>
-            {/* Discount approved by */}
-            <View style={tw`w-[30%] mr-1`}>
-              <Text numberOfLines={1} style={styles.labelText}>Dis Approved by</Text>
-              <TouchableOpacity style={tw`border border-gray-300 px-2 py-3 bg-white rounded-xl`}>
-                <Text style={styles.labelText}>Select</Text>
-              </TouchableOpacity>
-            </View>
+                {/* Balance Amount */}
+                <View style={tw`w-[30%] ml-1`}>
+                  <Text style={styles.labelText}>Balance Amt</Text>
+                  <TextInput
+                    value={balanceAmount ? String(balanceAmount) : 0}
+                    editable={false}
+                    style={[styles.inputBox]}
+                  />
+                </View>
+              </View>
 
-            {/* Discount reason */}
-            <View style={tw`w-[30%] mx-1`}>
-              <Text style={styles.labelText}>Disc Reason</Text>
-              <TextInput
-                value={discountReason}
-                onChangeText={setDiscountReason}
-                style={[styles.inputBox]}
-              />
-            </View>
+              {/* discount reason section */}
+              <View style={tw`flex-row items-center gap-2.5 mt-2`}>
+                {/* Discount approved by */}
+                <View style={tw`w-[30%] mr-1`}>
+                  <Text numberOfLines={1} style={styles.labelText}>Dis Approved by</Text>
+                  <TouchableOpacity style={tw`border border-gray-300 px-2 py-3 bg-white rounded-xl`}>
+                    <Text style={styles.labelText}>Select</Text>
+                  </TouchableOpacity>
+                </View>
 
-            {/* Remark */}
-            <View style={tw`w-[30%] mx-1`}>
-              <Text style={styles.labelText}>Remark</Text>
-              <TextInput
-                value={remark}
-                onChangeText={setRemark}
-                style={[styles.inputBox]}
-              />
-            </View>
-          </View>
+                {/* Discount reason */}
+                <View style={tw`w-[30%] mx-1`}>
+                  <Text style={styles.labelText}>Disc Reason</Text>
+                  <TextInput
+                    value={discountReason}
+                    onChangeText={setDiscountReason}
+                    style={[styles.inputBox]}
+                  />
+                </View>
+
+                {/* Remark */}
+                <View style={tw`w-[30%] mx-1`}>
+                  <Text style={styles.labelText}>Remark</Text>
+                  <TextInput
+                    value={remark}
+                    onChangeText={setRemark}
+                    style={[styles.inputBox]}
+                  />
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Payment Fields */}
+
         <View style={styles.cardShadow}>
           <Text style={styles.patientInfoText}>Payment Info:</Text>
           <View style={tw`mb-2`}>
