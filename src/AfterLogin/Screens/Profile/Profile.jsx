@@ -36,7 +36,7 @@ const Profile = () => {
   }
 
   return (
-    <View style={tw`flex-1 bg-gray-100`}>
+    <View style={tw`flex-1 bg-gray-100 p-2`}>
       {/* Scroll Content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 130 }}>
 
@@ -140,18 +140,8 @@ const Profile = () => {
             </View>
           </TouchableOpacity>
         </View>
-
-      </ScrollView>
-
-      {/* 🔥 Fixed Logout Button */}
-      <View
-        style={[
-          tw`absolute left-0 right-0 bg-white border-t border-gray-200 px-3 py-2`,
-          { bottom: Platform.OS === 'ios' ? 20 : 10 }
-        ]}
-      >
         <TouchableOpacity
-          style={tw`bg-red-500 rounded-xl py-4 flex-row items-center justify-center`}
+          style={tw`bg-red-500 mx-1 rounded-xl py-4 flex-row items-center justify-center`}
           onPress={handleLogout}
         >
           <Icon2 name="log-out-outline" size={22} color="white" />
@@ -159,9 +149,13 @@ const Profile = () => {
             Logout
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+
+
+
 
     </View>
+
   )
 }
 

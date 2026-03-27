@@ -128,9 +128,7 @@ const LabDashboard = () => {
     <ScrollView
       style={tw`flex-1 bg-gray-50`}
       showsVerticalScrollIndicator={false}
-    >
-
-
+     >
       {/* HEADER */}
       <View style={tw`px-4 pt-4 pb-4 bg-white border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-start`}>
@@ -173,16 +171,16 @@ const LabDashboard = () => {
               <Text style={tw`ml-2 text-sm text-gray-700`}>Filter</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() => navigation.navigate("Profile")}
               style={[
                 ButtonStyles.button,
 
               ]}
-            >
+             >
               <MaterialIcons name="supervised-user-circle" size={18} color="#374151" />
               <Text style={tw`ml-2 text-sm text-gray-700`}>Profile</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
         </View>

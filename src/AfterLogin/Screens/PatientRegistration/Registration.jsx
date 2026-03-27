@@ -186,8 +186,8 @@ const Registration = () => {
     //   showToast('Select Doctor', 'error');
     //   return;
     // }
-    if(!contactNumber){
-       showToast('Enter Contact number', 'error');
+    if (!contactNumber) {
+      showToast('Enter Contact number', 'error');
       return;
     }
 
@@ -492,8 +492,8 @@ const Registration = () => {
   };
 
   return (
-    <View style={tw`p-2`}>
-      <ScrollView style={tw``}>
+    <SafeAreaView style={tw``}>
+      <ScrollView style={tw`p-2 mb-15`}>
         <CenterInfo />
         {/* patient information */}
         <View style={styles.cardShadow}>
@@ -1031,160 +1031,161 @@ const Registration = () => {
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
 
-      {/* refer doctor modal */}
-      <Modal
-        visible={refrDoctrorModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setReferDoctorModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setReferDoctorModal(false)}>
-          <View style={tw`flex-1 justify-center items-center bg-black/50`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
-              <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
-                <ReferDoctor
-                  onSelectDoctor={(doctor) => {
-                    setSelectedReferDoctor(doctor);
-                  }}
-                  onClose={() => setReferDoctorModal(false)}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
 
-      {/* doctor list modal */}
-      <Modal
-        visible={doctorlistModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setDoctorListModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setDoctorListModal(false)}>
-          {/* Overlay */}
-          <View style={tw`flex-1 justify-end bg-black/50`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
-              {/* Bottom Sheet */}
-              <View style={tw`bg-white w-full h-[80%] rounded-t-2xl p-4`}>
-                <DoctorList
-                  onSelectDoctor={(doctor) => {
-                    setSelectedDoctorList(doctor);
-                    setDoctorListModal(false); // optional: auto close
-                  }}
-                  onClose={() => setDoctorListModal(false)}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* refer lab Modal */}
-      <Modal
-        visible={referLabListModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setReferLabListModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setReferLabListModal(false)}>
-          <View style={tw`flex-1 justify-center items-center bg-black/50`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
-              <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
-                <ReferLab
-                  onSelectDoctor={(doctor) => {
-                    setSelectedReferLab(doctor);
-                  }}
-                  onClose={() => setReferLabListModal(false)}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* search select modal */}
-      <Modal
-        visible={searchSelectModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSearchSelectModal(false)}
-      >
-        {/* BACKDROP */}
-        <TouchableWithoutFeedback onPress={() => setSearchSelectModal(false)}>
-          <View style={tw`flex-1 justify-end bg-black/40`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
-              <View style={tw`bg-white w-full h-[60%] rounded-t-3xl pt-3 pb-4 px-4`}>
-                <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-                {/* CONTENT */}
-                <View style={tw`flex-1`}>
-                  <SearchSelectService
-                    onClose={() => setSearchSelectModal(false)}
+        {/* refer doctor modal */}
+        <Modal
+          visible={refrDoctrorModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setReferDoctorModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setReferDoctorModal(false)}>
+            <View style={tw`flex-1 justify-center items-center bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
+                  <ReferDoctor
+                    onSelectDoctor={(doctor) => {
+                      setSelectedReferDoctor(doctor);
+                    }}
+                    onClose={() => setReferDoctorModal(false)}
                   />
                 </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
-                {/* CLOSE BUTTON */}
-                <TouchableOpacity
-                  onPress={() => setSearchSelectModal(false)}
-                  style={tw`bg-purple-500 py-4 rounded-full mt-3`}
-                >
-                  <Text style={tw`text-white text-center font-semibold`}>
-                    Close
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-
-
-      {/* Field boy modal */}
-      <Modal
-        visible={fieldBoyModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setFieldBoyModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setFieldBoyModal(false)}>
-          <View style={tw`flex-1 justify-end bg-black/50`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
-              <View style={tw`bg-white rounded-t-3xl w-full h-[60%] p-4`}>
-                <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-                {/* CONTENT */}
-                <View style={tw`flex-1`}>
-                  <FieldBoy
-                    onSelectFieldBoy={setSelectedFieldBoy}
-                    onClose={() => setFieldBoyModal(false)}
+        {/* doctor list modal */}
+        <Modal
+          visible={doctorlistModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setDoctorListModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setDoctorListModal(false)}>
+            {/* Overlay */}
+            <View style={tw`flex-1 justify-end bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                {/* Bottom Sheet */}
+                <View style={tw`bg-white w-full h-[80%] rounded-t-2xl p-4`}>
+                  <DoctorList
+                    onSelectDoctor={(doctor) => {
+                      setSelectedDoctorList(doctor);
+                      setDoctorListModal(false); // optional: auto close
+                    }}
+                    onClose={() => setDoctorListModal(false)}
                   />
                 </View>
-                <TouchableOpacity
-                  onPress={() => setFieldBoyModal(false)}
-                  style={tw`bg-purple-500 py-4 rounded-xl mt-2`}
-                >
-                  <Text style={tw`text-white text-center font-semibold`}>
-                    Close
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-      {/* title modal */}
-      <BottomModal
-        visible={selectTitleModal}
-        onClose={() => setSelectTitleModal(false)}
-      >
-        <SelectTitle
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* refer lab Modal */}
+        <Modal
+          visible={referLabListModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setReferLabListModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setReferLabListModal(false)}>
+            <View style={tw`flex-1 justify-center items-center bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
+                  <ReferLab
+                    onSelectDoctor={(doctor) => {
+                      setSelectedReferLab(doctor);
+                    }}
+                    onClose={() => setReferLabListModal(false)}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* search select modal */}
+        <Modal
+          visible={searchSelectModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSearchSelectModal(false)}
+        >
+          {/* BACKDROP */}
+          <TouchableWithoutFeedback onPress={() => setSearchSelectModal(false)}>
+            <View style={tw`flex-1 justify-end bg-black/40`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white w-full h-[60%] rounded-t-3xl pt-3 pb-4 px-4`}>
+                  <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+                  {/* CONTENT */}
+                  <View style={tw`flex-1`}>
+                    <SearchSelectService
+                      onClose={() => setSearchSelectModal(false)}
+                    />
+                  </View>
+
+                  {/* CLOSE BUTTON */}
+                  <TouchableOpacity
+                    onPress={() => setSearchSelectModal(false)}
+                    style={tw`bg-purple-500 py-4 rounded-full mt-3`}
+                  >
+                    <Text style={tw`text-white text-center font-semibold`}>
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+
+
+        {/* Field boy modal */}
+        <Modal
+          visible={fieldBoyModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setFieldBoyModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setFieldBoyModal(false)}>
+            <View style={tw`flex-1 justify-end bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white rounded-t-3xl w-full h-[60%] p-4`}>
+                  <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+                  {/* CONTENT */}
+                  <View style={tw`flex-1`}>
+                    <FieldBoy
+                      onSelectFieldBoy={setSelectedFieldBoy}
+                      onClose={() => setFieldBoyModal(false)}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setFieldBoyModal(false)}
+                    style={tw`bg-purple-500 py-4 rounded-xl mt-2`}
+                  >
+                    <Text style={tw`text-white text-center font-semibold`}>
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        {/* title modal */}
+        <BottomModal
+          visible={selectTitleModal}
           onClose={() => setSelectTitleModal(false)}
-          onSelectTitle={setSelectedTitle}
-        />
-      </BottomModal>
-    </View>
+        >
+          <SelectTitle
+            onClose={() => setSelectTitleModal(false)}
+            onSelectTitle={setSelectedTitle}
+          />
+        </BottomModal>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

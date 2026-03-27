@@ -1,103 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { BottomNavigation, Provider } from 'react-native-paper';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import DashBoard from './AfterLogin/Screens/DashboardData/Dashborad';
+// Screens
+import DashboardStack from './DashboardStack';
 import HelpDeskHome from './AfterLogin/Screens/HelpDesk/HelpDeskHome';
+import Registration from './AfterLogin/Screens/PatientRegistration/Registration';
 
+const Tab = createBottomTabNavigator();
 
+export default function BottomTabNavigation() {
+  const insets = useSafeAreaInsets();
 
-export default function BottomTabNavigation({ navigation }) {
-    const [index, setIndex] = useState(0);
+  const baseTabBarStyle = {
+    position: 'absolute',
+    left: 5,
+    right: 5,
+    height: 50 + insets.bottom,
+    paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+    backgroundColor: '#d5d2d2',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 10,
+  };
 
-    // ✅ Clean route keys (no spaces, lowercase)
-    const routes = [
-        { key: 'dashboard', title: 'Dashboard', icon: 'view-dashboard' },
-        { key: 'registration', title: 'Registration', icon: 'account-plus' },
-        { key: 'helpdesk', title: 'Help Desk', icon: 'bell' },
-    ];
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
 
-    // ✅ Update header title dynamically
-    useEffect(() => {
-        const currentRoute = routes[index];
+        tabBarIcon: ({ color, focused }) => {
+          let iconName;
 
-        let title = '';
+          if (route.name === 'Dashboard') iconName = 'view-dashboard';
+          else if (route.name === 'HelpDesk') iconName = 'bell';
+          else if (route.name === 'Registration') iconName = 'account-plus'; // ✅ ADD THIS
 
-        switch (currentRoute.key) {
-            case 'dashboard':
-                title = 'Dashboard';
-                break;
-            case 'helpdesk':
-                title = 'Help Desk';
-                break;
-            default:
-                title = 'Dashboard';
-        }
+          return (
+            <MaterialCommunityIcons
+              name={iconName}
+              size={focused ? 26 : 22}
+              color={color}
+            />
+          );
+        },
 
-        navigation.setOptions({ title });
+        tabBarActiveTintColor: '#007bff',
+        tabBarInactiveTintColor: '#777',
 
-    }, [index]);
+        tabBarStyle: baseTabBarStyle,
 
-    // ✅ Render tab screens
-    const renderScene = ({ route }) => {
-        switch (route.key) {
-            case 'dashboard':
-                return <DashBoard navigation={navigation} />;
-            case 'helpdesk':
-                return <HelpDeskHome navigation={navigation} />;
-            default:
-                return <DashBoard navigation={navigation} />;
-        }
-    };
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 5,
+        },
+      })}
+    >
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardStack}
+        options={({ route }) => {
+          const routeName =
+            getFocusedRouteNameFromRoute(route) ?? 'DashboardHome';
 
-    return (
-        <Provider>
-            <View style={{ flex: 1 }}>
-                {renderScene({ route: routes[index] })}
+          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory'];
 
-                <BottomNavigation.Bar
-                    navigationState={{ index, routes }}
+          return {
+            tabBarStyle: [
+              baseTabBarStyle,
+              { display: hideOnScreens.includes(routeName) ? 'none' : 'flex' },
+            ],
+          };
+        }}
+      />
+      <Tab.Screen
+        name="Registration"
+        component={Registration}
+      />
 
-                    onTabPress={({ route }) => {
-                        if (route.key === 'registration') {
-                            // 👉 Navigate to Stack Screen
-                            navigation.navigate('Registration');
-                        } else {
-                            const newIndex = routes.findIndex(
-                                r => r.key === route.key
-                            );
-                            setIndex(newIndex);
-                        }
-                    }}
-
-                    renderIcon={({ route, color }) => (
-                        <MaterialCommunityIcons
-                            name={route.icon}
-                            size={24}
-                            color={color}
-                        />
-                    )}
-
-                    getLabelText={({ route }) => route.title}
-
-                    style={styles.bottomBar}
-                />
-            </View>
-        </Provider>
-    );
+      <Tab.Screen
+        name="HelpDesk"
+        component={HelpDeskHome}
+      />
+    </Tab.Navigator>
+  );
 }
-
-const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        backgroundColor: '#99a9ce',
-    },
-    bottomBar: {
-        backgroundColor: '#aecddd',
-        // borderTopLeftRadius: 25,
-        // borderTopRightRadius: 25,
-        height: 70,
-        elevation: 10,
-    },
-});
