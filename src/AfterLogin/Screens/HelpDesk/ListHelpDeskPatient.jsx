@@ -326,7 +326,7 @@ const ListHelpDeskPatient = () => {
           description: 'Downloading report...',
         },
       }).fetch('GET',
-        `http://192.168.31.237:5021/api/ReportPrint/DownloadCombinedReport?ptInvstId=2035&isHeaderPNG=0&printBy=1&branchId=1`
+        `http://192.168.31.237:5021/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=1`
       );
        showToast('File downloaded', 'success');
     } catch (error) {

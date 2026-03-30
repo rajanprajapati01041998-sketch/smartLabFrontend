@@ -133,10 +133,10 @@ export default function LoginScreen({ navigation }) {
                 userPassword: password
             };
             const response = await api.post(`Login/branch-list`, formData);
-            console.log("branch response", response);
+            //console.log("branch response", response);
             setBranches(response.data);
         } catch (error) {
-            console.log("Branch error", error);
+            //console.log("Branch error", error);
         } finally {
             setIsLoading(false);
         }
@@ -160,7 +160,7 @@ export default function LoginScreen({ navigation }) {
 
         try {
             const response = await api.post(`Login/login`, formData);
-            console.log("final Login", response.data);
+            //console.log("final Login", response.data);
             setUserId(response?.data?.user.id);
             setLoginBranchId(response.data?.branchId);
             setSessionId(response.data?.sessionId);
@@ -168,7 +168,7 @@ export default function LoginScreen({ navigation }) {
             const token = response.data?.token;
             const userInfo = response.data;
             await AsyncStorage.setItem('AllBranch', JSON.stringify(branches));
-            console.log("branc", branches);
+            //console.log("branc", branches);
             if (token) {
                 await login(token, userInfo);
                 navigation.replace('Dashboard');
@@ -179,7 +179,7 @@ export default function LoginScreen({ navigation }) {
             navigation.replace('Dashboard');
 
         } catch (error) {
-            console.log("Final Login error", error);
+            //console.log("Final Login error", error);
         }
     };
 

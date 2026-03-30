@@ -43,7 +43,7 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
-    const { loginBranchId, userData, user } = useAuth()
+    const { loginBranchId, userData, user , userId } = useAuth()
 
     // Animation values
     const scaleValue = useSharedValue(1)
@@ -52,9 +52,10 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     useFocusEffect(
         useCallback(() => {
+            console.log("dashborad",fromDate, toDate, branchId)
             console.log("ON user", userData)
-            if (userData?.user?.id) {
-                getDashboardData(userData?.user?.id)
+            if (userId) {
+                getDashboardData(userId)
 
             }
             fadeAnim.value = withTiming(1, { duration: 800 })

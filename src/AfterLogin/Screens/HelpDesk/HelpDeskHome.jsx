@@ -2,7 +2,6 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, A
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import tw from 'twrnc'
 import styles from '../../../utils/InputStyle'
-import ListHelpDeskPatient from './ListHelpDeskPatient'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -204,10 +203,7 @@ const HelpDeskHome = () => {
       filter: null
     };
     setFinalPayload(payload)
-    navigation.navigate('Dashboard', {
-      screen: 'ListHelpDeskPatient',
-      params: { payload }
-    })
+    navigation.navigate('ListHelpDeskPatient', { payload })
   };
 
   // Animation for modal open/close

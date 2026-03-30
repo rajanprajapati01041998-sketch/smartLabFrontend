@@ -26,7 +26,6 @@ export default function DashboardStack() {
                 component={LabDashboard}
                 options={({ navigation }) => ({
                     headerTitle: "Dashboard", // optional
-
                     headerRight: () => (
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Profile')}
