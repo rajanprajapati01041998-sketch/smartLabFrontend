@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../../Authorization/api';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import BottomModal from '../../../utils/BottomModal';
+import { useTheme } from '../../../../Authorization/ThemeContext';
 
 const CenterInfo = () => {
     const [allBranchInfo, setAllBranchInfo] = useState([]);
@@ -16,14 +17,17 @@ const CenterInfo = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [ratePannel, setRatePannel] = useState(null);
     const [uhid, setUhid] = useState('')
+    const { colors } = useTheme()
     const [showCenterInfo, setShowCenterInfo] = useState(false); // Toggle state
     const { corporateId, setCorporateId, patientData, setPatientData, userData } = useAuth()
+
 
     useFocusEffect(
         useCallback(() => {
             getBranchInfo();
         }, [])
     );
+
 
     // ✅ Get Branches + Set Default + Call API
     const getBranchInfo = async () => {
@@ -83,10 +87,10 @@ const CenterInfo = () => {
             >
                 <Text style={styles.patientInfoText}>Center Information</Text>
                 <View style={tw`bg-gray-100 p-1 rounded-full`}>
-                    <MaterialIcons 
-                        name={showCenterInfo ? "expand-less" : "expand-more"} 
-                        size={20} 
-                        color="#6B7280" 
+                    <MaterialIcons
+                        name={showCenterInfo ? "expand-less" : "expand-more"}
+                        size={20}
+                        color="#6B7280"
                     />
                 </View>
             </TouchableOpacity>
@@ -135,8 +139,9 @@ const CenterInfo = () => {
                                 <TextInput
                                     value={uhid}
                                     onChangeText={(text) => setUhid(text)}
-                                    style={[styles.searchInput, tw`pl-10 pr-2`]} 
-                                    placeholder="Search By UHID" 
+                                    style={[styles.searchInput, tw`pl-10 pr-2`]}
+                                    placeholder="Search By UHID"
+                                    placeholderTextColor={colors.placeholder}
                                 />
                                 <Icon name="search" size={16} color="gray" style={tw`absolute left-3 top-3`} />
                             </View>

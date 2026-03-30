@@ -1,10 +1,12 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, Animated, Easing, FlatList } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, Animated, Easing, FlatList, LayoutAnimation, UIManager } from 'react-native'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import tw from 'twrnc'
 import styles from '../../../utils/InputStyle'
 import ListHelpDeskPatient from './ListHelpDeskPatient'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Icon from 'react-native-vector-icons/Feather';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import Entypo from 'react-native-vector-icons/Entypo';
 import BottomModal from '../../../utils/BottomModal'
 import AllDepartMent from './AllDepartMent'
 import { useAuth } from '../../../../Authorization/AuthContext'
@@ -12,6 +14,11 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../../../Authorization/api'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const HelpDeskHome = () => {
   const { loginBranchId, user, userId } = useAuth()
@@ -21,14 +28,18 @@ const HelpDeskHome = () => {
   const [selectedClient, setSelectedClient] = useState([])
   const [finalPayload, setFinalPayload] = useState(null)
   const [allBranchInfo, setAllBranchInfo] = useState([]);   // ✅ API data
+  const [showFilter, setShowFilter] = useState(false)
+
+  // Animation refs for filter toggle
+  const filterHeightAnim = useRef(new Animated.Value(0)).current
+  const filterRotateAnim = useRef(new Animated.Value(0)).current
 
   const navigation = useNavigation()
 
-  // Animation values
+  // Animation values for initial load
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(50)).current
   const buttonScale = useRef(new Animated.Value(1)).current
-  const formFieldsAnim = useRef(new Animated.Value(0)).current
 
   // Date picker states
   const [showFromDatePicker, setShowFromDatePicker] = useState(false)
@@ -70,6 +81,30 @@ const HelpDeskHome = () => {
     }
   }
 
+  // Handle filter toggle with animation
+  const toggleFilter = () => {
+    // Configure layout animation for smooth transitions
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+    // Animate chevron rotation
+    Animated.timing(filterRotateAnim, {
+      toValue: showFilter ? 0 : 1,
+      duration: 300,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.cubic)
+    }).start();
+
+    // Animate height
+    Animated.timing(filterHeightAnim, {
+      toValue: showFilter ? 0 : 1,
+      duration: 300,
+      useNativeDriver: false,
+      easing: Easing.out(Easing.cubic)
+    }).start();
+
+    setShowFilter(!showFilter);
+  }
+
   // Initial animation on component mount
   useEffect(() => {
     Animated.parallel([
@@ -84,12 +119,6 @@ const HelpDeskHome = () => {
         duration: 600,
         useNativeDriver: true,
         easing: Easing.out(Easing.back(0.5))
-      }),
-      Animated.timing(formFieldsAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.exp)
       })
     ]).start()
   }, [])
@@ -212,19 +241,23 @@ const HelpDeskHome = () => {
     })
   }
 
-  // Animated form field component
-  const AnimatedFormField = ({ children, delay = 0 }) => {
+  // Animated form field component with individual animations
+  const AnimatedFormField = ({ children, delay = 0, isVisible = true }) => {
     const fieldAnim = useRef(new Animated.Value(0)).current
 
     useEffect(() => {
-      Animated.timing(fieldAnim, {
-        toValue: 1,
-        duration: 500,
-        delay,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic)
-      }).start()
-    }, [])
+      if (isVisible) {
+        Animated.timing(fieldAnim, {
+          toValue: 1,
+          duration: 500,
+          delay,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic)
+        }).start()
+      } else {
+        fieldAnim.setValue(0)
+      }
+    }, [isVisible, delay])
 
     return (
       <Animated.View style={{
@@ -345,6 +378,12 @@ const HelpDeskHome = () => {
     );
   };
 
+  // Get chevron rotation interpolated value
+  const chevronRotation = filterRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg']
+  });
+
   return (
     <SafeAreaView style={tw`flex-1 bg-gray-100`}>
       <Animated.View style={[tw`flex-1`, { opacity: fadeAnim }]}>
@@ -353,10 +392,42 @@ const HelpDeskHome = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={tw`p-4 pb-24`}
         >
-          <Animated.View style={{ transform: [{ translateY: slideAnim }] }}>
-            {/* UHID and Barcode Row */}
-            <View style={[styles.cardShadow, tw`bg-white rounded-lg p-4 mb-3`]}>
-              <AnimatedFormField delay={0}>
+          {/* Filter Toggle Button with Animation */}
+          <TouchableOpacity
+            onPress={toggleFilter}
+            style={[
+              styles.cardShadow,
+              tw`flex flex-row justify-between items-center bg-white p-3 rounded-lg mb-3`
+            ]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.labelText, tw`font-medium`]}>Filter</Text>
+            <Animated.View style={[tw`bg-gray-100 rounded-full p-1.5`, { transform: [{ rotate: chevronRotation }] }]}>
+              <Entypo name='chevron-down' size={18} color="#4b5563" />
+            </Animated.View>
+          </TouchableOpacity>
+
+          {/* Filter Content with Height Animation */}
+          <Animated.View
+            style={[
+              {
+                overflow: 'hidden',
+                opacity: filterHeightAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 1]
+                }),
+                transform: [{
+                  translateY: filterHeightAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0]
+                  })
+                }]
+              }
+            ]}
+          >
+            {showFilter && (
+              <View style={[styles.cardShadow, tw`bg-white rounded-lg p-4 mb-3`]}>
+                {/* UHID and Barcode Row */}
                 <View style={tw`flex-row gap-3 mb-3`}>
                   <View style={tw`flex-1`}>
                     <Text style={styles.labelText}>UHID</Text>
@@ -379,10 +450,8 @@ const HelpDeskHome = () => {
                     />
                   </View>
                 </View>
-              </AnimatedFormField>
 
-              {/* Patient Name and Lab No Row */}
-              <AnimatedFormField delay={100}>
+                {/* Patient Name and Lab No Row */}
                 <View style={tw`flex-row gap-3 mb-3`}>
                   <View style={tw`flex-1`}>
                     <Text style={styles.labelText}>Patient Name</Text>
@@ -405,115 +474,114 @@ const HelpDeskHome = () => {
                     />
                   </View>
                 </View>
-              </AnimatedFormField>
-            </View>
+              </View>
+            )}
+          </Animated.View>
 
+          {/* Main Content with Slide Animation */}
+          <Animated.View style={{ transform: [{ translateY: slideAnim }] }}>
             <View style={[styles.cardShadow, tw`bg-white rounded-lg p-4`]}>
               {/* From Date and To Date Row */}
-              <AnimatedFormField delay={200}>
-                <View style={tw`flex-row gap-3 mb-3`}>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>From Date</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowFromDatePicker(true)}
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`]}
-                    >
-                      <Text style={tw`text-gray-700`}>{form.fromDate}</Text>
-                      <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>To Date</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowToDatePicker(true)}
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`]}
-                    >
-                      <Text style={tw`text-gray-700`}>{form.toDate}</Text>
-                      <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
-                    </TouchableOpacity>
-                  </View>
+              <View style={tw`flex-row gap-3 mb-3`}>
+                <View style={tw`flex-1`}>
+                  <Text style={styles.labelText}>From Date</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowFromDatePicker(true)}
+                    style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`]}
+                  >
+                    <Text style={tw`text-gray-700`}>{form.fromDate}</Text>
+                    <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
+                  </TouchableOpacity>
                 </View>
-              </AnimatedFormField>
+
+                <View style={tw`flex-1`}>
+                  <Text style={styles.labelText}>To Date</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowToDatePicker(true)}
+                    style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`]}
+                  >
+                    <Text style={tw`text-gray-700`}>{form.toDate}</Text>
+                    <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               {/* Investigation Name Row */}
-              <AnimatedFormField delay={300}>
-                <View style={tw`mb-3`}>
-                  <Text style={styles.labelText}>Investigation Name</Text>
-                  <TextInput
-                    value={form.investigationName}
-                    onChangeText={(t) => handleChange('investigationName', t)}
-                    placeholder="Enter investigation name"
-                    style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                    placeholderTextColor="#9ca3af"
-                  />
-                </View>
-              </AnimatedFormField>
+              <View style={tw`mb-3`}>
+                <Text style={styles.labelText}>Investigation Name</Text>
+                <TextInput
+                  value={form.investigationName}
+                  onChangeText={(t) => handleChange('investigationName', t)}
+                  placeholder="Enter investigation name"
+                  style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
+                  placeholderTextColor="#9ca3af"
+                />
+              </View>
 
               {/* Department and Client Row */}
-              <AnimatedFormField delay={400}>
-                <View style={tw`flex-row gap-3 mb-3`}>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>Select Department</Text>
-                    <TouchableOpacity
-                      onPress={() => openModal('department')}
-                      style={[styles.dropDownButton, tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`]}
-                    >
-                      <Text style={tw`text-gray-700 flex-1`}>
-                        {selectedDepartment !== "--Department--" ? selectedDepartment : 'Select Department'}
-                      </Text>
-                      <Icon name="chevron-down" size={18} color="gray" />
-                    </TouchableOpacity>
-                  </View>
-                  <View style={tw`flex-1`}>
-                    <View style={tw`flex-row items-center`}>
-                      <Text style={styles.labelText}>
-                        Client/Panel
-                      </Text>
-                      <Text style={tw`text-red-500 text-base ml-1`}>*</Text>
-                      <Text style={tw`text-gray-500 text-xs ml-1`}>
-                        ({selectedClient?.length || 0} selected)
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => openModal('client')}
-                      style={[styles.dropDownButton, tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`]}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={tw`text-gray-700 flex-1`}
-                      >
-                        {selectedClient?.length > 0
-                          ? `${selectedClient[0].BranchName}${selectedClient.length > 1
-                            ? ` +${selectedClient.length - 1}`
-                            : ''
-                          }`
-                          : 'Select Client'}
-                      </Text>
-                      <Icon name="chevron-down" size={18} color="gray" />
-                    </TouchableOpacity>
-                  </View>
+              <View style={tw`flex-row gap-3 mb-3`}>
+                <View style={tw`flex-1`}>
+                  <Text style={styles.labelText}>Select Department</Text>
+                  <TouchableOpacity
+                    onPress={() => openModal('department')}
+                    style={[styles.dropDownButton, tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`]}
+                  >
+                    <Text style={tw`text-gray-700 flex-1`}>
+                      {selectedDepartment !== "--Department--" ? selectedDepartment : 'Select Department'}
+                    </Text>
+                    <Icon name="chevron-down" size={18} color="gray" />
+                  </TouchableOpacity>
                 </View>
-              </AnimatedFormField>
+                <View style={tw`flex-1`}>
+                  <View style={tw`flex-row items-center`}>
+                    <Text style={styles.labelText}>
+                      Client/Panel
+                    </Text>
+                    <Text style={tw`text-red-500 text-base ml-1`}>*</Text>
+                    <Text style={tw`text-gray-500 text-xs ml-1`}>
+                      ({selectedClient?.length || 0} selected)
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => openModal('client')}
+                    style={[styles.dropDownButton, tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`]}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={tw`text-gray-700 flex-1`}
+                    >
+                      {selectedClient?.length > 0
+                        ? `${selectedClient[0].BranchName}${selectedClient.length > 1
+                          ? ` +${selectedClient.length - 1}`
+                          : ''
+                        }`
+                        : 'Select Client'}
+                    </Text>
+                    <Icon name="chevron-down" size={18} color="gray" />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </Animated.View>
 
           {/* Search Button */}
-          <TouchableOpacity
-            disabled={!selectedClient.length > 0}
-            onPress={handleSearch}
-            style={[
-              tw`py-3.5 rounded-md shadow-md mt-5`,
-              !selectedClient.length > 0
-                ? tw`bg-gray-400`
-                : tw`bg-blue-500`
-            ]}
-            activeOpacity={0.8}
-          >
-            <Text style={tw`text-white text-center font-bold text-base`}>
-              Search Patients
-            </Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <TouchableOpacity
+              disabled={!selectedClient.length > 0}
+              onPress={handleSearch}
+              style={[
+                tw`py-3.5 rounded-md shadow-md mt-5`,
+                !selectedClient.length > 0
+                  ? tw`bg-gray-400`
+                  : tw`bg-blue-500`
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text style={tw`text-white text-center font-bold text-base`}>
+                Search Patients
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
 
         {/* From Date Picker */}

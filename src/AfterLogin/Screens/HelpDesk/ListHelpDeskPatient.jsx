@@ -1,30 +1,44 @@
-import { View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
 import { useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import QRCode from 'react-native-qrcode-svg';
 import Svg from 'react-native-svg';
 import Barcode from '@kichiyaki/react-native-barcode-generator';
+import Entypo from 'react-native-vector-icons/Entypo';
+import styles from '../../../utils/InputStyle';
+import RNFetchBlob from 'react-native-blob-util';
+import FileViewer from 'react-native-file-viewer';
+import { useToast } from '../../../../Authorization/ToastContext';
+
+
+
 
 const { width } = Dimensions.get('window');
 
 const ListHelpDeskPatient = () => {
   const route = useRoute();
+  const [showFilter, setShowFilter] = useState(false);
   const payload = route?.params?.payload || null;
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
   const [showStatusLegend, setShowStatusLegend] = useState(false);
+    const { showToast } = useToast()
+  
   // Filter states
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [openItemIndex, setOpenItemIndex] = useState(null); // Track which item is open
+  const animationRefs = useRef({}); // Store animation values for each item
+
   // Status legend items
   const statusLegend = [
     { key: 'sample_pending', label: 'Sample Collection Pending', color: '#ef4444', bg: '#fee2e2', condition: (item) => !item.IsSampleCollected && !item.IsResultDone },
@@ -38,8 +52,12 @@ const ListHelpDeskPatient = () => {
     { key: 'urgent', label: 'Urgent', color: '#dc2626', bg: '#fee2e2', condition: (item) => item.isUrgent === 1 }
   ];
 
+  if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+
   const gethelpDesk = async () => {
-    console.log("help payload", payload)
+    console.log("help payload", payload);
     try {
       setLoading(true);
       const response = await api.post(`HelpDesk/help_desk`, payload);
@@ -51,6 +69,76 @@ const ListHelpDeskPatient = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleItem = (index) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+    if (openItemIndex === index) {
+      // Close the current item
+      setOpenItemIndex(null);
+    } else {
+      // Open new item and close previous
+      setOpenItemIndex(index);
+    }
+  };
+
+  const requestStoragePermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+        );
+
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    requestStoragePermission()
+  }, [])
+
+  // Create animation values for each item when needed
+  const getAnimationValue = (index) => {
+    if (!animationRefs.current[index]) {
+      animationRefs.current[index] = {
+        rotateAnim: new Animated.Value(openItemIndex === index ? 1 : 0)
+      };
+    }
+    return animationRefs.current[index];
+  };
+
+  // Update animation when openItemIndex changes
+  useEffect(() => {
+    // Animate all items based on their open state
+    Object.keys(animationRefs.current).forEach((key) => {
+      const index = parseInt(key);
+      const animValue = animationRefs.current[index];
+      if (animValue) {
+        Animated.timing(animValue.rotateAnim, {
+          toValue: openItemIndex === index ? 1 : 0,
+          duration: 300,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic)
+        }).start();
+      }
+    });
+  }, [openItemIndex]);
+
+  const getChevronRotation = (index) => {
+    const animValue = animationRefs.current[index];
+    if (animValue) {
+      return animValue.rotateAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '180deg']
+      });
+    }
+    return '0deg';
   };
 
   useEffect(() => {
@@ -225,6 +313,31 @@ const ListHelpDeskPatient = () => {
     }
   };
 
+  const handleDownloadReport = async (id) => {
+    try {
+      setLoading(true)
+      const { config, fs } = RNFetchBlob;
+      const path = `${fs.dirs.DownloadDir}/report-${id}.pdf`;
+      const res = await config({
+        addAndroidDownloads: {
+          useDownloadManager: true,   
+          notification: true,         
+          path: path,
+          description: 'Downloading report...',
+        },
+      }).fetch('GET',
+        `http://192.168.31.237:5021/api/ReportPrint/DownloadCombinedReport?ptInvstId=2035&isHeaderPNG=0&printBy=1&branchId=1`
+      );
+       showToast('File downloaded', 'success');
+    } catch (error) {
+      console.error("Download failed", error);
+    } finally {
+      setLoading(false); // STOP loading (always runs)
+    }
+  };
+
+
+
   // Get status color and icon (for badge)
   const getStatusInfo = (item) => {
     const status = getDetailedStatus(item);
@@ -256,146 +369,93 @@ const ListHelpDeskPatient = () => {
     const cardColor = getCardColor(item);
     const isUrgent = item.isUrgent === 1;
     const isVIP = item.VIPPatient === 1;
+    const isOpen = openItemIndex === index;
+
+    // Initialize animation for this item if needed
+    getAnimationValue(index);
+    const chevronRotation = getChevronRotation(index);
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.8}
+      <View
         style={[
           tw`rounded-lg mb-4 shadow-sm overflow-hidden`,
           { backgroundColor: cardColor.bg, borderLeftWidth: 4, borderLeftColor: cardColor.border }
         ]}
       >
         {/* Header Section */}
-        <View style={tw`flex flex-col py-2 px-4 border-b border-gray-100`}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => toggleItem(index)}
+          style={tw`flex flex-col py-2 px-4`}
+        >
           <View style={tw`flex-row justify-between items-start`}>
-            <View style={tw`flex-row items-center gap-2`}>
-              <View style={tw`bg-white/50 rounded-full p-2`}>
-                <MaterialCommunityIcons name="file-document-outline" size={20} color="#6b7280" />
-              </View>
-              {item.Barcode &&
-                <View>
-                  <Barcode
-                    value={item?.Barcode && String(item.Barcode)}
-                    format="CODE128"
-                    width={1}
-                    height={14}
-                    text={item?.Barcode}
-                    style={{ backgroundColor: 'transparent' }} // 🔥 force
-
-                  />
-                </View>
-              }
-            </View>
-
-            <View style={tw`flex-row gap-1`}>
-              {isUrgent && (
-                <View style={tw`bg-red-500 rounded-full px-2 py-1`}>
-                  <Text style={tw`text-white text-[10px] font-bold`}>URGENT</Text>
-                </View>
-              )}
-              {isVIP && (
-                <View style={tw`bg-amber-500 rounded-full px-2 py-1`}>
-                  <Text style={tw`text-white text-[10px] font-bold`}>VIP</Text>
-                </View>
-              )}
-              <View style={[tw`rounded-full px-2 py-1`, { backgroundColor: statusInfo.bg }]}>
-                <Text style={[tw`text-[10px] font-bold`, { color: statusInfo.color }]}>
-                  {statusInfo.text}
-                </Text>
-              </View>
-            </View>
-          </View>
-          <View style={tw`mt-2`}>
-            <Text style={tw`text-sm font-semibold text-gray-800`}>
-              {item.Name || 'No test name'}
-            </Text>
-            {(item.ClientName || item.CorporateName) && (
-              <Text style={tw`text-xs text-gray-500 mt-1`}>
-                {item.ClientName}{item.ClientName && item.CorporateName ? ' / ' : ''}{item.CorporateName}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Patient Info Section */}
-        <View style={tw`p-4 bg-white/50`}>
-          <View style={tw`flex-row items-center justify-between mb-1`}>
             <View style={tw`flex-row items-center flex-1`}>
               <View style={tw`mr-3 border border-gray-300 rounded-full p-1 bg-white`}>
                 <MaterialCommunityIcons name="account" size={24} color={genderIcon.color} />
               </View>
-              <View style={tw`flex-1`}>
+              <View style={tw`flex-1 justify-start items-start`}>
                 <Text style={tw`text-md font-bold text-gray-800`}>
                   {item.PatientName || 'No Name'}
                 </Text>
                 <Text style={tw`text-xs text-gray-500 mt-0.5`}>
-                  {item.UHID || 'N/A'}
+                  {item.UHID || 'N/A'} {" • "} {formatDateOnly(item.BillDate)}
                 </Text>
+                {item.Barcode && (
+                  <View style={tw`mt-1`}>
+                    <Barcode
+                      value={String(item.Barcode)}
+                      format="CODE128"
+                      width={1}
+                      height={14}
+                      text={String(item.Barcode)}
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  </View>
+                )}
+              </View>
+              <View
+                style={[
+                  styles.cardShadow,
+                  tw`flex flex-row justify-between items-center bg-white p-3 rounded-full`
+                ]}
+              >
+                <Animated.View style={[tw`bg-gray-100 rounded-full p-1.5`, { transform: [{ rotate: chevronRotation }] }]}>
+                  <Entypo name='chevron-down' size={18} color="#4b5563" />
+                </Animated.View>
               </View>
             </View>
-            {/* <View style={tw`bg-gray-200 rounded-full px-3 py-1`}>
-              <Text style={tw`text-xs font-medium text-gray-600`}>
-                {item.Type || 'OPD'}
-              </Text>
-            </View> */}
           </View>
-
-          <View style={tw`flex-row flex-wrap gap-3 `}>
-            <View style={tw`flex-row items-center`}>
-              <MaterialCommunityIcons name="calendar" size={14} color="#9ca3af" />
-              <Text style={tw`text-xs text-gray-600 ml-1`}>
-                Age: {item.CurrentAge || 'N/A'}
-              </Text>
-            </View>
-            <View style={tw`flex-row items-center`}>
-              <MaterialCommunityIcons name="phone" size={14} color="#9ca3af" />
-              <Text style={tw`text-xs text-gray-600 ml-1`}>
-                {item.ContactNumber || 'No Contact'}
-              </Text>
-            </View>
-          </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Timeline Section */}
-        <View style={tw`p-4 border-t border-gray-100 bg-white/30`}>
-          <TouchableOpacity
-            onPress={() => setIsTimelineOpen(!isTimelineOpen)}
-            style={tw`flex-row items-center justify-between`}
-            activeOpacity={0.7}
-          >
-            <View style={tw`flex-row items-center`}>
-              <MaterialCommunityIcons name="timeline-clock" size={18} color="#6b7280" />
-              <Text style={tw`text-sm font-semibold text-gray-700 ml-2`}>Timeline</Text>
-            </View>
-            <View style={tw`flex-row items-center`}>
-              {(() => {
-                const timelineCount = [
-                  item.BillDate,
-                  item.SampleCollectedOn,
-                  item.ResultDoneOn,
-                  item.ReportApprovedOn,
-                  item.DispatchedOn
-                ].filter(Boolean).length;
+        {isOpen && (
+          <View style={tw`p-4 border-t border-gray-100 bg-white/30`}>
+            <View style={tw`gap-2 `}>
+              <View style={tw`flex flex-row justify-between items-center`}>
+                <Text>{item?.Name || ""}</Text>
+                {/* <TouchableOpacity
+                  onPress={() => console.log('Print clicked')}
+                  style={tw`border border-gray-300 p-2 rounded-full bg-white`}
+                  activeOpacity={0.7}
+                >
+                  <AntDesign name='printer' size={16} color="#4b5563" />
+                </TouchableOpacity> */}
+              </View>
+              <View style={tw`flex-row flex-wrap gap-3 mb-2`}>
+                <View style={tw`flex-row items-center`}>
+                  <MaterialCommunityIcons name="calendar" size={14} color="#9ca3af" />
+                  <Text style={tw`text-xs text-gray-600 ml-1`}>
+                    Age: {item.CurrentAge || 'N/A'}
+                  </Text>
+                </View>
+                <View style={tw`flex-row items-center`}>
+                  <MaterialCommunityIcons name="phone" size={14} color="#9ca3af" />
+                  <Text style={tw`text-xs text-gray-600 ml-1`}>
+                    {item.ContactNumber || 'No Contact'}
+                  </Text>
+                </View>
+              </View>
 
-                if (timelineCount > 0) {
-                  return (
-                    <View style={tw`bg-gray-100 rounded-full px-2 py-0.5 mr-2`}>
-                      <Text style={tw`text-xs text-gray-600`}>{timelineCount}</Text>
-                    </View>
-                  );
-                }
-                return null;
-              })()}
-              <MaterialCommunityIcons
-                name={isTimelineOpen ? "chevron-up" : "chevron-down"}
-                size={20}
-                color="#9ca3af"
-              />
-            </View>
-          </TouchableOpacity>
-
-          {isTimelineOpen && (
-            <View style={tw`gap-2 mt-3`}>
               {item.BillDate && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
@@ -442,14 +502,36 @@ const ListHelpDeskPatient = () => {
                 </View>
               )}
             </View>
-          )}
-        </View>
-      </TouchableOpacity>
+            {item?.IsResultDone && <View style={tw`flex flex-row justify-between items-center gap-3 mt-4`}>
+              {/* <Text>{item?.PatientInvestigationId}</Text> */}
+              {/* Print Report Button */}
+              <TouchableOpacity
+                onPress={() => handleDownloadReport(item?.PatientInvestigationId)}
+                style={tw`flex-1 flex-row items-center justify-center border border-gray-300 p-2 rounded-lg bg-white`}
+                activeOpacity={0.7}
+              >
+                <Feather name="download" size={16} color="#4b5563" />
+                {loading ? <ActivityIndicator size={12} color='#fff' /> : <Text style={tw`ml-2 text-sm text-gray-700 font-medium`}>Download Report</Text>}
+              </TouchableOpacity>
+
+              {/* View Report Button */}
+              <TouchableOpacity
+                onPress={() => console.log('View clicked')}
+                style={tw`flex-1 flex-row items-center justify-center border border-blue-500 p-2 rounded-lg bg-blue-50`}
+                activeOpacity={0.7}
+              >
+                <Feather name='eye' size={16} color="#3b82f6" />
+                <Text style={tw`ml-2 text-sm text-blue-600 font-medium`}>View Report</Text>
+              </TouchableOpacity>
+            </View>}
+          </View>
+        )}
+      </View>
     );
   };
 
   return (
-    <View style={tw`flex-1 `}>
+    <View style={tw`flex-1`}>
       {/* Header with Filter Button */}
       <View style={tw`bg-white px-4 py-3 border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-center mb-3`}>
@@ -487,21 +569,35 @@ const ListHelpDeskPatient = () => {
         </View>
 
         {/* Search Bar */}
-        <View style={tw`flex-row items-center border border-gray-300 bg-white rounded-xl px-3`}>
-          <Feather name="search" size={18} color="#9ca3af" />
-          <TextInput
-            style={tw`flex-1 ml-2 text-base text-gray-700`}
-            placeholder="Search by name, UHID, test or barcode..."
-            placeholderTextColor="#9ca3af"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText('')}>
-              <MaterialCommunityIcons name="close-circle" size={16} color="#9ca3af" />
-            </TouchableOpacity>
-          )}
+        <View style={tw`flex flex-row items-center gap-2`}>
+          {/* Search Input */}
+          <View style={tw`flex-1 flex-row items-center border border-gray-300 bg-white rounded-xl px-3`}>
+            <Feather name="search" size={18} color="#9ca3af" />
+            <TextInput
+              style={tw`flex-1 ml-2 text-base text-gray-700 py-2`}
+              placeholder="Search by name, UHID, test or barcode..."
+              placeholderTextColor="#9ca3af"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <MaterialCommunityIcons name="close-circle" size={16} color="#9ca3af" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Barcode Scan Button with Text */}
+          <TouchableOpacity
+            onPress={() => console.log('Scan barcode clicked')}
+            style={tw`bg-blue-500 px-4 py-2.5 rounded-xl flex-row items-center justify-center gap-1`}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="qr-code-scanner" size={18} color="white" />
+            <Text style={tw`text-white text-sm font-medium`}>Scan</Text>
+          </TouchableOpacity>
         </View>
+
 
         {/* Status Legend */}
         {showStatusLegend && (
@@ -621,22 +717,6 @@ const ListHelpDeskPatient = () => {
                       selectedStatus === status.key ? tw`text-white` : tw`text-gray-700`
                     ]}>
                       {status.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Type Filter */}
-              <Text style={tw`text-base font-semibold text-gray-700 mb-3`}>Patient Type</Text>
-              <View style={tw`flex-row flex-wrap gap-2 mb-6`}>
-                {['all', 'OPD', 'IPD'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    onPress={() => setSelectedType(type)}
-                    style={tw`px-4 py-2 rounded-full ${selectedType === type ? 'bg-blue-500' : 'bg-gray-100'}`}
-                  >
-                    <Text style={tw`${selectedType === type ? 'text-white' : 'text-gray-700'} text-sm font-medium`}>
-                      {type === 'all' ? 'All' : type}
                     </Text>
                   </TouchableOpacity>
                 ))}

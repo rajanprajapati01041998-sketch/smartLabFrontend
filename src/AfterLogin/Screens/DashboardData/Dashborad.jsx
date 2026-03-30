@@ -133,7 +133,7 @@ const LabDashboard = () => {
       <View style={tw`px-4 pt-4 pb-4 bg-white border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`flex-1 `}>
-            <Text style={tw`text-xs text-gray-500 mb-1`}>Welcome back,</Text>
+            <Text style={tw`text-xs text-gray-500 mb-1 `}>Welcome back,</Text>
             {/* Branch Dropdown */}
             <TouchableOpacity
               onPress={() => setBranchModal(true)}
@@ -171,16 +171,7 @@ const LabDashboard = () => {
               <Text style={tw`ml-2 text-sm text-gray-700`}>Filter</Text>
             </TouchableOpacity>
 
-            {/* <TouchableOpacity
-              onPress={() => navigation.navigate("Profile")}
-              style={[
-                ButtonStyles.button,
-
-              ]}
-             >
-              <MaterialIcons name="supervised-user-circle" size={18} color="#374151" />
-              <Text style={tw`ml-2 text-sm text-gray-700`}>Profile</Text>
-            </TouchableOpacity> */}
+            
           </View>
 
         </View>
@@ -267,7 +258,7 @@ const LabDashboard = () => {
           fromDate={fromDate}
           toDate={toDate}
           branchId={selectedBranchIds}
-        />
+         />
 
         {/* Support Ticket Section */}
         <TouchableOpacity

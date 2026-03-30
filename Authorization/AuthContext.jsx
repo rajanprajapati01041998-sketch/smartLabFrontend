@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDeviceInfo } from '../src/utils/deviceInfo';
 import { logoutUser } from '../src/utils/logoutService/logout';
 
@@ -21,8 +21,8 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState(null)
   const [allBranchInfo, setAllBranchInfo] = useState([])
   const [deviceData, setDeviceData] = useState(null);
-  const [sessionId,setSessionId] = useState(null)
-
+  const [sessionId, setSessionId] = useState(null)
+  
 
   // Load stored auth data on app startup
   useEffect(() => {
@@ -31,6 +31,10 @@ export const AuthProvider = ({ children }) => {
     getBranchInfo()
     loadDeviceInfo();
   }, []);
+
+
+ 
+
 
 
   const loadDeviceInfo = async () => {
@@ -73,7 +77,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
- 
+
 
   const loadStoredData = async () => {
     try {
@@ -92,7 +96,7 @@ export const AuthProvider = ({ children }) => {
         setUserId(parsedUser?.user.id)
         setSessionId(parsedUser?.sessionId)
       }
-     
+
     } catch (error) {
       console.log('Error loading auth data:', error);
     } finally {
@@ -156,23 +160,24 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
-        user,userData,
-        isLoading,login,
+        user, userData,
+        isLoading, login,
         logout,
         token,
         setToken,
         setUserData,
         ipAddress,
         getCurrentIP,     // ✅ export function
-        serviceItem,setServiceItem,
-        selectedDoctor,setSelectedDoctor,
+        serviceItem, setServiceItem,
+        selectedDoctor, setSelectedDoctor,
         corporateId, setCorporateId,
         patientData, setPatientData,
         userId, setUserId,
         loginBranchId, setLoginBranchId,
         allBranchInfo, setAllBranchInfo,
-        deviceData, setDeviceData,loadDeviceInfo,
-        sessionId,setSessionId
+        deviceData, setDeviceData, loadDeviceInfo,
+        sessionId, setSessionId,
+       
       }}
     >
       {!isLoading && children}

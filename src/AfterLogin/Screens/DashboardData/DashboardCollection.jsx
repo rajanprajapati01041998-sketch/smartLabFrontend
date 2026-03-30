@@ -52,9 +52,9 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     useFocusEffect(
         useCallback(() => {
-            // console.log("ON user", userData)
-            if (userData?.id) {
-                getDashboardData(userData?.id)
+            console.log("ON user", userData)
+            if (userData?.user?.id) {
+                getDashboardData(userData?.user?.id)
 
             }
             fadeAnim.value = withTiming(1, { duration: 800 })

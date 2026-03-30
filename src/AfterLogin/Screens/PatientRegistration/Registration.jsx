@@ -26,6 +26,7 @@ import CenterInfo from './CenterInfo';
 import { useToast } from '../../../../Authorization/ToastContext';
 import BottomModal from '../../../utils/BottomModal';
 import CenterModal from '../../../utils/CenterModal';
+import { useTheme } from '../../../../Authorization/ThemeContext';
 
 
 
@@ -34,6 +35,7 @@ const Registration = () => {
   const [loading, setLoading] = useState(false)
   const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId } = useAuth();
   const { showToast } = useToast()
+  const { colors } = useTheme()
   const [error, setError] = useState(false)
   const [title, setTitle] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -87,6 +89,7 @@ const Registration = () => {
   const [selectTitleModal, setSelectTitleModal] = useState(false)
   const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
+  const [responseSuccess, setResponseSuccess] = useState(false)
 
 
 
@@ -109,45 +112,80 @@ const Registration = () => {
     useCallback(() => {
       GetReferedLabList();
       getInvestigationList('cbc');
-      GetSearchTestDetail();
       return () => {
         console.log('Registration Screen Unfocused');
       };
     }, [])
   );
 
+  useEffect(() => {
+    resetForm()
+  }, [responseSuccess])
+
   const resetForm = () => {
+    // Basic Info
     setTitle('');
     setFirstName('');
+    setMiddleName('');
+    setLastName('');
+
+    // Age / DOB
     setAgeYears('');
     setAgeMonths('');
     setAgeDays('');
     setDob(null);
-    setGender('');
+
+    // Personal
+    setGender('MALE');
+    setMaritalStatus('');
+    setRelation('');
+    setRelativeName('');
+
+    // Contact
     setContactNumber('');
+    setEmail('');
     setAddress('');
-    setSelectedDoctor(null);
+
+    // Location
+    setCountry('');
+    setState('');
+    setDistrict('');
+    setCity('');
+
+    // Medical
+    setMedicalHistory('');
+
+    // Visit
+    setVisitype('Clinic Visit');
+    setCollectionDateTime(null);
+
+    // Selection
     setSelectedReferDoctor(null);
     setSelectedReferLab(null);
     setSelectedFieldBoy(null);
-    setMedicalHistory('');
-    setCollectionDateTime(null);
-    setGrossAmount('');
-    setDiscountAmount('');
-    setNetAmount('');
-    setCash(0);
-    setDebitCardAmt(0);
-    setCreditCardAmt(0);
-    setChequeAmt(0);
-    setNeftrtgsAmt(0);
-    setPhonePayAmt(0);
-    setPayTmAmt(0);
-    setGrossAmount(0)
-    setGrossAmount(0)
+    setSelectedTitle(null);
 
-    // optional: clear services
+    // Billing
+    setGrossAmount(null);
+    setDiscountAmount(null);
+    setDiscountPercent(0);
+    setNetAmount(null);
+    setBalanceAmount(null);
+
+    // Payments
+    setCash(null);
+    setDebitCardAmt(null);
+    setCreditCardAmt(null);
+    setChequeAmt(null);
+    setPhonePayAmt(null);
+    setPayTm(null);
+
+    // Others
+    setDiscountReason('');
+    setRemark('');
+
+    // Services reset
     setServiceItem({ Services: [] });
-    payments
   };
 
 
@@ -218,7 +256,7 @@ const Registration = () => {
       ContactNumber: contactNumber,
       Address: address,
 
-      DoctorId: selectedDoctor,
+      DoctorId: selectedDoctor || 0,
       ReferDoctorId: selectedReferDoctor?.referDoctorId || 0,
       ReferLabId: selectedReferLab?.outSourceLabId || 0,
       FieldBoyId: selectedFieldBoy?.fieldBoyId || 0,
@@ -269,21 +307,23 @@ const Registration = () => {
       // ✅ Investigations (sample static or modify as needed)
       Investigations: [
         {
-          ReportingBranchId: 1,
-          Barcode: "BAR123",
-          TestRemark: "Fasting"
+          ReportingBranchId: loginBranchId,
+          Barcode: "gasfg",
+          TestRemark: ""
         }
       ]
     };
 
-    console.log("Final Payload 👉", JSON.stringify(payload, null, 2));
+
+
+    console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
       // console.log(payload)
       const response = await api.post(`Patient/save`, payload)
       console.log("booking suceess", response)
       showToast("Patinet Saved Sucessfully", 'success');
-      // resetForm();
-      // resetPayments()
+      setResponseSuccess(true)
+
     } catch (error) {
       console.log("erroer", error.response)
       showToast(error?.response?.data?.message, 'warning');
@@ -461,22 +501,22 @@ const Registration = () => {
     }
   };
 
-  const GetSearchTestDetail = async () => {
-    try {
-      const response = await SearchGetInvestigationListDetails({
-        corporateId: 1,
-        doctorId: 2,
-        serviceItemId: 1,
-        categoryId: 3,
-        subCategoryId: 1,
-        subSubCategoryId: 29261,
-        bedTypeId: 0,
-      });
-      console.log('Investigation List Details:', response);
-    } catch (error) {
-      console.error('Error fetching investigation list details:', error);
-    }
-  };
+  // const GetSearchTestDetail = async () => {
+  //   try {
+  //     const response = await SearchGetInvestigationListDetails({
+  //       corporateId: 1,
+  //       doctorId: 2,
+  //       serviceItemId: 1,
+  //       categoryId: 3,
+  //       subCategoryId: 1,
+  //       subSubCategoryId: 29261,
+  //       bedTypeId: 0,
+  //     });
+  //     console.log('Investigation List Details:', response);
+  //   } catch (error) {
+  //     console.error('Error fetching investigation list details:', error);
+  //   }
+  // };
 
   const formatDateTime = (dateTime) => {
     if (!dateTime || !(dateTime instanceof Date)) return '- Collection Date Time -';
@@ -523,6 +563,7 @@ const Registration = () => {
                 onChangeText={(text) => setFirstName(text)}
                 style={styles.inputBox}
                 placeholder='Name'
+                placeholderTextColor={colors.placeholder}
 
               />
               {/* {error&&<Text style={tw`text-red-500`}>Enter Name</Text>} */}
@@ -536,6 +577,9 @@ const Registration = () => {
                 value={ageYears}
                 onChangeText={(text) => setAgeYears(text)}
                 style={styles.inputBox}
+                placeholder='29'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
@@ -544,6 +588,9 @@ const Registration = () => {
                 value={ageMonths}
                 onChangeText={(text) => setAgeMonths(text)}
                 style={styles.inputBox}
+                placeholder='04'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
@@ -552,6 +599,9 @@ const Registration = () => {
                 value={ageDays}
                 onChangeText={(text) => setAgeDays(text)}
                 style={styles.inputBox}
+                placeholder='12'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[30%]`}>
@@ -564,7 +614,8 @@ const Registration = () => {
                   value={dob ? dob.toLocaleDateString() : ''}
                   editable={false}
                   pointerEvents="none"
-                  placeholder="Select"
+                  placeholder="1/4/1998"
+                  placeholderTextColor={colors.placeholder}
                   style={styles.inputBox}
                 />
               </TouchableOpacity>
@@ -640,13 +691,19 @@ const Registration = () => {
 
           <View style={tw`mt-1 flex flex-row justify-center items-center gap-2`}>
             <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
-              <Text style={styles.labelText}>Contact no (Self)</Text>
+              <View style={tw`flex flex-row items-center`}>
+                <Text style={styles.labelText}>Contact No (Self)</Text>
+                <Text style={tw`text-red-500  -mt-2`}>*</Text>
+              </View>
               <TextInput
                 keyboardType='numeric'
                 maxLength={10}
                 value={contactNumber}
                 onChangeText={(text) => setContactNumber(text)}
                 style={styles.inputBox}
+                placeholder='8991212131'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
@@ -656,6 +713,8 @@ const Registration = () => {
                 value={email}
                 onChangeText={(text) => setEmail(text)}
                 style={styles.inputBox}
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
           </View>
@@ -670,6 +729,8 @@ const Registration = () => {
               numberOfLines={4}
               textAlignVertical="top"
               style={[styles.inputBox, tw`h-[80px]`]}
+              placeholderTextColor={colors.placeholder}
+
             />
           </View>
 
@@ -683,6 +744,8 @@ const Registration = () => {
               numberOfLines={2}
               textAlignVertical="top"
               style={[styles.inputBox, tw`h-[60px]`]}
+              placeholderTextColor={colors.placeholder}
+
             />
           </View>
 
@@ -844,6 +907,7 @@ const Registration = () => {
                     editable={false}
                     value={grossAmount ? String(grossAmount) : ""}
                     style={[styles.inputBox]}
+                    placeholder=''
                   />
                 </View>
 
@@ -855,6 +919,9 @@ const Registration = () => {
                     keyboardType="numeric"
                     onChangeText={setDiscountPercent}
                     style={[styles.inputBox]}
+                    placeholder='1%'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
 
@@ -878,6 +945,9 @@ const Registration = () => {
                     value={grossAmount ? String(grossAmount) : ""}
                     keyboardType="numeric"
                     style={[styles.inputBox]}
+                    placeholder='1.4'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
 
@@ -888,6 +958,9 @@ const Registration = () => {
                     value={netAmount ? String(netAmount) : ""}
                     editable={false}
                     style={[styles.inputBox]}
+                    placeholder='120'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
 
@@ -898,6 +971,9 @@ const Registration = () => {
                     value={balanceAmount ? String(balanceAmount) : 0}
                     editable={false}
                     style={[styles.inputBox]}
+                    placeholder='Avl Bal'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
               </View>
@@ -919,6 +995,9 @@ const Registration = () => {
                     value={discountReason}
                     onChangeText={setDiscountReason}
                     style={[styles.inputBox]}
+                    placeholder='test'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
 
@@ -929,6 +1008,9 @@ const Registration = () => {
                     value={remark}
                     onChangeText={setRemark}
                     style={[styles.inputBox]}
+                    placeholder='Rem'
+                    placeholderTextColor={colors.placeholder}
+
                   />
                 </View>
               </View>
@@ -947,6 +1029,9 @@ const Registration = () => {
               keyboardType="numeric"
               onChangeText={setCash}
               style={[styles.inputBox]}
+              placeholder='100'
+              placeholderTextColor={colors.placeholder}
+
             />
           </View>
 
@@ -959,6 +1044,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setDebitCardAmt}
                 style={[styles.inputBox]}
+                placeholder='10'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`w-[48%]`}>
@@ -968,6 +1056,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setCreditCardAmt}
                 style={[styles.inputBox]}
+                placeholder='19'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
           </View>
@@ -981,6 +1072,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setChequeAmt}
                 style={[styles.inputBox]}
+                placeholder='22'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`w-[48%]`}>
@@ -990,6 +1084,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setNeftRtgsAmt}
                 style={[styles.inputBox]}
+                placeholder='25'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
           </View>
@@ -1003,6 +1100,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setPhonePayAmt}
                 style={[styles.inputBox]}
+                placeholder='123'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
             <View style={tw`w-[48%]`}>
@@ -1012,6 +1112,9 @@ const Registration = () => {
                 keyboardType="numeric"
                 onChangeText={setPayTm}
                 style={[styles.inputBox]}
+                placeholder='333'
+                placeholderTextColor={colors.placeholder}
+
               />
             </View>
           </View>
@@ -1041,9 +1144,9 @@ const Registration = () => {
           onRequestClose={() => setReferDoctorModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setReferDoctorModal(false)}>
-            <View style={tw`flex-1 justify-center items-center bg-black/50`}>
+            <View style={tw`flex-1 justify-end bg-black/50`}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
+                <View style={tw`bg-white rounded-t-2xl w-full h-[70%] p-4`}>
                   <ReferDoctor
                     onSelectDoctor={(doctor) => {
                       setSelectedReferDoctor(doctor);
@@ -1068,7 +1171,7 @@ const Registration = () => {
             <View style={tw`flex-1 justify-end bg-black/50`}>
               <TouchableWithoutFeedback onPress={() => { }}>
                 {/* Bottom Sheet */}
-                <View style={tw`bg-white w-full h-[80%] rounded-t-2xl p-4`}>
+                <View style={tw`bg-white w-full h-[70%] rounded-t-2xl p-4`}>
                   <DoctorList
                     onSelectDoctor={(doctor) => {
                       setSelectedDoctorList(doctor);
@@ -1090,15 +1193,22 @@ const Registration = () => {
           onRequestClose={() => setReferLabListModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setReferLabListModal(false)}>
-            <View style={tw`flex-1 justify-center items-center bg-black/50`}>
+            <View style={tw`flex-1 justify-end bg-black/50`}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white rounded-md w-[95%] h-[80%] p-4`}>
-                  <ReferLab
-                    onSelectDoctor={(doctor) => {
-                      setSelectedReferLab(doctor);
-                    }}
-                    onClose={() => setReferLabListModal(false)}
-                  />
+                <View style={tw`bg-white px-4 rounded-t-3xl w-full h-[70%]`}>
+                  <View style={tw`flex-1`}>
+                    {/* Drag Indicator */}
+                    <View style={tw`items-center pt-2 pb-1`}>
+                      <View style={tw`w-12 h-1 bg-gray-300 rounded-full`} />
+                    </View>
+
+                    <ReferLab
+                      onSelectDoctor={(doctor) => {
+                        setSelectedReferLab(doctor);
+                      }}
+                      onClose={() => setReferLabListModal(false)}
+                    />
+                  </View>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -1116,7 +1226,7 @@ const Registration = () => {
           <TouchableWithoutFeedback onPress={() => setSearchSelectModal(false)}>
             <View style={tw`flex-1 justify-end bg-black/40`}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white w-full h-[60%] rounded-t-3xl pt-3 pb-4 px-4`}>
+                <View style={tw`bg-white w-full h-[70%] rounded-t-3xl pt-3 pb-4 px-4`}>
                   <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
                   {/* CONTENT */}
                   <View style={tw`flex-1`}>
