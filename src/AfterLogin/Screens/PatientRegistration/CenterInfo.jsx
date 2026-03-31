@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+=======
+import { View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, TextInput, ActivityIndicator } from 'react-native';
+>>>>>>> d92ffcb (fix this)
 import React, { useCallback, useEffect, useState } from 'react';
 import tw from 'twrnc';
 import styles from '../../../utils/InputStyle';
@@ -16,10 +20,19 @@ const CenterInfo = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [ratePannel, setRatePannel] = useState(null);
+<<<<<<< HEAD
     const [errorMessage, setErrorMessage] = useState("");
     const [searching, setSearching] = useState(false)
     const [uhid, setUhid] = useState('');
     const [showCenterInfo, setShowCenterInfo] = useState(false);
+=======
+    const [errorMessage, setErrorMessage] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [uhid, setUhid] = useState('')
+    const { colors } = useTheme()
+    const [showCenterInfo, setShowCenterInfo] = useState(false); // Toggle state
+    const { corporateId, setCorporateId, patientData, setPatientData, userData, loginBranchId ,setCenterLoginBranchId } = useAuth()
+>>>>>>> d92ffcb (fix this)
 
     const { colors } = useTheme();
     const {
@@ -60,15 +73,23 @@ const CenterInfo = () => {
     const getrateListPanel = async (id) => {
         try {
             const response = await api.get(`Rate/rate-list/${id}`);
+<<<<<<< HEAD
             setCorporateId(response.data?.CorporateId);
             setRatePannel(response.data);
+=======
+            console.log("getrateListPanel", response.data);
+            setCorporateId(response.data?.CorporateId)
+            setRatePannel(response.data); // ✅ correct
+            setCenterLoginBranchId(id)
+>>>>>>> d92ffcb (fix this)
         } catch (error) {
-            console.log("getrateListPanel", error);
+            console.log("getrateListPanel", error.response);
         }
     };
 
     const searchGetPatientByUhid = async () => {
         try {
+<<<<<<< HEAD
             setSearching(true)
             const response = await api.get( `Patient/get-by-uhid?uhid=${uhid}&branchId=${loginBranchId}`);
             const patient = response?.data?.data;
@@ -76,17 +97,36 @@ const CenterInfo = () => {
                 setPatientData(patient);
                 setUhid(patient.UHID);
                 setErrorMessage("");
+=======
+            setLoading(true)
+            const response = await api.get(`Patient/get-by-uhid?uhid=${uhid}&branchId=${loginBranchId}`);
+            const patient = response?.data?.data;
+            console.log("Search response", patient);
+            if (patient) {
+                setPatientData(patient);
+                setUhid(patient.UHID);
+                setErrorMessage(""); // clear old error
+>>>>>>> d92ffcb (fix this)
             } else {
                 setErrorMessage("Patient not found");
             }
 
         } catch (error) {
+<<<<<<< HEAD
+=======
+            // console.log("error", error?.response);
+>>>>>>> d92ffcb (fix this)
             setErrorMessage(
                 error?.response?.data?.message || "Something went wrong"
             );
         }
+<<<<<<< HEAD
         finally{
             setSearching(false)
+=======
+        finally {
+            setLoading(false)
+>>>>>>> d92ffcb (fix this)
         }
     };
 
@@ -96,7 +136,11 @@ const CenterInfo = () => {
                 setErrorMessage("");
             }, 5000);
 
+<<<<<<< HEAD
             return () => clearTimeout(timer);
+=======
+            return () => clearTimeout(timer); // cleanup
+>>>>>>> d92ffcb (fix this)
         }
     }, [errorMessage]);
 
@@ -147,6 +191,7 @@ const CenterInfo = () => {
                                 </Text>
                             </View>
                         </View>
+<<<<<<< HEAD
                     </View>
 
                     {/* SEARCH */}
@@ -184,6 +229,24 @@ const CenterInfo = () => {
                             </Text>
                         </View>
                     ) : null}
+=======
+                        <TouchableOpacity
+                            disabled={loading}
+                            style={tw`bg-blue-500 px-4 py-3 mt-6 rounded-xl`}
+                            onPress={() => searchGetPatientByUhid()}
+                        >
+                            {loading ? <ActivityIndicator size={14} color='#fff' /> : <Text style={tw`text-white`}>Search</Text>}
+                        </TouchableOpacity>
+
+                    </View>
+                    {errorMessage && <View style={tw`flex-row items-center mt-1`}>
+                        <MaterialIcons name="error-outline" size={16} color="#ef4444" />
+                        <Text style={tw`text-red-500 ml-1`}>
+                            {errorMessage}
+                        </Text>
+                    </View>}
+
+>>>>>>> d92ffcb (fix this)
                 </>
             )}
 

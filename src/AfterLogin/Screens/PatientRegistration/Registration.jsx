@@ -33,7 +33,7 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId } = useAuth();
   const { showToast } = useToast()
   const { colors } = useTheme()
   const [error, setError] = useState(false)
@@ -231,11 +231,15 @@ const Registration = () => {
       return;
     }
 
-    setLoading(true)
+    // setLoading(true)
+    const finalBranchId = centerLoginBranchId || loginBranchId;
+    console.log("c_id", centerLoginBranchId)
+    console.log("l_id", loginBranchId)
+
     const payload = {
       HospId: 1,
-      BranchId: loginBranchId,
-      LoginBranchId: loginBranchId,
+      BranchId: finalBranchId,
+      LoginBranchId: finalBranchId,
 
       Title: title,
       FirstName: firstName,
@@ -310,7 +314,7 @@ const Registration = () => {
       Investigations: [
         {
           ReportingBranchId: loginBranchId,
-          Barcode: "gasfg",
+          Barcode: "",
           TestRemark: ""
         }
       ]
@@ -320,7 +324,6 @@ const Registration = () => {
 
     console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
-      // console.log(payload)
       const response = await api.post(`Patient/save`, payload)
       console.log("booking suceess", response)
       showToast("Patinet Saved Sucessfully", 'success');
@@ -860,6 +863,7 @@ const Registration = () => {
             contentContainerStyle={tw`flex-row items-center`}
           >
             {serviceItem?.Services?.map((s, index) => (
+<<<<<<< HEAD
               <View key={index} style={tw`mr-2 mb-2 pt-2`}>
 
                 <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
@@ -891,6 +895,35 @@ const Registration = () => {
 
                 </View>
 
+=======
+              <View
+                key={index}
+                style={tw`flex-row items-center bg-blue-100 px-3 pb-1 pt-1 mt-2 rounded-full mr-2 relative`}
+              >
+
+                {/* 🔥 BADGE (only if urgent) */}
+                {s.isUrgent === 1 && (
+                  <View style={tw`absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[16px] h-[16px] items-center justify-center`}>
+                    <Text style={tw`text-white text-[9px] font-bold`}>
+                      U
+                    </Text>
+                  </View>
+                )}
+
+                {/* Service Name */}
+                <Text style={tw`text-blue-700 text-xs mr-1`}>
+                  {s.ServiceName.slice(0, 10)}
+                </Text>
+
+                {/* Close Button */}
+                <TouchableOpacity
+                  onPress={() => handleRemoveService(index)}
+                  style={tw`ml-1 p-1`}
+                >
+                  <FontAwesome5 name="times" size={12} color="#ef4444" />
+                </TouchableOpacity>
+
+>>>>>>> d92ffcb (fix this)
               </View>
             ))}
           </ScrollView>
