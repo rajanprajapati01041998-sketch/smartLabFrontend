@@ -1028,7 +1028,7 @@ const Registration = () => {
               value={cash ? String(cash) : ""}
               keyboardType="numeric"
               onChangeText={setCash}
-              style={[styles.inputBox]}
+              style={[styles.inputBox, { color: colors.text }]}
               placeholder='100'
               placeholderTextColor={colors.placeholder}
 

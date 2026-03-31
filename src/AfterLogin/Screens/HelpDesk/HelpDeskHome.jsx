@@ -515,7 +515,7 @@ const HelpDeskHome = () => {
               </View>
 
               {/* Department and Client Row */}
-              <View style={tw`flex-row gap-3 mb-3`}>
+              <View style={tw`flex-col gap-3 mb-3`}>
                 <View style={tw`flex-1`}>
                   <Text style={styles.labelText}>Select Department</Text>
                   <TouchableOpacity

@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator, Alert } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
@@ -30,8 +30,9 @@ const ListHelpDeskPatient = () => {
   const [loading, setLoading] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
   const [showStatusLegend, setShowStatusLegend] = useState(false);
-    const { showToast } = useToast()
-  
+  const [downloadingId, setDownloadinId] = useState(false)
+  const { showToast } = useToast()
+
   // Filter states
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -313,26 +314,28 @@ const ListHelpDeskPatient = () => {
     }
   };
 
-  const handleDownloadReport = async (id) => {
+  const handleDownloadReport = async (id, name) => {
+    console.log("download report:", id, name)
     try {
-      setLoading(true)
+      setDownloadinId(id)
       const { config, fs } = RNFetchBlob;
-      const path = `${fs.dirs.DownloadDir}/report-${id}.pdf`;
+      const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
       const res = await config({
         addAndroidDownloads: {
-          useDownloadManager: true,   
-          notification: true,         
+          useDownloadManager: true,
+          notification: true,
           path: path,
           description: 'Downloading report...',
         },
       }).fetch('GET',
-        `http://192.168.31.237:5021/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=1`
+        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=1`
       );
-       showToast('File downloaded', 'success');
+      console.log("download", res)
+      showToast('File downloaded', 'success');
     } catch (error) {
       console.error("Download failed", error);
     } finally {
-      setLoading(false); // STOP loading (always runs)
+      setDownloadinId(null); // STOP loading (always runs)
     }
   };
 
@@ -381,7 +384,7 @@ const ListHelpDeskPatient = () => {
           tw`rounded-lg mb-4 shadow-sm overflow-hidden`,
           { backgroundColor: cardColor.bg, borderLeftWidth: 4, borderLeftColor: cardColor.border }
         ]}
-      >
+       >
         {/* Header Section */}
         <TouchableOpacity
           activeOpacity={0.8}
@@ -398,7 +401,7 @@ const ListHelpDeskPatient = () => {
                   {item.PatientName || 'No Name'}
                 </Text>
                 <Text style={tw`text-xs text-gray-500 mt-0.5`}>
-                  {item.UHID || 'N/A'} {" • "} {formatDateOnly(item.BillDate)}
+                  {`${item.UHID || 'N/A'} • ${formatDateOnly(item.BillDate)}`}
                 </Text>
                 {item.Barcode && (
                   <View style={tw`mt-1`}>
@@ -502,28 +505,40 @@ const ListHelpDeskPatient = () => {
                 </View>
               )}
             </View>
-            {item?.IsResultDone && <View style={tw`flex flex-row justify-between items-center gap-3 mt-4`}>
-              {/* <Text>{item?.PatientInvestigationId}</Text> */}
-              {/* Print Report Button */}
-              <TouchableOpacity
-                onPress={() => handleDownloadReport(item?.PatientInvestigationId)}
-                style={tw`flex-1 flex-row items-center justify-center border border-gray-300 p-2 rounded-lg bg-white`}
-                activeOpacity={0.7}
-              >
-                <Feather name="download" size={16} color="#4b5563" />
-                {loading ? <ActivityIndicator size={12} color='#fff' /> : <Text style={tw`ml-2 text-sm text-gray-700 font-medium`}>Download Report</Text>}
-              </TouchableOpacity>
+            {/* {console.log("request",item?.IsResultDone)} */}
+            {item?.IsReportApproved === 1 && (
+              <View style={tw`flex flex-row justify-between items-center gap-3 mt-4`}>
 
-              {/* View Report Button */}
-              <TouchableOpacity
-                onPress={() => console.log('View clicked')}
-                style={tw`flex-1 flex-row items-center justify-center border border-blue-500 p-2 rounded-lg bg-blue-50`}
-                activeOpacity={0.7}
-              >
-                <Feather name='eye' size={16} color="#3b82f6" />
-                <Text style={tw`ml-2 text-sm text-blue-600 font-medium`}>View Report</Text>
-              </TouchableOpacity>
-            </View>}
+                <TouchableOpacity
+                  onPress={() => handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)}
+                  style={tw`flex-1 flex-row items-center justify-center border border-gray-300 p-2 rounded-lg bg-white`}
+                  activeOpacity={0.7}
+                  disabled={downloadingId === item?.PatientInvestigationId}
+                >
+                  {downloadingId === item?.PatientInvestigationId ? (
+                    <ActivityIndicator size="small" color="#4b5563" />
+                  ) : (
+                    <>
+                      <Feather name="download" size={16} color="#4b5563" />
+                      <Text style={tw`ml-2 text-sm text-gray-700 font-medium`}>
+                        Download Report
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => console.log('View clicked')}
+                  style={tw`flex-1 flex-row items-center justify-center border border-blue-500 p-2 rounded-lg bg-blue-50`}
+                  activeOpacity={0.7}
+                >
+                  <Feather name='eye' size={16} color="#3b82f6" />
+                  <Text style={tw`ml-2 text-sm text-blue-600 font-medium`}>
+                    View Report
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </View>

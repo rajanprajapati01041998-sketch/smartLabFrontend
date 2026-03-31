@@ -244,23 +244,7 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
                             { elevation: 2 }
                         ]}
                     >
-                        {/* <View style={tw`flex-row justify-between items-start mb-3`}>
-                            <View style={tw`${item.iconBg} rounded-full p-2`}>
-                                {renderIcon(item.icon, item.iconType, 16, item.valueColor?.replace('text-', '').replace('-800', '-600') || '#374151')}
-                            </View>
-                            {item.trend && (
-                                <View style={tw`flex-row items-center bg-white rounded-full px-2 py-1 shadow-sm`}>
-                                    {item.trendUp ? (
-                                        <AntDesign name="arrowup" size={12} color="#10b981" />
-                                    ) : (
-                                        <AntDesign name="arrowdown" size={12} color="#ef4444" />
-                                    )}
-                                    <Text style={tw`text-gray-600 text-xs ml-1 font-semibold`}>
-                                        {item.trend}
-                                    </Text>
-                                </View>
-                            )}
-                        </View> */}
+                        
 
                         <View style={tw`flex flex-col justify-center items-center`}>
                             <Text style={tw`text-xl font-bold ${item.valueColor} mb-1 text-center`}>
