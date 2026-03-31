@@ -2,7 +2,7 @@ import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View,
 import React, { useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -23,6 +23,7 @@ const { width } = Dimensions.get('window');
 
 const ListHelpDeskPatient = () => {
   const route = useRoute();
+  const navigation = useNavigation()
   const [showFilter, setShowFilter] = useState(false);
   const payload = route?.params?.payload || null;
   const [data, setData] = useState([]);
@@ -30,8 +31,8 @@ const ListHelpDeskPatient = () => {
   const [loading, setLoading] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
   const [showStatusLegend, setShowStatusLegend] = useState(false);
-  const [downloadingId, setDownloadinId] = useState(false)
   const { showToast } = useToast()
+  const [downloadingId, setDownloadingId] = useState(null)
 
   // Filter states
   const [searchText, setSearchText] = useState('');
@@ -317,7 +318,7 @@ const ListHelpDeskPatient = () => {
   const handleDownloadReport = async (id, name) => {
     // console.log("download report:", id, name)
     try {
-      setDownloadinId(id)
+      setDownloadingId(id)
       const { config, fs } = RNFetchBlob;
       const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
       const res = await config({
@@ -330,12 +331,11 @@ const ListHelpDeskPatient = () => {
       }).fetch('GET',
         `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=1`
       );
-      console.log("download", res)
       showToast('File downloaded', 'success');
     } catch (error) {
       console.error("Download failed", error);
     } finally {
-      setDownloadinId(null); // STOP loading (always runs)
+      setDownloadingId(null); // STOP loading (always runs)
     }
   };
 
@@ -384,7 +384,7 @@ const ListHelpDeskPatient = () => {
           tw`rounded-lg mb-4 shadow-sm overflow-hidden`,
           { backgroundColor: cardColor.bg, borderLeftWidth: 4, borderLeftColor: cardColor.border }
         ]}
-       >
+      >
         {/* Header Section */}
         <TouchableOpacity
           activeOpacity={0.8}
@@ -507,11 +507,14 @@ const ListHelpDeskPatient = () => {
             </View>
             {/* {console.log("request",item?.IsResultDone)} */}
             {item?.IsReportApproved === 1 && (
-              <View style={tw`flex flex-row justify-between items-center gap-3 mt-4`}>
+              <View style={tw`flex-row gap-2 mt-4`}>
 
+                {/* DOWNLOAD */}
                 <TouchableOpacity
-                  onPress={() => handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)}
-                  style={tw`flex-1 flex-row items-center justify-center border border-gray-300 p-2 rounded-lg bg-white`}
+                  onPress={() =>
+                    handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)
+                  }
+                  style={tw`flex-1 flex-row items-center justify-center border border-gray-300 py-2 rounded-lg bg-white`}
                   activeOpacity={0.7}
                   disabled={downloadingId === item?.PatientInvestigationId}
                 >
@@ -519,24 +522,18 @@ const ListHelpDeskPatient = () => {
                     <ActivityIndicator size="small" color="#4b5563" />
                   ) : (
                     <>
-                      <Feather name="download" size={16} color="#4b5563" />
-                      <Text style={tw`ml-2 text-sm text-gray-700 font-medium`}>
-                        Download Report
-                      </Text>
+                      <Feather name="download" size={14} color="#4b5563" />
+                      <Text  numberOfLines={1}  adjustsFontSizeToFit style={tw`ml-1 text-xs text-gray-700 font-medium`} >  Download  </Text>
                     </>
                   )}
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => console.log('View clicked')}
-                  style={tw`flex-1 flex-row items-center justify-center border border-blue-500 p-2 rounded-lg bg-blue-50`}
-                  activeOpacity={0.7}
-                >
-                  <Feather name='eye' size={16} color="#3b82f6" />
-                  <Text style={tw`ml-2 text-sm text-blue-600 font-medium`}>
-                    View Report
-                  </Text>
+                {/* VIEW */}
+                <TouchableOpacity onPress={() => console.log('View clicked')}style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`} activeOpacity={0.7} >
+                  <Feather name="eye" size={14} color="#3b82f6" />
+                  <Text numberOfLines={1} adjustsFontSizeToFit  style={tw`ml-1 text-xs text-blue-600 font-medium`} >  View </Text>
                 </TouchableOpacity>
+
               </View>
             )}
           </View>
@@ -604,7 +601,7 @@ const ListHelpDeskPatient = () => {
 
           {/* Barcode Scan Button with Text */}
           <TouchableOpacity
-            onPress={() => console.log('Scan barcode clicked')}
+            onPress={() => setScanCameraModal(true)}
             style={tw`bg-blue-500 px-4 py-2.5 rounded-xl flex-row items-center justify-center gap-1`}
             activeOpacity={0.7}
           >
@@ -755,6 +752,7 @@ const ListHelpDeskPatient = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
     </View>
   );
 };

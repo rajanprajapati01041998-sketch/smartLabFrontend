@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
   const [allBranchInfo, setAllBranchInfo] = useState([])
   const [deviceData, setDeviceData] = useState(null);
   const [sessionId, setSessionId] = useState(null)
+  const [centerLoginBranchId,setCenterLoginBranchId] = useState(null)
   
 
   // Load stored auth data on app startup
@@ -177,6 +178,7 @@ export const AuthProvider = ({ children }) => {
         allBranchInfo, setAllBranchInfo,
         deviceData, setDeviceData, loadDeviceInfo,
         sessionId, setSessionId,
+        centerLoginBranchId,setCenterLoginBranchId
        
       }}
     >

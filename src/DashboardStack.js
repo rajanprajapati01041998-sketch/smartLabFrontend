@@ -70,6 +70,8 @@ export default function DashboardStack() {
                     headerShown: true
                 }}
             />
+            
+
         </Stack.Navigator>
     );
 }

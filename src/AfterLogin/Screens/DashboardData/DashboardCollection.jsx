@@ -1,8 +1,8 @@
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native'
 import React, { useCallback, useState } from 'react'
 import tw from 'twrnc'
 import api from '../../../../Authorization/api'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import Animated, {
     FadeInDown,
     FadeInUp,
@@ -43,7 +43,8 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
-    const { loginBranchId, userData, user , userId } = useAuth()
+    const { loginBranchId, userData, user, userId } = useAuth()
+    const navigation = useNavigation()
 
     // Animation values
     const scaleValue = useSharedValue(1)
@@ -52,7 +53,7 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     useFocusEffect(
         useCallback(() => {
-            console.log("dashborad",fromDate, toDate, branchId)
+            console.log("dashborad", fromDate, toDate, branchId)
             console.log("ON user", userData)
             if (userId) {
                 getDashboardData(userId)
@@ -236,7 +237,9 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
             >
                 <TouchableOpacity
                     activeOpacity={0.9}
-                    onPress={() => console.log(`Pressed ${item.title}`)}
+                    onPress={() => navigation.navigate('HelpDesk', {
+                        screen: 'HelpDeskHome',
+                    })}
                 >
                     <Animated.View
                         style={[
@@ -244,7 +247,7 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
                             { elevation: 2 }
                         ]}
                     >
-                        
+
 
                         <View style={tw`flex flex-col justify-center items-center`}>
                             <Text style={tw`text-xl font-bold ${item.valueColor} mb-1 text-center`}>

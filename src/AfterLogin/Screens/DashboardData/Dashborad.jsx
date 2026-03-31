@@ -261,10 +261,10 @@ const LabDashboard = () => {
          />
 
         {/* Support Ticket Section */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={tw`bg-white border border-gray-200 p-4 mt-4 rounded-xl shadow-sm`}
           activeOpacity={0.8}
-        >
+         >
           <View style={tw`flex-row items-center`}>
             <View style={tw`bg-blue-50 p-2 rounded-lg mr-3`}>
               <MaterialIcons name="support-agent" size={24} color="#3b82f6" />
@@ -275,7 +275,7 @@ const LabDashboard = () => {
             </View>
             <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
           </View>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
       </View>
 
