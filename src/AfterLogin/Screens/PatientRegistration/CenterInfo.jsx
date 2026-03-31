@@ -1,7 +1,11 @@
-
-
-import { View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, TextInput, ActivityIndicator } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    TextInput,
+    ActivityIndicator
+} from 'react-native';
 import tw from 'twrnc';
 import styles from '../../../utils/InputStyle';
 import Icon from 'react-native-vector-icons/Feather';
@@ -18,20 +22,20 @@ const CenterInfo = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [ratePannel, setRatePannel] = useState(null);
-
     const [errorMessage, setErrorMessage] = useState("");
     const [uhid, setUhid] = useState('');
+    const [loading, setLoading] = useState(false);
     const [showCenterInfo, setShowCenterInfo] = useState(false);
 
-    const [errorMessage, setErrorMessage] = useState("")
-    const [loading, setLoading] = useState(false)
-    const [uhid, setUhid] = useState('')
-    const { colors } = useTheme()
-    const [showCenterInfo, setShowCenterInfo] = useState(false); // Toggle state
-    const { corporateId, setCorporateId, patientData, setPatientData, userData, loginBranchId ,setCenterLoginBranchId } = useAuth()
-   
+    const { colors } = useTheme();
 
-    const loginBranchId = selectedItem?.branchId; // ✅ FIX
+    const {
+        setCorporateId,
+        setPatientData,
+        setCenterLoginBranchId
+    } = useAuth();
+
+    const loginBranchId = selectedItem?.branchId;
 
     useFocusEffect(
         useCallback(() => {
@@ -64,11 +68,7 @@ const CenterInfo = () => {
 
             setCorporateId(response.data?.CorporateId);
             setRatePannel(response.data);
-
-            console.log("getrateListPanel", response.data);
-            setCorporateId(response.data?.CorporateId)
-            setRatePannel(response.data); // ✅ correct
-            setCenterLoginBranchId(id)
+            setCenterLoginBranchId(id);
 
         } catch (error) {
             console.log("getrateListPanel", error);
@@ -77,54 +77,35 @@ const CenterInfo = () => {
 
     const searchGetPatientByUhid = async () => {
         try {
+            setLoading(true);
 
-            setSearching(true)
-            const response = await api.get( `Patient/get-by-uhid?uhid=${uhid}&branchId=${loginBranchId}`);
+            const response = await api.get(
+                `Patient/get-by-uhid?uhid=${uhid}&branchId=${loginBranchId}`
+            );
+
             const patient = response?.data?.data;
 
             if (patient) {
                 setPatientData(patient);
                 setUhid(patient.UHID);
                 setErrorMessage("");
-
-            setLoading(true)
-            const response = await api.get(`Patient/get-by-uhid?uhid=${uhid}&branchId=${loginBranchId}`);
-            const patient = response?.data?.data;
-            console.log("Search response", patient);
-            if (patient) {
-                setPatientData(patient);
-                setUhid(patient.UHID);
-                setErrorMessage(""); // clear old error
-
             } else {
                 setErrorMessage("Patient not found");
             }
 
         } catch (error) {
-
-            // console.log("error", error?.response);
-
             setErrorMessage(
                 error?.response?.data?.message || "Something went wrong"
             );
-        }
-
-        finally{
-            setSearching(false)
-
-
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         if (errorMessage) {
-            const timer = setTimeout(() => {
-                setErrorMessage("");
-            }, 5000);
-
-
+            const timer = setTimeout(() => setErrorMessage(""), 5000);
             return () => clearTimeout(timer);
-
         }
     }, [errorMessage]);
 
@@ -149,7 +130,6 @@ const CenterInfo = () => {
                 <>
                     {/* TOP ROW */}
                     <View style={tw`flex-row justify-between`}>
-                        {/* CENTER */}
                         <View style={tw`w-[48%]`}>
                             <Text style={styles.labelText}>Center</Text>
 
@@ -164,7 +144,6 @@ const CenterInfo = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {/* PANEL */}
                         <View style={tw`w-[48%]`}>
                             <Text style={styles.labelText}>Panel</Text>
 
@@ -174,27 +153,40 @@ const CenterInfo = () => {
                                 </Text>
                             </View>
                         </View>
-
                     </View>
 
                     {/* SEARCH */}
-                    <View style={tw`flex-row items-center gap-3 mt-3`}>
+                    <View style={tw`flex-row items-end gap-3 mt-3`}>
+
+                        {/* INPUT */}
                         <View style={tw`flex-1`}>
+                            <Text style={styles.labelText}>Enter UHID</Text>
                             <TextInput
                                 value={uhid}
                                 onChangeText={setUhid}
                                 placeholder="Search UHID"
                                 placeholderTextColor={colors.placeholder}
-                                style={styles.searchInput}
+                                style={[styles.searchInput, tw`h-12`]} // ✅ fixed height
                             />
                         </View>
 
+                        {/* BUTTON */}
                         <TouchableOpacity
                             onPress={searchGetPatientByUhid}
-                            style={tw`bg-blue-500 px-4 py-3 rounded-xl`}
-                        >
-                            <Text style={tw`text-white`}>Search</Text>
+                            disabled={loading || uhid.length === 0}
+                            style={tw`
+                            h-12 px-5 rounded-xl justify-center items-center
+                            ${loading || uhid.length === 0 ? "bg-gray-300" : "bg-blue-500"}
+                            `}
+                            placeholderTextColor={colors.placeholder}
+                         >
+                            {loading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={tw`text-white font-medium`}>Search</Text>
+                            )}
                         </TouchableOpacity>
+
                     </View>
 
                     {/* ERROR */}
@@ -206,28 +198,14 @@ const CenterInfo = () => {
                             </Text>
                         </View>
                     ) : null}
-                        <TouchableOpacity
-                            disabled={loading}
-                            style={tw`bg-blue-500 px-4 py-3 mt-6 rounded-xl`}
-                            onPress={() => searchGetPatientByUhid()}
-                        >
-                            {loading ? <ActivityIndicator size={14} color='#fff' /> : <Text style={tw`text-white`}>Search</Text>}
-                        </TouchableOpacity>
-
-                    </View>
-                    {errorMessage && <View style={tw`flex-row items-center mt-1`}>
-                        <MaterialIcons name="error-outline" size={16} color="#ef4444" />
-                        <Text style={tw`text-red-500 ml-1`}>
-                            {errorMessage}
-                        </Text>
-                    </View>}
-
-
                 </>
             )}
 
             {/* MODAL */}
-            <BottomModal visible={isModalVisible} onClose={() => setIsModalVisible(false)}>
+            <BottomModal
+                visible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+            >
                 <View style={tw`p-4`}>
                     {allBranchInfo.map((b, index) => (
                         <TouchableOpacity
