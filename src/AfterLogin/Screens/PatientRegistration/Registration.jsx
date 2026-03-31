@@ -103,6 +103,8 @@ const Registration = () => {
     setAgeYears(patientData?.AgeYears || "")
     setGender(patientData?.Gender || "")
     setBalanceAmount(patientData?.TotalBalanceOfAdvanceAmount || 0)
+    setContactNumber(patientData?.ContactNumber)
+    setDob(patientData?.DOB ? new Date(patientData.DOB) : null);
   }, [patientData])
   useEffect(() => {
     setGender("MALE")
@@ -700,7 +702,7 @@ const Registration = () => {
                 maxLength={10}
                 value={contactNumber}
                 onChangeText={(text) => setContactNumber(text)}
-                style={styles.inputBox}
+                style={[styles.inputBox, { color: colors.text }]}
                 placeholder='8991212131'
                 placeholderTextColor={colors.placeholder}
 
@@ -858,22 +860,37 @@ const Registration = () => {
             contentContainerStyle={tw`flex-row items-center`}
           >
             {serviceItem?.Services?.map((s, index) => (
-              <View
-                key={index}
-                style={tw`flex-row items-center bg-blue-100 px-3 py-1 rounded-full mr-2`}
-              >
-                {/* Service Name */}
-                <Text style={tw`text-blue-700 text-xs mr-1`}>
-                  {s.ServiceName.slice(0, 10)}
-                </Text>
+              <View key={index} style={tw`mr-2 mb-2 pt-2`}>
 
-                {/* Close Button */}
-                <TouchableOpacity
-                  onPress={() => handleRemoveService(index)}
-                  style={tw`ml-1 p-1`}
-                >
-                  <FontAwesome5 name="times" size={12} color="#ef4444" />
-                </TouchableOpacity>
+                <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
+
+                  {/* Service Name */}
+                  <Text
+                    numberOfLines={1}
+                    style={tw`text-blue-700 text-xs font-medium mr-2`}
+                  >
+                    {s.ServiceName.replace('\n', ' ').slice(0, 15)}
+                  </Text>
+
+                  {/* Remove Button */}
+                  <TouchableOpacity
+                    onPress={() => handleRemoveService(index)}
+                    style={tw`ml-1`}
+                  >
+                    <FontAwesome5 name="times" size={12} color="#ef4444" />
+                  </TouchableOpacity>
+
+                  {/* Urgent Badge */}
+                  {s.isUrgent === 1 && (
+                    <View style={tw`absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[16px] h-[16px] items-center justify-center px-[3px]`}>
+                      <Text style={tw`text-white text-[9px] font-bold`}>
+                        U
+                      </Text>
+                    </View>
+                  )}
+
+                </View>
+
               </View>
             ))}
           </ScrollView>

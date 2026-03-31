@@ -37,7 +37,7 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                 .filter(res => res.data?.success)
                 .map(res => ({
                     ...res.data.data,
-                    urgent: false, // ✅ per item state
+                    urgent: false,
                     qty: 1
                 }));
 
@@ -58,23 +58,10 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         }
     }, [data]);
 
-    // 🔹 Toggle urgent (per item)
+    // 🔹 Toggle urgent
     const toggleUrgent = (index) => {
         const updated = [...detailsList];
         updated[index].urgent = !updated[index].urgent;
-        setDetailsList(updated);
-    };
-
-    // 🔹 Update quantity
-    const updateQty = (index, type) => {
-        const updated = [...detailsList];
-
-        if (type === 'inc') {
-            updated[index].qty += 1;
-        } else {
-            updated[index].qty = Math.max(1, updated[index].qty - 1);
-        }
-
         setDetailsList(updated);
     };
 
@@ -87,7 +74,7 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         onDelete?.(item);
     };
 
-    // 🔥 CREATE PAYLOAD
+    // 🔹 Create payload
     const createPayload = () => {
         const payload = {
             Services: detailsList.map(item => ({
@@ -96,7 +83,7 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                 ServiceName: item.serviceName,
                 Amount: item.rate,
                 qty: item.qty,
-                isUrgent: item.urgent ? 1 : 0 // ✅ FIXED
+                isUrgent: item.urgent ? 1 : 0
             })),
             Investigations: {
                 isUrgent: 0,
@@ -107,7 +94,6 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         };
 
         setServiceItem(payload);
-
         console.log('FINAL PAYLOAD:', payload);
     };
 
@@ -115,19 +101,25 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         <View style={tw`flex-1`}>
 
             {loading ? (
-                <ActivityIndicator size="large" />
+                <View style={tw`flex-1 justify-center items-center`}>
+                    <ActivityIndicator size="large" />
+                </View>
             ) : (
                 <>
-                    {/* 🔹 LIST */}
-                    <ScrollView>
-
+                    {/* ✅ SCROLL AREA */}
+                    <ScrollView
+                        style={tw`flex-1`}
+                        contentContainerStyle={tw`pb-24`}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled={true}   // 🔥 IMPORTANT (for Modal)
+                    >
                         {detailsList.map((item, index) => (
                             <View
                                 key={item.serviceItemId}
                                 style={tw`bg-white border border-gray-200 rounded-xl p-3 mb-2`}
                             >
 
-                                {/* 🔹 Header */}
+                                {/* Header */}
                                 <View style={tw`flex-row justify-between items-center`}>
                                     <Text style={tw`text-sm font-semibold flex-1`}>
                                         {item.serviceName}
@@ -138,19 +130,16 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* Divider */}
                                 <View style={tw`h-[1px] bg-gray-200 my-2`} />
 
-                                {/* 🔹 Price + Controls */}
+                                {/* Price + Urgent */}
                                 <View style={tw`flex-row justify-between items-center`}>
 
-                                    {/* MRP */}
                                     <View>
                                         <Text style={tw`text-[10px] text-gray-400`}>MRP</Text>
                                         <Text style={tw`text-xs`}>₹ {item.mrp}</Text>
                                     </View>
 
-                                    {/* Rate */}
                                     <View>
                                         <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
                                         <Text style={tw`text-sm font-bold text-green-600`}>
@@ -158,27 +147,11 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                                         </Text>
                                     </View>
 
-                                    {/* Qty */}
-                                    <View style={tw`flex-row items-center gap-2`}>
-                                        <TouchableOpacity onPress={() => updateQty(index, 'dec')}>
-                                            <Text style={tw`text-lg`}>-</Text>
-                                        </TouchableOpacity>
-
-                                        <Text>{item.qty}</Text>
-
-                                        <TouchableOpacity onPress={() => updateQty(index, 'inc')}>
-                                            <Text style={tw`text-lg`}>+</Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    {/* 🔹 Urgent Checkbox */}
                                     <TouchableOpacity
                                         onPress={() => toggleUrgent(index)}
                                         style={tw`flex-row items-center`}
                                     >
-                                        <Checkbox
-                                            status={item.urgent ? 'checked' : 'unchecked'}
-                                        />
+                                        <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
                                         <Text style={tw`text-[10px]`}>Urgent</Text>
                                     </TouchableOpacity>
 
@@ -188,11 +161,11 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                         ))}
                     </ScrollView>
 
-                    {/* 🔹 BUTTON */}
-                    <View style={tw`p-3 border-t border-gray-200`}>
+                    {/* ✅ FIXED FOOTER */}
+                    <View style={tw`absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200`}>
                         <TouchableOpacity
                             onPress={createPayload}
-                            style={tw`bg-blue-500 p-3 rounded`}
+                            style={tw`bg-blue-500 p-3 rounded-lg`}
                         >
                             <Text style={tw`text-white text-center font-bold`}>
                                 Add ({detailsList.length}) Tests

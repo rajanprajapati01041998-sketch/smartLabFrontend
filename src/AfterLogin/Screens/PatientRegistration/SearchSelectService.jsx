@@ -17,6 +17,7 @@ import {
 import SearchSelectServiceItem from './SearchSelectServiceItem';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import styles from '../../../utils/InputStyle';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const SearchSelectService = ({ onClose }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -130,16 +131,13 @@ const SearchSelectService = ({ onClose }) => {
                 <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
                     <View style={tw`flex-1 justify-end bg-black/40`}>
 
-                        {/* PREVENT CLOSE INSIDE */}
                         <TouchableWithoutFeedback onPress={() => { }}>
+                            <View style={tw`bg-white w-full max-h-[80%] rounded-t-3xl pt-3 px-4 flex-1`}>
 
-                            {/* 🔥 BOTTOM SHEET */}
-                            <View style={tw`bg-white w-full h-[60%] rounded-t-3xl pt-3 px-4`}>
-
-                                {/* 🔹 DRAG HANDLE */}
+                                {/* Drag Handle */}
                                 <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
 
-                                {/* 🔹 CONTENT */}
+                                {/* 🔥 CONTENT (takes available space) */}
                                 <View style={tw`flex-1`}>
                                     <SearchSelectServiceItem
                                         data={selectedServices}
@@ -147,9 +145,8 @@ const SearchSelectService = ({ onClose }) => {
                                     />
                                 </View>
 
-                                {/* 🔹 FIXED FOOTER BUTTONS */}
-                                <View style={tw`pb-4 pt-2`}>
-
+                                {/* 🔹 FIXED FOOTER */}
+                                <View style={tw`pb-4 pt-2 bg-white`}>
                                     <View style={tw`flex-row gap-3`}>
 
                                         {/* Select Another */}
@@ -163,7 +160,7 @@ const SearchSelectService = ({ onClose }) => {
                                         </TouchableOpacity>
 
                                         {/* Next Button */}
-                                        {serviceItem?.Services.length > 0 && (
+                                        {serviceItem?.Services?.length > 0 && (
                                             <TouchableOpacity
                                                 style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
                                                 onPress={() => {
@@ -176,13 +173,9 @@ const SearchSelectService = ({ onClose }) => {
                                                 </Text>
                                             </TouchableOpacity>
                                         )}
-
                                     </View>
-
                                 </View>
-
                             </View>
-
                         </TouchableWithoutFeedback>
                     </View>
                 </TouchableWithoutFeedback>

@@ -315,7 +315,7 @@ const ListHelpDeskPatient = () => {
   };
 
   const handleDownloadReport = async (id, name) => {
-    console.log("download report:", id, name)
+    // console.log("download report:", id, name)
     try {
       setDownloadinId(id)
       const { config, fs } = RNFetchBlob;
