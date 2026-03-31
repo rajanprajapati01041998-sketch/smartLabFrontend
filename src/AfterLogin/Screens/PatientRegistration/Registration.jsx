@@ -233,8 +233,8 @@ const Registration = () => {
 
     // setLoading(true)
     const finalBranchId = centerLoginBranchId || loginBranchId;
-    console.log("c_id", centerLoginBranchId)
-    console.log("l_id", loginBranchId)
+    // console.log("c_id", centerLoginBranchId)
+    // console.log("l_id", loginBranchId)
 
     const payload = {
       HospId: 1,
@@ -313,7 +313,7 @@ const Registration = () => {
       // ✅ Investigations (sample static or modify as needed)
       Investigations: [
         {
-          ReportingBranchId: loginBranchId,
+          ReportingBranchId: finalBranchId,
           Barcode: "",
           TestRemark: ""
         }
