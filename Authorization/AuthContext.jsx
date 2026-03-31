@@ -22,13 +22,8 @@ export const AuthProvider = ({ children }) => {
   const [allBranchInfo, setAllBranchInfo] = useState([])
   const [deviceData, setDeviceData] = useState(null);
   const [sessionId, setSessionId] = useState(null)
-<<<<<<< HEAD
   const [centerLoginBranchId,setCenterLoginBranchId] = useState(null)
   
-=======
-  const [centerLoginBranchId, setCenterLoginBranchId] = useState(null)
-
->>>>>>> d92ffcb (fix this)
 
   // Load stored auth data on app startup
   useEffect(() => {
@@ -184,12 +179,9 @@ export const AuthProvider = ({ children }) => {
         deviceData, setDeviceData, loadDeviceInfo,
         sessionId, setSessionId,
         centerLoginBranchId,setCenterLoginBranchId
-<<<<<<< HEAD
        
-=======
 
 
->>>>>>> d92ffcb (fix this)
       }}
     >
       {!isLoading && children}
