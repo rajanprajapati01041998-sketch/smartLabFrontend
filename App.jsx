@@ -5,6 +5,7 @@ import BottomTabNavigation from './src/BottomNavigation';
 import LoginScreen from './src/Login';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
+import { ResponsiveProvider } from './src/context/ResponsiveContext';
 
 export default function App() {
   const { token } = useAuth();
@@ -33,13 +34,15 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#ffffff"
-      />
-      <NavigationContainer>
-        {token ? <BottomTabNavigation /> : <LoginScreen />}
-      </NavigationContainer>
+      <ResponsiveProvider>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#ffffff"
+        />
+        <NavigationContainer>
+          {token ? <BottomTabNavigation /> : <LoginScreen />}
+        </NavigationContainer>
+      </ResponsiveProvider>
     </SafeAreaProvider>
   );
 }

@@ -5,7 +5,7 @@
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
         <!-- Match system navigation bar with bottom tab bar (avoids 'bottom margin' look on some devices) -->
-        <item name="android:navigationBarColor">#aecddd</item>
+        <item name="android:navigationBarColor">#d5d2d2</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 
