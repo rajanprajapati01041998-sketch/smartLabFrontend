@@ -130,7 +130,7 @@ const LabDashboard = () => {
       showsVerticalScrollIndicator={false}
     >
       {/* HEADER */}
-      <View style={tw`px-4 pt-4 pb-4 bg-white border-b border-gray-200`}>
+      <View style={tw`px-4 pt-2 pb-1 bg-white border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`flex-1 `}>
             <Text style={tw`text-xs text-gray-500 mb-1 `}>Welcome back,</Text>
@@ -150,7 +150,7 @@ const LabDashboard = () => {
 
 
             {/* Date */}
-            <View style={tw`flex-row items-center mt-2`}>
+            <View style={tw`flex-row items-center`}>
               <Icon name="calendar" size={12} color="#9ca3af" />
               <Text style={tw`text-xs text-gray-500 ml-1`}>
                 {fromDate} → {toDate}

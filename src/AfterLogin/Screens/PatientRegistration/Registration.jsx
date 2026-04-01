@@ -66,6 +66,9 @@ const Registration = () => {
   const [grossAmount, setGrossAmount] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(null);
   const [discountPercent, setDiscountPercent] = useState(0);
+  // Keeps track of which field user edited last, so we can update the other field
+  // without fighting each other.
+  const [discountLastEdited, setDiscountLastEdited] = useState('percent');
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
   const [netAmount, setNetAmount] = useState(null);
   const [cash, setCash] = useState(null);
@@ -171,6 +174,7 @@ const Registration = () => {
     setGrossAmount(null);
     setDiscountAmount(null);
     setDiscountPercent(0);
+    setDiscountLastEdited('percent');
     setNetAmount(null);
     setBalanceAmount(null);
 
@@ -352,13 +356,41 @@ const Registration = () => {
 
   useEffect(() => {
     const gross = Number(grossAmount || 0);
+
     const discPer = Number(discountPercent || 0);
-    const discAmt = (gross * discPer) / 100;
-    const net = gross - discAmt;
+    const discAmt = Number(discountAmount || 0);
+
+    // If gross is 0, reset discount + net to avoid NaN.
+    if (!gross) {
+      setDiscountAmount(0);
+      setDiscountPercent(0);
+      setNetAmount(0);
+      return;
+    }
+
+    let nextDiscPer = discPer;
+    let nextDiscAmt = discAmt;
+
+    if (discountLastEdited === 'percent') {
+      nextDiscAmt = (gross * discPer) / 100;
+      nextDiscPer = discPer;
+    } else {
+      // User edited discount amount => recalc percent.
+      nextDiscAmt = discAmt;
+      nextDiscPer = (nextDiscAmt / gross) * 100;
+    }
+
+    // Keep stable rounding to avoid endless re-renders due to float precision.
+    const roundedDiscAmt = Number(nextDiscAmt.toFixed(2));
+    const roundedDiscPer = Number(nextDiscPer.toFixed(2));
+
+    const net = gross - roundedDiscAmt;
     const roundedNet = Math.round(net);
-    setDiscountAmount(discAmt.toFixed(2));
+
+    setDiscountAmount(roundedDiscAmt);
+    setDiscountPercent(roundedDiscPer);
     setNetAmount(roundedNet);
-  }, [discountPercent, grossAmount]);
+  }, [discountLastEdited, discountPercent, discountAmount, grossAmount]);
 
   useEffect(() => {
     const totalPaid =
@@ -958,7 +990,12 @@ const Registration = () => {
                   <TextInput
                     value={discountPercent ? String(discountPercent) : ""}
                     keyboardType="numeric"
-                    onChangeText={setDiscountPercent}
+                    onChangeText={(txt) => {
+                      setDiscountLastEdited('percent');
+                      const cleaned = txt.replace(/[^0-9.]/g, '');
+                      const num = cleaned === '' ? 0 : Number(cleaned);
+                      setDiscountPercent(num);
+                    }}
                     style={[styles.inputBox]}
                     placeholder='1%'
                     placeholderTextColor={colors.placeholder}
@@ -971,7 +1008,13 @@ const Registration = () => {
                   <Text style={styles.labelText}>Disc Amt</Text>
                   <TextInput
                     value={discountAmount ? String(discountAmount) : ""}
-                    editable={false}
+                    keyboardType="numeric"
+                    onChangeText={(txt) => {
+                      setDiscountLastEdited('amount');
+                      const cleaned = txt.replace(/[^0-9.]/g, '');
+                      const num = cleaned === '' ? 0 : Number(cleaned);
+                      setDiscountAmount(num);
+                    }}
                     style={[styles.inputBox]}
                   />
                 </View>

@@ -78,7 +78,7 @@ const Profile = () => {
         {/* Header with animation */}
         <Animated.View 
           entering={FadeInDown.delay(100).springify()}
-          style={tw`px-4 pt-4 pb-2 bg-white border-b border-gray-200`}
+          style={tw`px-4 pt-4 pb-2  border-b border-gray-200`}
         >
           <View style={tw`flex-row justify-between items-center`}>
             <View>
@@ -103,7 +103,7 @@ const Profile = () => {
             
             <Animated.View 
               entering={ZoomIn.delay(150)}
-              style={tw`bg-green-100 p-2 rounded-full`}
+              style={tw`bg-green-100 border border-green-300 p-2 rounded-full`}
              >
               <Icon2 name="person-circle" size={20} color="#16a34a" />
             </Animated.View>
@@ -207,14 +207,14 @@ const Profile = () => {
         <Animated.View
           entering={FadeInUp.delay(400).springify()}
           style={[
-            tw`absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200`,
+            tw`absolute bottom-0 left-0 right-0 `,
             { paddingHorizontal: 16, paddingVertical: 10, paddingBottom: Platform.OS === 'ios' ? 34 : 16 }
           ]}
          >
           <Animated.View style={animatedButtonStyle}>
             <TouchableOpacity
               style={[
-                tw`bg-red-500 rounded-xl py-4 flex-row items-center justify-center`,
+                tw`bg-red-500 rounded-md py-3 flex-row items-center justify-center`,
                 isLoggingOut && tw`opacity-70`
               ]}
               onPress={handleLogout}
@@ -230,7 +230,7 @@ const Profile = () => {
                   size={22} 
                   color="white" 
                 />
-                <Text style={tw`text-white font-bold text-lg ml-2`}>
+                <Text style={tw`text-white font-semibold text-md ml-2`}>
                   {isLoggingOut ? "Logging out..." : "Logout"}
                 </Text>
               </Animated.View>

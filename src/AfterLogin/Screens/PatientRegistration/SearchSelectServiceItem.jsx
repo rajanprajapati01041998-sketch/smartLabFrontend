@@ -4,7 +4,8 @@ import {
     Text,
     ActivityIndicator,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    TextInput
 } from 'react-native';
 import api from '../../../../Authorization/api';
 import tw from 'twrnc';
@@ -12,7 +13,7 @@ import { Checkbox } from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../../../Authorization/AuthContext';
 
-const SearchSelectServiceItem = ({ data, onDelete }) => {
+const SearchSelectServiceItem = ({ data, onDelete, isDirty, onDirtyChange, onSaved }) => {
     const [loading, setLoading] = useState(false);
     const [detailsList, setDetailsList] = useState([]);
 
@@ -63,6 +64,26 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         const updated = [...detailsList];
         updated[index].urgent = !updated[index].urgent;
         setDetailsList(updated);
+
+        // Urgent change is not saved into registration until user taps Add Tests.
+        onDirtyChange?.(true);
+    };
+
+    const updateRate = (index, txt) => {
+        const cleaned = String(txt).replace(/[^0-9.]/g, '');
+        const next = cleaned === '' ? '' : Number(cleaned);
+
+        setDetailsList((prev) => {
+            const updated = [...prev];
+            updated[index] = {
+                ...updated[index],
+                rate: next === '' ? '' : next,
+            };
+            return updated;
+        });
+
+        // Rate change is not saved into registration until user taps Add Tests.
+        onDirtyChange?.(true);
     };
 
     // 🔹 Delete
@@ -72,29 +93,52 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
         );
 
         onDelete?.(item);
+
+        // Deleting changes selection until user taps Add Tests again.
+        onDirtyChange?.(true);
     };
 
     // 🔹 Create payload
     const createPayload = () => {
-        const payload = {
-            Services: detailsList.map(item => ({
-                ServiceItemId: item.serviceItemId,
-                SubSubCategoryId: item.subSubCategoryId,
-                ServiceName: item.serviceName,
-                Amount: item.rate,
-                qty: item.qty,
-                isUrgent: item.urgent ? 1 : 0
-            })),
-            Investigations: {
-                isUrgent: 0,
-                ReportingBranchId: 1,
-                Barcode: "BAR123",
-                TestRemark: "Fasting"
-            }
-        };
+        const newServices = detailsList.map(item => ({
+            ServiceItemId: item.serviceItemId,
+            SubSubCategoryId: item.subSubCategoryId,
+            ServiceName: item.serviceName,
+            Amount: item.rate,
+            qty: item.qty,
+            isUrgent: item.urgent ? 1 : 0
+        }));
 
-        setServiceItem(payload);
-        console.log('FINAL PAYLOAD:', payload);
+        setServiceItem((prev) => {
+            const existingServices = Array.isArray(prev?.Services) ? prev.Services : [];
+
+            // Keep old selected tests and update/append new ones by ServiceItemId.
+            const mergedMap = new Map(
+                existingServices.map((service) => [service.ServiceItemId, service])
+            );
+
+            newServices.forEach((service) => {
+                mergedMap.set(service.ServiceItemId, service);
+            });
+
+            const payload = {
+                ...(prev || {}),
+                Services: Array.from(mergedMap.values()),
+                Investigations: prev?.Investigations || {
+                    isUrgent: 0,
+                    ReportingBranchId: 1,
+                    Barcode: "BAR123",
+                    TestRemark: "Fasting"
+                }
+            };
+
+            console.log('FINAL PAYLOAD:', payload);
+            return payload;
+        });
+
+        // Now the modal is synced with registration (Next can be shown).
+        onDirtyChange?.(false);
+        onSaved?.();
     };
 
     return (
@@ -142,9 +186,22 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
 
                                     <View>
                                         <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
-                                        <Text style={tw`text-sm font-bold text-green-600`}>
-                                            ₹ {item.rate}
-                                        </Text>
+                                        {item.isRateEditable === false ? (
+                                            <View style={tw`flex-row items-center`}>
+                                                <Text style={tw`text-green-600 font-bold mr-1`}>₹</Text>
+                                                <TextInput
+                                                    value={item.rate === '' || item.rate === null || item.rate === undefined ? '' : String(item.rate)}
+                                                    onChangeText={(txt) => updateRate(index, txt)}
+                                                    keyboardType="numeric"
+                                                    style={tw`min-w-[70px] px-2 py-1 border border-green-200 rounded-lg text-green-700 font-bold`}
+                                                    placeholder="0"
+                                                />
+                                            </View>
+                                        ) : (
+                                            <Text style={tw`text-sm font-bold text-green-600`}>
+                                                ₹ {item.rate}
+                                            </Text>
+                                        )}
                                     </View>
 
                                     <TouchableOpacity
@@ -162,16 +219,18 @@ const SearchSelectServiceItem = ({ data, onDelete }) => {
                     </ScrollView>
 
                     {/* ✅ FIXED FOOTER */}
-                    <View style={tw`absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200`}>
-                        <TouchableOpacity
-                            onPress={createPayload}
-                            style={tw`bg-blue-500 p-3 rounded-lg`}
-                        >
-                            <Text style={tw`text-white text-center font-bold`}>
-                                Add ({detailsList.length}) Tests
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    {isDirty && detailsList.length > 0 && (
+                        <View style={tw`absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200`}>
+                            <TouchableOpacity
+                                onPress={createPayload}
+                                style={tw`bg-blue-500 p-3 rounded-lg`}
+                            >
+                                <Text style={tw`text-white text-center font-bold`}>
+                                    Add ({detailsList.length}) Tests
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </>
             )}
 

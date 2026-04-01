@@ -12,18 +12,25 @@ import {
     FlatList,
     ActivityIndicator,
     TextInput,
+    Alert,
 } from 'react-native';
 
 import SearchSelectServiceItem from './SearchSelectServiceItem';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import styles from '../../../utils/InputStyle';
 import { ScrollView } from 'react-native-gesture-handler';
+import { useToast } from '../../../../Authorization/ToastContext';
 
 const SearchSelectService = ({ onClose }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const { serviceItem } = useAuth()
+    const { showToast } = useToast()
+
+  // When user changes selection (urgent toggle / select another / delete),
+  // we treat it as "dirty" until they press Add Tests again.
+  const [isDirty, setIsDirty] = useState(false);
 
     // ✅ MULTI SELECT STATE
     const [selectedServices, setSelectedServices] = useState([]);
@@ -65,12 +72,18 @@ const SearchSelectService = ({ onClose }) => {
 
     // 🔹 MULTI SELECT ADD
     const handleSelectItem = (item) => {
-        setSelectedServices((prev) => {
-            const exists = prev.find(i => i.itemId === item.itemId);
-            if (exists) return prev;
-            return [...prev, item];
-        });
+    setSelectedServices((prev) => {
+      const exists = prev.find(i => i.itemId === item.itemId);
+      if (exists) {
+        showToast('This service is already selected.','warning')
+        // Alert.alert('Already Selected', 'This service is already selected.');
+        return prev;
+      }
 
+      // Any NEW selection means footer needs Add Tests again.
+      setIsDirty(true);
+      return [...prev, item];
+    });
         setModalVisible(true);
     };
 
@@ -79,7 +92,12 @@ const SearchSelectService = ({ onClose }) => {
         setSelectedServices(prev =>
             prev.filter(i => i.itemId !== item.serviceItemId)
         );
+
+    // If user deletes/changes, require Add Tests again.
+    setIsDirty(true);
     };
+
+  const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
 
     return (
         <View style={tw`flex-1 bg-white`}>
@@ -142,6 +160,9 @@ const SearchSelectService = ({ onClose }) => {
                                     <SearchSelectServiceItem
                                         data={selectedServices}
                                         onDelete={handleDelete}
+                                        isDirty={isDirty}
+                                        onDirtyChange={setIsDirty}
+                                        onSaved={() => setIsDirty(false)}
                                     />
                                 </View>
 
@@ -160,7 +181,7 @@ const SearchSelectService = ({ onClose }) => {
                                         </TouchableOpacity>
 
                                         {/* Next Button */}
-                                        {serviceItem?.Services?.length > 0 && (
+                                        {showNext && (
                                             <TouchableOpacity
                                                 style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
                                                 onPress={() => {

@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native'
-import React, { useCallback, useState } from 'react'
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native'
+import React, { useCallback, useState, useRef } from 'react'
 import tw from 'twrnc'
 import api from '../../../../Authorization/api'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
@@ -7,20 +7,20 @@ import Animated, {
     FadeInDown,
     FadeInUp,
     Layout,
-    SlideInRight,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming
+    withTiming,
+    interpolate,
+    Extrapolate
 } from 'react-native-reanimated'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import Feather from 'react-native-vector-icons/Feather'
 import AntDesign from 'react-native-vector-icons/AntDesign'
-import { Dimensions } from 'react-native'
-import { LineChart } from 'react-native-chart-kit'
 import { useAuth } from '../../../../Authorization/AuthContext'
+import LinearGradient from 'react-native-linear-gradient'
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -50,30 +50,32 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
     const scaleValue = useSharedValue(1)
     const fadeAnim = useSharedValue(0)
     const translateY = useSharedValue(50)
+    const headerScale = useSharedValue(0.8)
+    const headerOpacity = useSharedValue(0)
 
     useFocusEffect(
         useCallback(() => {
-            console.log("dashborad", fromDate, toDate, branchId)
+            console.log("dashboard", fromDate, toDate, branchId)
             console.log("ON user", userData)
             if (userId) {
                 getDashboardData(userId)
-
             }
-            fadeAnim.value = withTiming(1, { duration: 800 })
-            translateY.value = withTiming(0, { duration: 600 })
-        }, [fromDate, toDate, branchId])
-    )
 
-    console.log(user.roles)
+            // Start animations
+            fadeAnim.value = withTiming(1, { duration: 1000 })
+            translateY.value = withTiming(0, { duration: 800 })
+            headerScale.value = withSpring(1, { damping: 10, stiffness: 100 })
+            headerOpacity.value = withTiming(1, { duration: 600 })
+        }, [fromDate, toDate, branchId, userId])
+    )
 
     const getDashboardData = async (id) => {
         const selectedBranchId = branchId ?? loginBranchId;
-        // console.log("clientid",selectedBranchId)
 
         try {
             setLoading(true)
             const response = await api.get(
-                `Dashboard/states?branchId=${loginBranchId}&userId=${id}&roleId=${user.roles[0]}&clientIdList=${selectedBranchId}&fromDate=${fromDate}&toDate=${toDate}`
+                `Dashboard/states?branchId=${loginBranchId}&userId=${id}&roleId=${user?.roles?.[0] || 1}&clientIdList=${selectedBranchId}&fromDate=${fromDate}&toDate=${toDate}`
             );
             console.log("dashboard", response.data)
 
@@ -81,9 +83,13 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
                 setDashboardData(response.data)
             }
 
-            // Animate scale for refresh effect
-            scaleValue.value = withSpring(1.05, { damping: 10 }, () => {
-                scaleValue.value = withSpring(1)
+            // Animate scale for refresh effect with bounce
+            scaleValue.value = withSpring(1.02, {
+                damping: 8,
+                stiffness: 150,
+                mass: 0.5
+            }, () => {
+                scaleValue.value = withSpring(1, { damping: 12, stiffness: 120 })
             })
 
         } catch (error) {
@@ -96,8 +102,8 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true)
-        getDashboardData()
-    }, [])
+        getDashboardData(userId)
+    }, [userId])
 
     // Animated styles
     const animatedStyle = useAnimatedStyle(() => {
@@ -109,8 +115,11 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
 
     const headerAnimatedStyle = useAnimatedStyle(() => {
         return {
-            transform: [{ translateY: translateY.value }],
-            opacity: fadeAnim.value
+            transform: [
+                { translateY: translateY.value },
+                { scale: headerScale.value }
+            ],
+            opacity: headerOpacity.value
         }
     })
 
@@ -118,94 +127,84 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
         return `₹ ${amount?.toLocaleString('en-IN') || '0'}`
     }
 
+    const getGradientColors = (type) => {
+        const gradients = {
+            visited: ['#9bf6d8', '#23b98a'],
+            collection: ['#efa017', '#cfb69a'],
+            hospital: ['#bda6f3', '#6d42b8'],
+            store: ['#cb92ae', '#f56eab'],
+            samplePending: ['#f97316', '#efb392'],
+            sampleCollected: ['#a4e8f4', '#39bcdc'],
+            reportsPending: ['#63a1f1', '#8582c8'],
+            reportsDone: ['#5ec1b5', '#449a64']
+        }
+        return gradients[type] || ['#6b7280', '#4b5563']
+    }
+
     const statsCards = [
         {
             title: "Visited Patients",
             value: dashboardData.totalVisitedCount,
-            bg: "bg-emerald-100",
             icon: "account-group",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-emerald-200",
-            textColor: "text-emerald-700",
-            valueColor: "text-emerald-800",
-            suffix: "Patients"
+            gradientType: "visited",
+            suffix: "Patients",
+
         },
         {
             title: "Total Collection",
             value: formatCurrency(dashboardData.totalCollection),
-            bg: "bg-amber-100",
             icon: "wallet",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-amber-200",
-            textColor: "text-amber-700",
-            valueColor: "text-amber-800",
-            suffix: "Collected"
+            gradientType: "collection",
+            suffix: "Collected",
+
         },
         {
             title: "Hospital Collection",
             value: formatCurrency(dashboardData.totalHospitalCollection),
-            bg: "bg-purple-100",
             icon: "hospital-building",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-purple-200",
-            textColor: "text-purple-700",
-            valueColor: "text-purple-800",
-            suffix: "Revenue"
+            gradientType: "hospital",
+            suffix: "Revenue",
+
         },
         {
             title: "Store Collection",
             value: formatCurrency(dashboardData.totalStoreCollection),
-            bg: "bg-rose-100",
             icon: "store",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-rose-200",
-            textColor: "text-rose-700",
-            valueColor: "text-rose-800",
-            suffix: "Sales"
+            gradientType: "store",
+            suffix: "Sales",
+
         },
         {
             title: "Sample Pending",
             value: dashboardData.totalSamplePending,
-            bg: "bg-orange-100",
             icon: "package-variant",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-orange-200",
-            textColor: "text-orange-700",
-            valueColor: "text-orange-800",
-            suffix: "Samples"
+            gradientType: "samplePending",
+            suffix: "Samples",
+
         },
         {
             title: "Sample Collected",
             value: dashboardData.totalSampleCollected,
-            bg: "bg-cyan-100",
             icon: "check-circle",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-cyan-200",
-            textColor: "text-cyan-700",
-            valueColor: "text-cyan-800",
-            suffix: "Samples"
+            gradientType: "sampleCollected",
+            suffix: "Samples",
+
         },
         {
             title: "Reports Pending",
             value: dashboardData.totalResultsPending,
-            bg: "bg-indigo-100",
             icon: "file-document",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-indigo-200",
-            textColor: "text-indigo-700",
-            valueColor: "text-indigo-800",
-            suffix: "Reports"
+            gradientType: "reportsPending",
+            suffix: "Reports",
+
         },
         {
             title: "Reports Done",
             value: dashboardData.totalResultsDone,
-            bg: "bg-teal-100",
             icon: "clock-check",
-            iconType: "MaterialCommunityIcons",
-            iconBg: "bg-teal-200",
-            textColor: "text-teal-700",
-            valueColor: "text-teal-800",
-            suffix: "Reports"
+            gradientType: "reportsDone",
+            suffix: "Reports",
+
         }
     ]
 
@@ -227,46 +226,81 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
     }
 
     const StatsCard = ({ item, index }) => {
-        const isNumericValue = typeof item.value === 'number' && item.value !== 'string'
+        const scaleAnim = useSharedValue(1)
+
+        const handlePressIn = () => {
+            scaleAnim.value = withSpring(0.96, { damping: 10 })
+        }
+
+        const handlePressOut = () => {
+            scaleAnim.value = withSpring(1, { damping: 10 })
+        }
+
+        const animatedCardStyle = useAnimatedStyle(() => ({
+            transform: [{ scale: scaleAnim.value }]
+        }))
+
+        const gradientColors = getGradientColors(item.gradientType)
 
         return (
             <Animated.View
-                entering={FadeInDown.delay(index * 100).springify()}
+                entering={FadeInDown
+                    .delay(index * 80)
+                    .duration(600)
+                    .springify()
+                    .damping(12)
+                    .stiffness(100)
+                }
                 layout={Layout.springify()}
-                style={tw`w-[48%] mb-3`}
+                style={tw`w-[48%] mb-4 `}
             >
                 <TouchableOpacity
                     activeOpacity={0.9}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
                     onPress={() => navigation.navigate('HelpDesk', {
                         screen: 'HelpDeskHome',
                     })}
                 >
-                    <Animated.View
-                        style={[
-                            tw`${item.bg} rounded-xl p-4 shadow-sm`,
-                            { elevation: 2 }
-                        ]}
-                    >
+                    <Animated.View style={animatedCardStyle}>
+                        <LinearGradient
+                            colors={gradientColors}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={tw`rounded-2xl p-4 shadow-lg`}
+                        >
+                            {/* Icon and Trend Indicator */}
+                            <View style={tw`flex-row justify-between items-center mb-3`}>
+                                <View style={tw`bg-white/20 rounded-full p-2`}>
+                                    {renderIcon(item.icon, "MaterialCommunityIcons", 24, "white")}
+                                </View>
+
+                                {/* Value */}
+                                <Text style={tw`text-2xl font-bold text-white mb-1`}>
+                                    {item.value}
+                                </Text>
+                            </View>
 
 
-                        <View style={tw`flex flex-col justify-center items-center`}>
-                            <Text style={tw`text-xl font-bold ${item.valueColor} mb-1 text-center`}>
-                                {item.value}
-                            </Text>
 
-                            <Text style={tw`text-sm ${item.textColor} font-medium text-center`}>
+                            {/* Title */}
+                            <Text style={tw`text-white/90 text-sm font-medium mb-2 text-center`}>
                                 {item.title}
                             </Text>
-                        </View>
+
+                        </LinearGradient>
                     </Animated.View>
                 </TouchableOpacity>
             </Animated.View>
         )
     }
 
+
+
+
     return (
         <ScrollView
-            style={tw`flex-1 `}
+            style={tw`flex-1 bg-white`}
             showsVerticalScrollIndicator={false}
             refreshControl={
                 <RefreshControl
@@ -274,14 +308,17 @@ const DashboardCollection = ({ fromDate, toDate, branchId }) => {
                     onRefresh={onRefresh}
                     tintColor="#10b981"
                     colors={['#10b981']}
+                    progressBackgroundColor="white"
                 />
             }
         >
-            {/* Header Section */}
+
+
+
 
 
             {/* Stats Cards Grid */}
-            <View style={tw``}>
+            <View style={tw` pt-2 `}>
                 <Animated.View
                     entering={FadeInUp.delay(200).springify()}
                     style={tw`flex-row flex-wrap justify-between`}
