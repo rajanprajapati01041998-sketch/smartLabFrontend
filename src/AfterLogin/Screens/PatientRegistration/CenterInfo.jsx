@@ -120,9 +120,10 @@ const CenterInfo = () => {
                 <Text style={styles.patientInfoText}>Center Information</Text>
 
                 <MaterialIcons
+                style={tw`bg-gray-200 rounded-full p-2`}
                     name={showCenterInfo ? "expand-less" : "expand-more"}
                     size={20}
-                    color="#6B7280"
+                    color="#313235"
                 />
             </TouchableOpacity>
 

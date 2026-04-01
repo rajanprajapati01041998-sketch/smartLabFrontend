@@ -601,7 +601,7 @@ const ListHelpDeskPatient = () => {
 
           {/* Barcode Scan Button with Text */}
           <TouchableOpacity
-            onPress={() => setScanCameraModal(true)}
+            // onPress={() => setScanCameraModal(true)}
             style={tw`bg-blue-500 px-4 py-2.5 rounded-xl flex-row items-center justify-center gap-1`}
             activeOpacity={0.7}
           >

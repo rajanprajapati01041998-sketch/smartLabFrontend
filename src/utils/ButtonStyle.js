@@ -5,16 +5,14 @@ const ButtonStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 6,
-
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 16,
 
-    minHeight: 48,
+    minHeight: 40,
 
     // Shadow
     elevation: 2, // Android
@@ -35,6 +33,26 @@ const ButtonStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: 'rgba(0,0,0,0.85)',
+  },
+  cancleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1d1d1d',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+
+    minHeight: 40,
+
+    // Shadow
+    elevation: 2, // Android
+    shadowColor: '#000', // iOS
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   }
 });
 

@@ -33,7 +33,7 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId } = useAuth();
   const { showToast } = useToast()
   const { colors } = useTheme()
   const [error, setError] = useState(false)
@@ -231,11 +231,12 @@ const Registration = () => {
       return;
     }
 
+    const finalLoginBranchId = centerLoginBranchId || loginBranchId;
     setLoading(true)
     const payload = {
       HospId: 1,
-      BranchId: loginBranchId,
-      LoginBranchId: loginBranchId,
+      BranchId: finalLoginBranchId,
+      LoginBranchId: finalLoginBranchId,
 
       Title: title,
       FirstName: firstName,
@@ -309,8 +310,8 @@ const Registration = () => {
       // ✅ Investigations (sample static or modify as needed)
       Investigations: [
         {
-          ReportingBranchId: loginBranchId,
-          Barcode: "gasfg",
+          ReportingBranchId: finalLoginBranchId,
+          Barcode: "",
           TestRemark: ""
         }
       ]
@@ -795,6 +796,7 @@ const Registration = () => {
                       mode="date"
                       display="default"
                       onChange={onChangeDate}
+                      minimumDate={new Date()}
                     />
                   )}
 
@@ -804,7 +806,29 @@ const Registration = () => {
                       value={collectionDateTime || new Date()}
                       mode="time"
                       display="default"
-                      onChange={onChangeTime}
+                      onChange={(event, selectedTime) => {
+                        if (!selectedTime) {
+                          setShowTimePicker(false);
+                          return;
+                        }
+                        const now = new Date();
+                        const selectedDateTime = new Date(selectedTime);
+                        if (
+                          collectionDateTime &&
+                          collectionDateTime.toDateString() === now.toDateString()
+                        ) {
+                          if (
+                            selectedDateTime.getHours() < now.getHours() ||
+                            (selectedDateTime.getHours() === now.getHours() &&
+                              selectedDateTime.getMinutes() < now.getMinutes())
+                          ) {
+                            alert("Cannot select past time for today");
+                            return;
+                          }
+                        }
+                        onChangeTime(event, selectedTime);
+                        setShowTimePicker(false);
+                      }}
                     />
                   )}
                 </View>

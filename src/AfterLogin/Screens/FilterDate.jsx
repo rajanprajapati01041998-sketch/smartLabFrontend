@@ -83,7 +83,7 @@ const FilterDate = ({ onClose, onSave }) => {
 
                     <TouchableOpacity
                         onPress={onClose}
-                        style={CustomStyles.cancleButton}
+                        style={ButtonStyles.cancleButton}
                     >
                         <Text style={tw`text-white`}>Clear</Text>
                     </TouchableOpacity>
@@ -99,6 +99,8 @@ const FilterDate = ({ onClose, onSave }) => {
                     mode="date"
                     display="default"
                     onChange={onChangeFrom}
+                    maximumDate={new Date()}
+
                 />
             )}
 
@@ -109,6 +111,8 @@ const FilterDate = ({ onClose, onSave }) => {
                     mode="date"
                     display="default"
                     onChange={onChangeTo}
+                    maximumDate={new Date()}
+
                 />
             )}
 
