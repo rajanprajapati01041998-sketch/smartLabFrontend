@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Searchbar } from 'react-native-paper';
 import { searchInvestigation } from './services/doctorService';
 import Icon from "react-native-vector-icons/Feather"; // or Ionicons
 import tw from 'twrnc';
@@ -8,17 +7,14 @@ import {
     Text,
     TouchableOpacity,
     Modal,
-    TouchableWithoutFeedback,
+    Pressable,
     FlatList,
     ActivityIndicator,
     TextInput,
-    Alert,
 } from 'react-native';
 
 import SearchSelectServiceItem from './SearchSelectServiceItem';
 import { useAuth } from '../../../../Authorization/AuthContext';
-import styles from '../../../utils/InputStyle';
-import { ScrollView } from 'react-native-gesture-handler';
 import { useToast } from '../../../../Authorization/ToastContext';
 
 const SearchSelectService = ({ onClose }) => {
@@ -128,6 +124,8 @@ const SearchSelectService = ({ onClose }) => {
                 data={results}
                 keyExtractor={(item, index) => index.toString()}
                 contentContainerStyle={tw`p-3`}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => handleSelectItem(item)}
@@ -143,63 +141,57 @@ const SearchSelectService = ({ onClose }) => {
                 visible={modalVisible}
                 transparent
                 animationType="slide"
+                presentationStyle="overFullScreen"
                 onRequestClose={() => setModalVisible(false)}
             >
-                {/* BACKDROP */}
-                <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-                    <View style={tw`flex-1 justify-end bg-black/40`}>
+                <View style={tw`flex-1 justify-end`}>
+                    <Pressable style={tw`absolute inset-0 bg-black/40`} onPress={() => setModalVisible(false)} />
+                    <View style={tw`bg-white w-full h-[80%] rounded-t-3xl pt-3 px-4`}>
+                        {/* Drag Handle */}
+                        <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
 
-                        <TouchableWithoutFeedback onPress={() => { }}>
-                            <View style={tw`bg-white w-full max-h-[80%] rounded-t-3xl pt-3 px-4 flex-1`}>
+                        {/* 🔥 CONTENT (takes available space) */}
+                        <View style={tw`flex-1`}>
+                            <SearchSelectServiceItem
+                                data={selectedServices}
+                                onDelete={handleDelete}
+                                isDirty={isDirty}
+                                onDirtyChange={setIsDirty}
+                                onSaved={() => setIsDirty(false)}
+                            />
+                        </View>
 
-                                {/* Drag Handle */}
-                                <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+                        {/* 🔹 FIXED FOOTER */}
+                        <View style={tw`pb-4 pt-2 bg-white`}>
+                            <View style={tw`flex-row gap-3`}>
+                                {/* Select Another */}
+                                <TouchableOpacity
+                                    style={tw`flex-1 bg-blue-50 border border-blue-200 py-3 rounded-full`}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={tw`text-blue-500 text-center font-medium`}>
+                                        Select Another
+                                    </Text>
+                                </TouchableOpacity>
 
-                                {/* 🔥 CONTENT (takes available space) */}
-                                <View style={tw`flex-1`}>
-                                    <SearchSelectServiceItem
-                                        data={selectedServices}
-                                        onDelete={handleDelete}
-                                        isDirty={isDirty}
-                                        onDirtyChange={setIsDirty}
-                                        onSaved={() => setIsDirty(false)}
-                                    />
-                                </View>
-
-                                {/* 🔹 FIXED FOOTER */}
-                                <View style={tw`pb-4 pt-2 bg-white`}>
-                                    <View style={tw`flex-row gap-3`}>
-
-                                        {/* Select Another */}
-                                        <TouchableOpacity
-                                            style={tw`flex-1 bg-blue-50 border border-blue-200 py-3 rounded-full`}
-                                            onPress={() => setModalVisible(false)}
-                                        >
-                                            <Text style={tw`text-blue-500 text-center font-medium`}>
-                                                Select Another
-                                            </Text>
-                                        </TouchableOpacity>
-
-                                        {/* Next Button */}
-                                        {showNext && (
-                                            <TouchableOpacity
-                                                style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
-                                                onPress={() => {
-                                                    setModalVisible(false);
-                                                    onClose();
-                                                }}
-                                            >
-                                                <Text style={tw`text-green-500 text-center font-medium`}>
-                                                    Next
-                                                </Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                </View>
+                                {/* Next Button */}
+                                {showNext && (
+                                    <TouchableOpacity
+                                        style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
+                                        onPress={() => {
+                                            setModalVisible(false);
+                                            onClose();
+                                        }}
+                                    >
+                                        <Text style={tw`text-green-500 text-center font-medium`}>
+                                            Next
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
-                        </TouchableWithoutFeedback>
+                        </View>
                     </View>
-                </TouchableWithoutFeedback>
+                </View>
             </Modal>
         </View>
     );

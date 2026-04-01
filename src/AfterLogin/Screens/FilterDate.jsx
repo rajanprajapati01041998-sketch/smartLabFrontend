@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity, Modal, Platform } from 'react-native'
 import React, { useState } from 'react'
 import tw from 'twrnc'
 import CustomStyles from '../../../Custom.styles'
@@ -11,9 +11,9 @@ const FilterDate = ({ onClose, onSave }) => {
 
     const [fromDate, setFromDate] = useState(new Date())
     const [toDate, setToDate] = useState(new Date())
-    const [showFromPicker, setShowFromPicker] = useState(false)
-    const [showToPicker, setShowToPicker] = useState(false)
-    // dd-mm-yyyy format function
+    const [showPicker, setShowPicker] = useState(null) // 'from' | 'to'
+    const [tempDate, setTempDate] = useState(new Date()) // For iOS modal
+
     const formatDate = (date) => {
         const day = String(date.getDate()).padStart(2, '0')
         const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -21,18 +21,108 @@ const FilterDate = ({ onClose, onSave }) => {
         return `${day}-${month}-${year}`
     }
 
-    const onChangeFrom = (event, selectedDate) => {
-        setShowFromPicker(false)
-        if (selectedDate) setFromDate(selectedDate)
+    const onChange = (event, selectedDate) => {
+        if (Platform.OS === 'android') {
+            // For Android, close the picker immediately
+            setShowPicker(null)
+            
+            if (selectedDate) {
+                if (showPicker === 'from') {
+                    setFromDate(selectedDate)
+                } else if (showPicker === 'to') {
+                    setToDate(selectedDate)
+                }
+            }
+        } else {
+            // For iOS, update temp date while user is scrolling
+            if (selectedDate) {
+                setTempDate(selectedDate)
+            }
+        }
     }
 
-    const onChangeTo = (event, selectedDate) => {
-        setShowToPicker(false)
-        if (selectedDate) setToDate(selectedDate)
+    const onIOSConfirm = () => {
+        if (showPicker === 'from') {
+            setFromDate(tempDate)
+        } else if (showPicker === 'to') {
+            setToDate(tempDate)
+        }
+        setShowPicker(null)
+    }
+
+    const renderDatePicker = () => {
+        if (Platform.OS === 'android') {
+            // For Android, show picker directly without modal
+            if (showPicker) {
+                return (
+                    <DateTimePicker
+                        value={showPicker === 'from' ? fromDate : toDate}
+                        mode="date"
+                        display="default"
+                        onChange={onChange}
+                        maximumDate={new Date()}
+                    />
+                )
+            }
+            return null
+        } else {
+            // For iOS, show picker in modal
+            if (showPicker) {
+                return (
+                    <Modal
+                        visible={showPicker !== null}
+                        transparent
+                        animationType="slide"
+                    >
+                        <View style={{
+                            flex: 1,
+                            justifyContent: 'flex-end',
+                            backgroundColor: 'rgba(0,0,0,0.4)'
+                        }}>
+                            <View style={{
+                                backgroundColor: '#fff',
+                                borderTopLeftRadius: 20,
+                                borderTopRightRadius: 20,
+                                padding: 15
+                            }}>
+                                {/* Header */}
+                                <View style={tw`flex-row justify-between items-center mb-4`}>
+                                    <Text style={tw`font-bold text-base`}>
+                                        Select {showPicker === 'from' ? 'From' : 'To'} Date
+                                    </Text>
+                                    <TouchableOpacity onPress={() => setShowPicker(null)}>
+                                        <Text style={{ color: 'red', fontSize: 16 }}>Cancel</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                <DateTimePicker
+                                    value={showPicker === 'from' ? fromDate : toDate}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={onChange}
+                                    maximumDate={new Date()}
+                                    style={{ backgroundColor: 'white' }}
+                                />
+
+                                {/* Confirm Button */}
+                                <TouchableOpacity
+                                    style={[tw`mt-4 py-3 rounded-lg`, { backgroundColor: '#007AFF' }]}
+                                    onPress={onIOSConfirm}
+                                >
+                                    <Text style={tw`text-white text-center font-semibold`}>Confirm</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Modal>
+                )
+            }
+            return null
+        }
     }
 
     return (
         <View style={tw`p-4`}>
+
             {/* Header */}
             <View style={tw`flex-row justify-between items-center`}>
                 <Text style={tw`text-lg font-bold`}>Filter</Text>
@@ -44,77 +134,62 @@ const FilterDate = ({ onClose, onSave }) => {
 
             <View style={tw`mt-8`}>
 
-                {/* From Date */}
-                <Text>From</Text>
-
+                {/* From */}
+                <Text style={tw`mb-1 text-gray-700`}>From</Text>
                 <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center`, CustomStyles.input]}
-                    onPress={() => setShowFromPicker(true)}
+                    style={[tw`flex-row justify-between items-center p-3 border border-gray-300 rounded-lg`, CustomStyles.input]}
+                    onPress={() => {
+                        setTempDate(fromDate)
+                        setShowPicker('from')
+                    }}
                 >
-                    <Text>{formatDate(fromDate)}</Text>
-                    <MaterialIcons name="calendar-month" size={20} />
+                    <Text style={tw`text-gray-800`}>{formatDate(fromDate)}</Text>
+                    <MaterialIcons name="calendar-month" size={20} color="#666" />
                 </TouchableOpacity>
 
-                {/* To Date */}
-                <Text style={tw`mt-3`}>To</Text>
-
+                {/* To */}
+                <Text style={tw`mt-4 mb-1 text-gray-700`}>To</Text>
                 <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center`, CustomStyles.input]}
-                    onPress={() => setShowToPicker(true)}
+                    style={[tw`flex-row justify-between items-center p-3 border border-gray-300 rounded-lg`, CustomStyles.input]}
+                    onPress={() => {
+                        setTempDate(toDate)
+                        setShowPicker('to')
+                    }}
                 >
-                    <Text>{formatDate(toDate)}</Text>
-                    <MaterialIcons name="calendar-month" size={20} />
+                    <Text style={tw`text-gray-800`}>{formatDate(toDate)}</Text>
+                    <MaterialIcons name="calendar-month" size={20} color="#666" />
                 </TouchableOpacity>
 
                 {/* Buttons */}
-                <View style={tw`flex-row gap-2 justify-end items-center mt-5`}>
-
+                <View style={tw`flex-row gap-2 justify-end items-center mt-6`}>
                     <TouchableOpacity
-                        style={ButtonStyles.button}
+                        style={[ButtonStyles.button, tw`px-6 py-2 rounded-lg`]}
                         onPress={() =>
                             onSave({
                                 fromDate: formatDate(fromDate),
                                 toDate: formatDate(toDate),
                             })
                         }
-                    >
-                        <Text>Save</Text>
+                     >
+                        <Text style={tw``}>Save</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={onClose}
-                        style={ButtonStyles.cancleButton}
+                        onPress={() => {
+                            setFromDate(new Date())
+                            setToDate(new Date())
+                            onClose()
+                        }}
+                        style={[ButtonStyles.cancleButton, tw`px-6 py-2 rounded-lg`]}
                     >
                         <Text style={tw`text-white`}>Clear</Text>
                     </TouchableOpacity>
-
                 </View>
 
             </View>
 
-            {/* From Date Picker */}
-            {showFromPicker && (
-                <DateTimePicker
-                    value={fromDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeFrom}
-                    maximumDate={new Date()}
-
-                />
-            )}
-
-            {/* To Date Picker */}
-            {showToPicker && (
-                <DateTimePicker
-                    value={toDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeTo}
-                    maximumDate={new Date()}
-
-                />
-            )}
+            {/* Render Date Picker based on platform */}
+            {renderDatePicker()}
 
         </View>
     )

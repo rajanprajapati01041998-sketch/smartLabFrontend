@@ -11,6 +11,11 @@ export default function HelpDeskStack() {
         headerStyle: { backgroundColor: '#e6e9ec' },
         headerTintColor: '#111',
         headerShown: true,
+        headerBackVisible: true,
+        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
+        headerBackTitle: '',
+        headerTitleAlign: 'center',
       }}
     >
       <Stack.Screen

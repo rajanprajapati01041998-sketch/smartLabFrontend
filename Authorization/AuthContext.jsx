@@ -54,8 +54,8 @@ export const AuthProvider = ({ children }) => {
         // ✅ default select first branch
         if (parsedData.length > 0) {
           const defaultBranch = parsedData[0];
-          setSelectedItem(defaultBranch);
-          getrateListPanel(defaultBranch.branchId);
+          // setSelectedItem(defaultBranch);
+          // getrateListPanel(defaultBranch.branchId);
         }
       }
     } catch (error) {

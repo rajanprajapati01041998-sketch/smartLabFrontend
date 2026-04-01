@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import tw from 'twrnc';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +19,7 @@ import FieldBoy from './FieldBoy';
 import api from '../../../../Authorization/api';
 import SelectTitle from './SelectTitle';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../../utils/InputStyle';
 import Icon from 'react-native-vector-icons/Feather';
 import CenterInfo from './CenterInfo';
@@ -27,9 +27,6 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import BottomModal from '../../../utils/BottomModal';
 import CenterModal from '../../../utils/CenterModal';
 import { useTheme } from '../../../../Authorization/ThemeContext';
-
-
-
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
@@ -63,6 +60,8 @@ const Registration = () => {
   const [collectionDateTime, setCollectionDateTime] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date()); // For iOS modal
+  const [tempTime, setTempTime] = useState(new Date()); // For iOS modal
   const [grossAmount, setGrossAmount] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(null);
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -93,8 +92,6 @@ const Registration = () => {
   const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
   const [responseSuccess, setResponseSuccess] = useState(false)
-
-
 
   // console.log(patientData)
   useEffect(() => {
@@ -194,7 +191,6 @@ const Registration = () => {
     setServiceItem({ Services: [] });
   };
 
-
   const handleRemoveService = (indexToRemove) => {
     if (!serviceItem?.Services) return;
 
@@ -207,9 +203,6 @@ const Registration = () => {
       Services: updatedServices,
     });
   };
-
-
-
 
   const handleSavePatient = async () => {
     console.log(loginBranchId)
@@ -320,8 +313,6 @@ const Registration = () => {
         }
       ]
     };
-
-
 
     console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
@@ -479,41 +470,120 @@ const Registration = () => {
   };
 
   const onChangeDate = (event, selectedDate) => {
-    setShowDatePicker(false);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (selectedDate) {
+        if (!collectionDateTime) {
+          const newDate = new Date(selectedDate);
+          const now = new Date();
+          newDate.setHours(now.getHours(), now.getMinutes());
+          setCollectionDateTime(newDate);
+        } else {
+          const updated = new Date(collectionDateTime);
+          updated.setFullYear(selectedDate.getFullYear());
+          updated.setMonth(selectedDate.getMonth());
+          updated.setDate(selectedDate.getDate());
+          setCollectionDateTime(updated);
+        }
+        setShowTimePicker(true);
+      }
+    } else {
+      // For iOS, update temp date
+      if (selectedDate) {
+        setTempDate(selectedDate);
+      }
+    }
+  };
 
-    if (selectedDate) {
-      // If we don't have a collectionDateTime yet, create a new date with time set to now
+  const onIOSDateConfirm = () => {
+    if (tempDate) {
       if (!collectionDateTime) {
-        const newDate = new Date(selectedDate);
+        const newDate = new Date(tempDate);
         const now = new Date();
         newDate.setHours(now.getHours(), now.getMinutes());
         setCollectionDateTime(newDate);
       } else {
-        // Preserve the existing time and update only the date
         const updated = new Date(collectionDateTime);
-        updated.setFullYear(selectedDate.getFullYear());
-        updated.setMonth(selectedDate.getMonth());
-        updated.setDate(selectedDate.getDate());
+        updated.setFullYear(tempDate.getFullYear());
+        updated.setMonth(tempDate.getMonth());
+        updated.setDate(tempDate.getDate());
         setCollectionDateTime(updated);
       }
-      setShowTimePicker(true); // Open time picker after date selection
+      setShowDatePicker(false);
+      setShowTimePicker(true);
     }
   };
 
   const onChangeTime = (event, selectedTime) => {
-    setShowTimePicker(false);
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+      if (selectedTime && collectionDateTime) {
+        const now = new Date();
+        const selectedDateTime = new Date(selectedTime);
+        
+        if (
+          collectionDateTime &&
+          collectionDateTime.toDateString() === now.toDateString()
+        ) {
+          if (
+            selectedDateTime.getHours() < now.getHours() ||
+            (selectedDateTime.getHours() === now.getHours() &&
+              selectedDateTime.getMinutes() < now.getMinutes())
+          ) {
+            Alert.alert("Invalid Time", "Cannot select past time for today");
+            return;
+          }
+        }
+        
+        const updated = new Date(collectionDateTime);
+        updated.setHours(selectedTime.getHours());
+        updated.setMinutes(selectedTime.getMinutes());
+        setCollectionDateTime(updated);
+      } else if (selectedTime && !collectionDateTime) {
+        const newDate = new Date();
+        newDate.setHours(selectedTime.getHours());
+        newDate.setMinutes(selectedTime.getMinutes());
+        setCollectionDateTime(newDate);
+      }
+    } else {
+      // For iOS, update temp time
+      if (selectedTime) {
+        setTempTime(selectedTime);
+      }
+    }
+  };
 
-    if (selectedTime && collectionDateTime) {
+  const onIOSTimeConfirm = () => {
+    if (tempTime && collectionDateTime) {
+      const now = new Date();
+      const selectedDateTime = new Date(tempTime);
+      
+      if (
+        collectionDateTime &&
+        collectionDateTime.toDateString() === now.toDateString()
+      ) {
+        if (
+          selectedDateTime.getHours() < now.getHours() ||
+          (selectedDateTime.getHours() === now.getHours() &&
+            selectedDateTime.getMinutes() < now.getMinutes())
+        ) {
+          Alert.alert("Invalid Time", "Cannot select past time for today");
+          setShowTimePicker(false);
+          return;
+        }
+      }
+      
       const updated = new Date(collectionDateTime);
-      updated.setHours(selectedTime.getHours());
-      updated.setMinutes(selectedTime.getMinutes());
+      updated.setHours(tempTime.getHours());
+      updated.setMinutes(tempTime.getMinutes());
       setCollectionDateTime(updated);
-    } else if (selectedTime && !collectionDateTime) {
-      // If for some reason we have time but no date, create a new date with today's date
+      setShowTimePicker(false);
+    } else if (tempTime && !collectionDateTime) {
       const newDate = new Date();
-      newDate.setHours(selectedTime.getHours());
-      newDate.setMinutes(selectedTime.getMinutes());
+      newDate.setHours(tempTime.getHours());
+      newDate.setMinutes(tempTime.getMinutes());
       setCollectionDateTime(newDate);
+      setShowTimePicker(false);
     }
   };
 
@@ -535,23 +605,6 @@ const Registration = () => {
       console.error('Error fetching investigation list:', error);
     }
   };
-
-  // const GetSearchTestDetail = async () => {
-  //   try {
-  //     const response = await SearchGetInvestigationListDetails({
-  //       corporateId: 1,
-  //       doctorId: 2,
-  //       serviceItemId: 1,
-  //       categoryId: 3,
-  //       subCategoryId: 1,
-  //       subSubCategoryId: 29261,
-  //       bedTypeId: 0,
-  //     });
-  //     console.log('Investigation List Details:', response);
-  //   } catch (error) {
-  //     console.error('Error fetching investigation list details:', error);
-  //   }
-  // };
 
   const formatDateTime = (dateTime) => {
     if (!dateTime || !(dateTime instanceof Date)) return '- Collection Date Time -';
@@ -676,18 +729,30 @@ const Registration = () => {
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <View style={tw`flex-row items-center`}>
-                <View style={tw`flex-row items-center mr-4`}>
-                  <RadioButton value="MALE" />
+                <TouchableOpacity
+                  style={tw`flex-row items-center mr-4`}
+                  onPress={() => setGender('MALE')}
+                  activeOpacity={0.8}
+                >
+                  <RadioButton.Android value="MALE" />
                   <Text style={tw`ml-1`}>Male</Text>
-                </View>
-                <View style={tw`flex-row items-center mr-4`}>
-                  <RadioButton value="FEMALE" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={tw`flex-row items-center mr-4`}
+                  onPress={() => setGender('FEMALE')}
+                  activeOpacity={0.8}
+                >
+                  <RadioButton.Android value="FEMALE" />
                   <Text style={tw`ml-1`}>Female</Text>
-                </View>
-                <View style={tw`flex-row items-center`}>
-                  <RadioButton value="OTHER" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={tw`flex-row items-center`}
+                  onPress={() => setGender('OTHER')}
+                  activeOpacity={0.8}
+                >
+                  <RadioButton.Android value="OTHER" />
                   <Text style={tw`ml-1`}>Other</Text>
-                </View>
+                </TouchableOpacity>
               </View>
             </RadioButton.Group>
           </View>
@@ -785,44 +850,64 @@ const Registration = () => {
           </View>
 
           <View style={tw`my-3`}>
-            <RadioButton.Group
-              onValueChange={value => setVisitype(value)}
-              value={vistType}
-            >
-              <Text style={styles.labelText}>Visit type</Text>
-              <View style={tw`flex-row items-center justify-start`}>
-                <View style={tw`flex-row items-center`}>
-                  <RadioButton value="Clinic Visit" />
-                  <Text style={styles.labelText}>Clinic Visit</Text>
-                </View>
+            <View>
+              <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>
+                Visit type
+              </Text>
+
+              <RadioButton.Group
+                onValueChange={value => setVisitype(value)}
+                value={vistType}
+              >
 
                 <View style={tw`flex-row items-center`}>
-                  <RadioButton value="Home Collection" />
-                  <Text style={styles.labelText}>Home Collection</Text>
+
+                  {/* Clinic Visit */}
+                  <TouchableOpacity
+                    style={tw`flex-row items-center mr-5`}
+                    onPress={() => setVisitype('Clinic Visit')}
+                  >
+                    <RadioButton.Android value="Clinic Visit" />
+                    <Text>Clinic Visit</Text>
+                  </TouchableOpacity>
+
+                  {/* Home Collection */}
+                  <TouchableOpacity
+                    style={tw`flex-row items-center`}
+                    onPress={() => setVisitype('Home Collection')}
+                  >
+                    <RadioButton.Android value="Home Collection" />
+                    <Text>Home Collection</Text>
+                  </TouchableOpacity>
+
                 </View>
-              </View>
-            </RadioButton.Group>
+
+              </RadioButton.Group>
+            </View>
 
             {vistType === "Home Collection" && (
-              <View style={tw`flex flex-row justify-center items-center gap-2 mt-1`}>
-                <View style={tw`flex flex-col w-[48%]`}>
+              <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
+                <View style={tw`flex-1  w-full`}>
                   <Text style={styles.labelText}>Field Boy</Text>
                   <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={tw`border border-gray-300 p-3 rounded mb-3 mt-1`}>
                     <Text>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
                   </TouchableOpacity>
                 </View>
 
-                <View style={tw`flex flex-col w-[48%]`}>
+                <View style={tw`flex-1 w-full`}>
                   <Text style={styles.labelText}>Collection Date Time</Text>
                   <TouchableOpacity
-                    onPress={() => setShowDatePicker(true)}
+                    onPress={() => {
+                      setTempDate(collectionDateTime || new Date());
+                      setShowDatePicker(true);
+                    }}
                     style={tw`border border-gray-300 p-3 rounded mb-3 mt-1`}
                   >
                     <Text>{formatDateTime(collectionDateTime)}</Text>
                   </TouchableOpacity>
 
-                  {/* Date Picker */}
-                  {showDatePicker && (
+                  {/* ================= DATE PICKER ================= */}
+                  {showDatePicker && Platform.OS === 'android' && (
                     <DateTimePicker
                       value={collectionDateTime || new Date()}
                       mode="date"
@@ -832,8 +917,46 @@ const Registration = () => {
                     />
                   )}
 
-                  {/* Time Picker */}
-                  {showTimePicker && (
+                  {/* iOS DATE MODAL */}
+                  {showDatePicker && Platform.OS === 'ios' && (
+                    <Modal transparent animationType="slide">
+                      <View style={tw`flex-1 justify-end bg-black/40`}>
+                        <View style={tw`bg-white p-4 rounded-t-3xl`}>
+                          <View style={tw`flex-row justify-between items-center mb-4`}>
+                            <Text style={tw`font-bold text-base`}>Select Date</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                              <Text style={{ color: 'red', fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <DateTimePicker
+                            value={tempDate || new Date()}
+                            mode="date"
+                            display="spinner"
+                            onChange={(event, selectedDate) => {
+                              if (selectedDate) {
+                                setTempDate(selectedDate);
+                              }
+                            }}
+                            minimumDate={new Date()}
+                            style={{ height: 150 }}
+                          />
+
+                          <TouchableOpacity
+                            onPress={onIOSDateConfirm}
+                            style={tw`bg-blue-500 p-3 rounded-xl mt-3`}
+                          >
+                            <Text style={tw`text-white text-center font-bold`}>
+                              Confirm Date
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </Modal>
+                  )}
+
+                  {/* ================= TIME PICKER ================= */}
+                  {showTimePicker && Platform.OS === 'android' && (
                     <DateTimePicker
                       value={collectionDateTime || new Date()}
                       mode="time"
@@ -854,14 +977,51 @@ const Registration = () => {
                             (selectedDateTime.getHours() === now.getHours() &&
                               selectedDateTime.getMinutes() < now.getMinutes())
                           ) {
-                            alert("Cannot select past time for today");
+                            Alert.alert("Invalid Time", "Cannot select past time for today");
+                            setShowTimePicker(false);
                             return;
                           }
                         }
                         onChangeTime(event, selectedTime);
-                        setShowTimePicker(false);
                       }}
                     />
+                  )}
+
+                  {/* iOS TIME MODAL */}
+                  {showTimePicker && Platform.OS === 'ios' && (
+                    <Modal transparent animationType="slide">
+                      <View style={tw`flex-1 justify-end bg-black/40`}>
+                        <View style={tw`bg-white p-4 rounded-t-3xl`}>
+                          <View style={tw`flex-row justify-between items-center mb-4`}>
+                            <Text style={tw`font-bold text-base`}>Select Time</Text>
+                            <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                              <Text style={{ color: 'red', fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
+                          </View>
+
+                          <DateTimePicker
+                            value={tempTime || collectionDateTime || new Date()}
+                            mode="time"
+                            display="spinner"
+                            onChange={(event, selectedTime) => {
+                              if (selectedTime) {
+                                setTempTime(selectedTime);
+                              }
+                            }}
+                            style={{ height: 150 }}
+                          />
+
+                          <TouchableOpacity
+                            onPress={onIOSTimeConfirm}
+                            style={tw`bg-green-500 p-3 rounded-xl mt-3`}
+                          >
+                            <Text style={tw`text-white text-center font-bold`}>
+                              Confirm Time
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </Modal>
                   )}
                 </View>
               </View>
@@ -869,88 +1029,56 @@ const Registration = () => {
           </View>
         </View>
 
-
         <View style={styles.cardShadow}>
-          <Text style={styles.patientInfoText}>Invstigation Details:</Text>
-
-
-          {/* Name Field */}
-          {/* <View style={tw`flex-1`}>
-              <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>Select Doctor</Text>
-                <Text style={tw`text-red-500 -mt-2`}>*</Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setDoctorListModal(true)}
-                style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-center`]}              >
-                <Text numberOfLines={1} style={styles.insideDropDownText}>
-                  {selectedDoctorList ? selectedDoctorList.name : 'Select Doctor'}
-                </Text>
-                <Icon name="chevron-down" size={18} color="gray" />
-              </TouchableOpacity>
-            </View> */}
+          <Text style={styles.patientInfoText}>Investigation Details:</Text>
 
           {/* Search Service */}
           <View style={tw`flex-1`}>
             <View style={tw`flex flex-row items-center`}>
-              {/* {console.log("item",serviceItem)} */}
               <Text style={styles.labelText}>Search Service</Text>
               <Text style={tw`text-red-500 -mt-2`}>* </Text>
             </View>
 
             <TouchableOpacity
               onPress={() => setSearchSelectModal(true)}
-              style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-start`]}              >
-              <FontAwesome5 name="search" size={16} color="gray" style={tw`mr-2`} />
+              style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-start`]}
+            >
+              <MaterialCommunityIcons name="magnify" size={20} color="gray" style={tw`mr-2`} />
               <Text style={styles.insideDropDownText}>
                 Search Service
               </Text>
             </TouchableOpacity>
           </View>
 
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`flex-row items-center`}
-          >
+           >
             {serviceItem?.Services?.map((s, index) => (
               <View key={index} style={tw`mr-2 mb-2 pt-2`}>
-
                 <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
-
-                  {/* Service Name */}
                   <Text
                     numberOfLines={1}
                     style={tw`text-blue-700 text-xs font-medium mr-2`}
                   >
                     {s.ServiceName.replace('\n', ' ').slice(0, 15)}
                   </Text>
-
-                  {/* Remove Button */}
                   <TouchableOpacity
                     onPress={() => handleRemoveService(index)}
                     style={tw`ml-1`}
                   >
-                    <FontAwesome5 name="times" size={12} color="#ef4444" />
+                    <MaterialCommunityIcons name="close-circle" size={16} color="#ef4444" />
                   </TouchableOpacity>
-
-                  {/* Urgent Badge */}
                   {s.isUrgent === 1 && (
                     <View style={tw`absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[16px] h-[16px] items-center justify-center px-[3px]`}>
-                      <Text style={tw`text-white text-[9px] font-bold`}>
-                        U
-                      </Text>
+                      <Text style={tw`text-white text-[9px] font-bold`}>U</Text>
                     </View>
                   )}
-
                 </View>
-
               </View>
-            ))}
+            ))}s
           </ScrollView>
-
         </View>
 
         <View style={styles.cardShadow}>
@@ -1103,7 +1231,6 @@ const Registration = () => {
         </View>
 
         {/* Payment Fields */}
-
         <View style={styles.cardShadow}>
           <Text style={styles.patientInfoText}>Payment Info:</Text>
           <View style={tw`mb-2`}>
@@ -1219,7 +1346,6 @@ const Registration = () => {
           )}
         </TouchableOpacity>
 
-
         {/* refer doctor modal */}
         <Modal
           visible={refrDoctrorModal}
@@ -1251,15 +1377,13 @@ const Registration = () => {
           onRequestClose={() => setDoctorListModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setDoctorListModal(false)}>
-            {/* Overlay */}
             <View style={tw`flex-1 justify-end bg-black/50`}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                {/* Bottom Sheet */}
                 <View style={tw`bg-white w-full h-[70%] rounded-t-2xl p-4`}>
                   <DoctorList
                     onSelectDoctor={(doctor) => {
                       setSelectedDoctorList(doctor);
-                      setDoctorListModal(false); // optional: auto close
+                      setDoctorListModal(false);
                     }}
                     onClose={() => setDoctorListModal(false)}
                   />
@@ -1281,11 +1405,9 @@ const Registration = () => {
               <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={tw`bg-white px-4 rounded-t-3xl w-full h-[70%]`}>
                   <View style={tw`flex-1`}>
-                    {/* Drag Indicator */}
                     <View style={tw`items-center pt-2 pb-1`}>
                       <View style={tw`w-12 h-1 bg-gray-300 rounded-full`} />
                     </View>
-
                     <ReferLab
                       onSelectDoctor={(doctor) => {
                         setSelectedReferLab(doctor);
@@ -1306,20 +1428,16 @@ const Registration = () => {
           animationType="slide"
           onRequestClose={() => setSearchSelectModal(false)}
         >
-          {/* BACKDROP */}
           <TouchableWithoutFeedback onPress={() => setSearchSelectModal(false)}>
             <View style={tw`flex-1 justify-end bg-black/40`}>
               <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={tw`bg-white w-full h-[70%] rounded-t-3xl pt-3 pb-4 px-4`}>
                   <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-                  {/* CONTENT */}
                   <View style={tw`flex-1`}>
                     <SearchSelectService
                       onClose={() => setSearchSelectModal(false)}
                     />
                   </View>
-
-                  {/* CLOSE BUTTON */}
                   <TouchableOpacity
                     onPress={() => setSearchSelectModal(false)}
                     style={tw`bg-purple-500 py-4 rounded-full mt-3`}
@@ -1334,8 +1452,6 @@ const Registration = () => {
           </TouchableWithoutFeedback>
         </Modal>
 
-
-
         {/* Field boy modal */}
         <Modal
           visible={fieldBoyModal}
@@ -1348,7 +1464,6 @@ const Registration = () => {
               <TouchableWithoutFeedback onPress={() => { }}>
                 <View style={tw`bg-white rounded-t-3xl w-full h-[60%] p-4`}>
                   <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-                  {/* CONTENT */}
                   <View style={tw`flex-1`}>
                     <FieldBoy
                       onSelectFieldBoy={setSelectedFieldBoy}
@@ -1368,11 +1483,12 @@ const Registration = () => {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+        
         {/* title modal */}
         <BottomModal
           visible={selectTitleModal}
           onClose={() => setSelectTitleModal(false)}
-        >
+         >
           <SelectTitle
             onClose={() => setSelectTitleModal(false)}
             onSelectTitle={setSelectedTitle}

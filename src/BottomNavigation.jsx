@@ -24,6 +24,7 @@ export default function BottomTabNavigation() {
     Platform.OS === 'android' ? 10 : 0
   );
 
+
   const horizontalInset = Math.max(insets.left, insets.right, 10);
 
   const baseTabBarStyle = {

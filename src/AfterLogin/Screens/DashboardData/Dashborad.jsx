@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
   TextInput,
-  FlatList
+  FlatList,Platform
 } from 'react-native';
 import tw from 'twrnc';
 import CustomStyles from '../../../../Custom.styles';
@@ -25,6 +26,8 @@ import ButtonStyles from '../../../utils/ButtonStyle';
 const LabDashboard = () => {
   const { userData, allBranchInfo, deviceData } = useAuth();
   const navigation = useNavigation();
+  const dashboardRef = React.useRef(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
@@ -39,13 +42,13 @@ const LabDashboard = () => {
 
   // ✅ Set today's date
   useEffect(() => {
-    console.log("device data", deviceData)
     const today = new Date();
     const formattedDate = today.toISOString().split("T")[0];
 
     setFromDate(formattedDate);
     setToDate(formattedDate);
   }, []);
+
 
   // ✅ Convert dd-MM-yyyy → yyyy-MM-dd
   const formatDateToAPI = (date) => {
@@ -80,9 +83,11 @@ const LabDashboard = () => {
   };
 
   // ✅ Filter branches based on search
-  const filteredBranches = allBranchInfo?.filter(branch =>
-    branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredBranches = useMemo(() => {
+    return allBranchInfo?.filter(branch =>
+      branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+  }, [allBranchInfo, searchQuery]);
 
   // ✅ Handle select all
   const handleSelectAll = () => {
@@ -124,10 +129,28 @@ const LabDashboard = () => {
     setSelectedBranches([]);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await dashboardRef.current?.refresh?.();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <ScrollView
       style={tw`flex-1 bg-gray-50`}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#10b981"
+          colors={['#10b981']}
+          progressBackgroundColor="white"
+        />
+      }
     >
       {/* HEADER */}
       <View style={tw`px-4 pt-2 pb-1 bg-white border-b border-gray-200`}>
@@ -255,6 +278,7 @@ const LabDashboard = () => {
 
         {/* Dashboard */}
         <DashboardCollection
+          ref={dashboardRef}
           fromDate={fromDate}
           toDate={toDate}
           branchId={selectedBranchIds}
