@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator, Alert } from 'react-native';
+import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
@@ -321,6 +321,7 @@ const ListHelpDeskPatient = () => {
       setDownloadingId(id)
       const { config, fs } = RNFetchBlob;
       const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
+      const branchId = payload?.branchId ? String(payload.branchId) : '1'
       const res = await config({
         addAndroidDownloads: {
           useDownloadManager: true,
@@ -329,7 +330,7 @@ const ListHelpDeskPatient = () => {
           description: 'Downloading report...',
         },
       }).fetch('GET',
-        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=1`
+        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${branchId}`
       );
       showToast('File downloaded', 'success');
     } catch (error) {
@@ -338,8 +339,6 @@ const ListHelpDeskPatient = () => {
       setDownloadingId(null); // STOP loading (always runs)
     }
   };
-
-
 
   // Get status color and icon (for badge)
   const getStatusInfo = (item) => {
@@ -406,12 +405,17 @@ const ListHelpDeskPatient = () => {
                 {item.Barcode && (
                   <View style={tw`mt-1`}>
                     <Barcode
-                      value={String(item.Barcode)}
+                      value={String(item.Barcode).trim()}
                       format="CODE128"
-                      width={1}
-                      height={14}
-                      text={String(item.Barcode)}
-                      style={{ backgroundColor: 'transparent' }}
+                      width={1.2}
+                      maxWidth={Math.min(240, width - 160)}
+                      height={24}
+                      lineColor="#111827"
+                      background="transparent"
+                      text={String(item.Barcode).trim()}
+                      textStyle={tw`text-[10px] text-gray-700`}
+                      onError={(e) => console.warn('Barcode render error:', e?.message || e)}
+                      style={{ alignSelf: 'flex-start' }}
                     />
                   </View>
                 )}
@@ -529,7 +533,17 @@ const ListHelpDeskPatient = () => {
                 </TouchableOpacity>
 
                 {/* VIEW */}
-                <TouchableOpacity onPress={() => console.log('View clicked')}style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`} activeOpacity={0.7} >
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate('ViewLabReport', {
+                      patientInvestigationId: item?.PatientInvestigationId,
+                      patientName: item?.PatientName,
+                      branchId: payload?.branchId ,
+                    })
+                  }
+                  style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
+                  activeOpacity={0.7}
+                >
                   <Feather name="eye" size={14} color="#3b82f6" />
                   <Text numberOfLines={1} adjustsFontSizeToFit  style={tw`ml-1 text-xs text-blue-600 font-medium`} >  View </Text>
                 </TouchableOpacity>
@@ -541,6 +555,29 @@ const ListHelpDeskPatient = () => {
       </View>
     );
   };
+
+  if (!payload) {
+    return (
+      <View style={tw`flex-1`}>
+        <View style={tw`flex-1 bg-white items-center justify-center px-6`}>
+          <MaterialCommunityIcons name="magnify" size={44} color="#6b7280" />
+          <Text style={tw`mt-3 text-base font-semibold text-gray-800 text-center`}>
+            Search required
+          </Text>
+          <Text style={tw`mt-1 text-sm text-gray-500 text-center`}>
+            Please search from Help Desk to view the patient list.
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('HelpDeskHome')}
+            style={tw`mt-4 bg-blue-500 px-4 py-3 rounded-lg`}
+            activeOpacity={0.8}
+          >
+            <Text style={tw`text-white font-semibold`}>Go to Search</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={tw`flex-1`}>

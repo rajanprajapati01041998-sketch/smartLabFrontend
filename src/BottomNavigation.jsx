@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Screens
 import DashboardStack from './DashboardStack';
 import HelpDeskStack from './HelpDeskStack';
-import Registration from './AfterLogin/Screens/PatientRegistration/Registration';
+import RegistrationStack from './RegistrationStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -91,7 +91,7 @@ export default function BottomTabNavigation() {
           const routeName =
             getFocusedRouteNameFromRoute(route) ?? 'DashboardHome';
 
-          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory'];
+          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory','ViewLabReport'];
 
           return {
             tabBarStyle: [
@@ -103,7 +103,7 @@ export default function BottomTabNavigation() {
       />
       <Tab.Screen
         name="Registration"
-        component={Registration}
+        component={RegistrationStack}
       />
 
       <Tab.Screen
@@ -112,7 +112,7 @@ export default function BottomTabNavigation() {
         options={({ route }) => {
           const routeName =
             getFocusedRouteNameFromRoute(route) ?? 'HelpDeskHome';
-          const hideOnScreens = ['ListHelpDeskPatient'];
+          const hideOnScreens = ['ListHelpDeskPatient', 'ViewLabReport'];
           return {
             tabBarStyle: [
               baseTabBarStyle,

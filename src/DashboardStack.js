@@ -9,7 +9,6 @@ import Registration from './AfterLogin/Screens/PatientRegistration/Registration'
 import UserLoginHistory from './AfterLogin/Screens/Profile/UserLoginHistory';
 import Profile from './AfterLogin/Screens/Profile/Profile';
 import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatient';
-import ListHelpDeskPatient from './AfterLogin/Screens/HelpDesk/ListHelpDeskPatient';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +57,12 @@ export default function DashboardStack() {
                 }}
             />
 
+            <Stack.Screen
+                name="SearchPatient"
+                component={SearchPatient}
+                options={{ title: 'Search Patient' }}
+            />
+
             {/* Login History */}
             <Stack.Screen
                 name="UserLoginHistory"
@@ -71,16 +76,6 @@ export default function DashboardStack() {
                 component={Profile}
                 options={{
                     title: 'My Profile',
-                    headerShown: true,
-                }}
-            />
-
-            {/* ✅ Help Desk (FIXED) */}
-            <Stack.Screen
-                name="ListHelpDeskPatient"
-                component={ListHelpDeskPatient}
-                options={{
-                    title: 'Help desk',
                     headerShown: true,
                 }}
             />

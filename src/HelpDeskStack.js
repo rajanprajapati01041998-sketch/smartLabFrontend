@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HelpDeskHome from './AfterLogin/Screens/HelpDesk/HelpDeskHome';
 import ListHelpDeskPatient from './AfterLogin/Screens/HelpDesk/ListHelpDeskPatient';
+import ViewLabReport from './AfterLogin/Screens/HelpDesk/ViewLabReport';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +35,15 @@ export default function HelpDeskStack() {
           headerShown: true,
         }}
       />
+
+      <Stack.Screen
+        name="ViewLabReport"
+        component={ViewLabReport}
+        options={{
+          title: 'Report',
+          headerShown: true,
+        }}
+      />
     </Stack.Navigator>
   );
 }
-
