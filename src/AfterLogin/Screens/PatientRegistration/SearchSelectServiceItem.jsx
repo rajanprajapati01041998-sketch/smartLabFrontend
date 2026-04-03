@@ -7,57 +7,68 @@ import {
     TouchableOpacity,
     TextInput
 } from 'react-native';
-import api from '../../../../Authorization/api';
 import tw from 'twrnc';
 import { Checkbox } from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../../../Authorization/AuthContext';
+import { SearchGetInvestigationListDetails } from './services/doctorService';
 
 const SearchSelectServiceItem = ({ data, onDelete, isDirty, onDirtyChange, onSaved }) => {
     const [loading, setLoading] = useState(false);
     const [detailsList, setDetailsList] = useState([]);
 
-    const { serviceItem, setServiceItem, selectedDoctor } = useAuth();
-
-    // 🔹 Fetch details
-    const getServiceitemDetails = async () => {
-        if (!data || data.length === 0) return;
-
-        try {
-            setLoading(true);
-
-            const responses = await Promise.all(
-                data.map(item =>
-                    api.get(
-                        `ServiceAllDetailsForOPDBilling/GetServiceDetails?corporateId=1&${selectedDoctor}=1&serviceItemId=${item.itemId}&categoryId=${item.categoryId}&subCategoryId=${item.subCategoryId}&subSubCategoryId=${item.subSubCategoryId}&bedTypeId=0`
-                    )
-                )
-            );
-
-            const formatted = responses
-                .filter(res => res.data?.success)
-                .map(res => ({
-                    ...res.data.data,
-                    urgent: false,
-                    qty: 1
-                }));
-
-            setDetailsList(formatted);
-
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { setServiceItem, selectedDoctor, corporateId } = useAuth();
 
     useEffect(() => {
+        let cancelled = false;
+
+        const run = async () => {
+            if (!data || data.length === 0) return;
+
+            setLoading(true);
+            try {
+                const responses = await Promise.all(
+                    data.map(item =>
+                        SearchGetInvestigationListDetails({
+                            corporateId: corporateId ?? 1,
+                            doctorId: selectedDoctor ?? 1,
+                            serviceItemId: item.itemId,
+                            categoryId: item.categoryId,
+                            subCategoryId: item.subCategoryId,
+                            subSubCategoryId: item.subSubCategoryId,
+                            bedTypeId: 0,
+                        })
+                    )
+                );
+
+                if (cancelled) return;
+
+                const formatted = responses
+                    .filter(res => res?.success)
+                    .map(res => ({
+                        ...res.data,
+                        urgent: false,
+                        qty: 1
+                    }));
+
+                setDetailsList(formatted);
+            } catch (error) {
+                if (!cancelled) console.error('Error:', error);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+
         if (data?.length > 0) {
-            getServiceitemDetails();
+            run();
         } else {
             setDetailsList([]);
         }
-    }, [data]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [data, corporateId, selectedDoctor]);
 
     // 🔹 Toggle urgent
     const toggleUrgent = (index) => {
@@ -208,7 +219,9 @@ const SearchSelectServiceItem = ({ data, onDelete, isDirty, onDirtyChange, onSav
                                         onPress={() => toggleUrgent(index)}
                                         style={tw`flex-row items-center`}
                                     >
-                                        <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
+                                        <Checkbox
+                                        status={item.urgent ? 'checked' : 'unchecked'} />
+                                        
                                         <Text style={tw`text-[10px]`}>Urgent</Text>
                                     </TouchableOpacity>
 

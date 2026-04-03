@@ -8,7 +8,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   TextInput,
-  FlatList,Platform
+  FlatList, Platform
 } from 'react-native';
 import tw from 'twrnc';
 import CustomStyles from '../../../../Custom.styles';
@@ -332,7 +332,7 @@ const LabDashboard = () => {
               <View style={tw`bg-white rounded-2xl w-[90%] max-h-[85%] overflow-hidden shadow-xl`}>
 
                 {/* Header */}
-                <View style={tw`flex-row justify-between items-center p-5 border-b border-gray-100 bg-white`}>
+                <View style={tw`flex-row justify-between items-center px-5 pt-2 pb-2 border-b border-gray-100 bg-white`}>
                   <View>
                     <Text style={tw`text-lg font-bold text-gray-800`}>Select Branches</Text>
                     <Text style={tw`text-xxs text-gray-500 mt-1`}>
@@ -348,19 +348,30 @@ const LabDashboard = () => {
                 </View>
 
                 {/* Search Bar */}
-                <View style={tw`px-4 border-b border-gray-100 bg-gray-50`}>
-                  <View style={tw`flex-row items-center bg-white rounded-xl px-3  border border-gray-200`}>
-                    <Feather name="search" size={16} color="#9ca3af" />
+                <View style={tw`px-4 py-2 border-b border-gray-200 bg-gray-50`}>
+                  <View
+                    style={tw`flex-row items-center bg-white rounded-xl px-3 h-12 border border-gray-300`}
+                  >
+                    <Feather name="search" size={18} color="#9ca3af" />
                     <TextInput
-                      style={tw`flex-1 ml-2 text-base text-gray-700`}
+                      style={tw`flex-1 ml-2 text-base text-gray-800`}
                       placeholder="Search branches..."
                       placeholderTextColor="#9ca3af"
                       value={searchQuery}
                       onChangeText={setSearchQuery}
+                      returnKeyType="search"
+                      clearButtonMode="never" // iOS handled manually
+                      underlineColorAndroid="transparent" // Android fix
                     />
-                    {searchQuery.length > 0 && (
-                      <TouchableOpacity onPress={() => setSearchQuery('')}>
-                        <Icon name="close-circle" size={18} color="#9ca3af" />
+
+                    {/* Clear Button */}
+                    {searchQuery?.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setSearchQuery('')}
+                        activeOpacity={0.7}
+                        style={tw`p-1`}
+                      >
+                        <Feather name="x-circle" size={18} color="#9ca3af" />
                       </TouchableOpacity>
                     )}
                   </View>

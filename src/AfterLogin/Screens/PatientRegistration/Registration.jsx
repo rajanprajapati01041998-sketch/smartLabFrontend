@@ -71,6 +71,7 @@ const Registration = () => {
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
   const [netAmount, setNetAmount] = useState(null);
   const [cash, setCash] = useState(null);
+  const [isCashAuto, setIsCashAuto] = useState(true);
   const [debitCardAmt, setDebitCardAmt] = useState(null);
   const [creditCardAmt, setCreditCardAmt] = useState(null);
   const [chequeAmt, setChequeAmt] = useState(null);
@@ -174,6 +175,7 @@ const Registration = () => {
     setDiscountLastEdited('percent');
     setNetAmount(null);
     setBalanceAmount(null);
+    setIsCashAuto(true);
 
     // Payments
     setCash(null);
@@ -189,6 +191,13 @@ const Registration = () => {
 
     // Services reset
     setServiceItem({ Services: [] });
+  };
+
+  const parseMoney = (txt) => {
+    const cleaned = String(txt ?? '').replace(/[^0-9.]/g, '');
+    if (cleaned === '') return null;
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : null;
   };
 
   const handleRemoveService = (indexToRemove) => {
@@ -334,15 +343,15 @@ const Registration = () => {
 
   useEffect(() => {
     if (serviceItem?.Services) {
-      const sum = serviceItem.Services.reduce((acc, item) => {
-        return acc + (item.Amount);
-      }, 0);
-      console.log("total Amount", sum);
+      const sum = serviceItem.Services.reduce((acc, item) => acc + (item.Amount || 0), 0);
       setGrossAmount(sum);
-      setNetAmount(sum);
-      setBalanceAmount(sum);
-      setCash(sum);
+
+      // Auto-fill cash only when user hasn't manually edited payments.
+      if (isCashAuto) {
+        setCash(sum);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceItem]);
 
   useEffect(() => {
@@ -383,6 +392,37 @@ const Registration = () => {
     setNetAmount(roundedNet);
   }, [discountLastEdited, discountPercent, discountAmount, grossAmount]);
 
+  // Keep cash synced with net amount when cash is still in "auto" mode and
+  // user hasn't entered other payment modes. This prevents cases like:
+  // gross=7200, discount=200 => net=7000 but cash remains 7200 (balance becomes 0).
+  useEffect(() => {
+    if (!isCashAuto) return;
+
+    const otherPaid =
+      Number(debitCardAmt || 0) +
+      Number(creditCardAmt || 0) +
+      Number(chequeAmt || 0) +
+      Number(neftrtgsAmt || 0) +
+      Number(phonePayAmt || 0) +
+      Number(payTmAmt || 0);
+
+    if (otherPaid > 0) return;
+
+    const nextNet = Number(netAmount || 0);
+    if (!nextNet) return;
+
+    setCash(nextNet);
+  }, [
+    isCashAuto,
+    netAmount,
+    debitCardAmt,
+    creditCardAmt,
+    chequeAmt,
+    neftrtgsAmt,
+    phonePayAmt,
+    payTmAmt,
+  ]);
+
   useEffect(() => {
     const totalPaid =
       Number(cash || 0) +
@@ -408,18 +448,6 @@ const Registration = () => {
     payTmAmt,
     netAmount
   ]);
-
-  useEffect(() => {
-    if (serviceItem?.Services) {
-      const sum = serviceItem.Services.reduce((acc, item) => {
-        return acc + item.Amount;
-      }, 0);
-
-      setGrossAmount(sum);
-      setNetAmount(sum);
-      setBalanceAmount(sum);
-    }
-  }, [serviceItem]);
 
   const onChangeDate1 = (event, selectedDate) => {
     setShowPicker(false);
@@ -1054,7 +1082,7 @@ const Registration = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`flex-row items-center`}
-           >
+            >
             {serviceItem?.Services?.map((s, index) => (
               <View key={index} style={tw`mr-2 mb-2 pt-2`}>
                 <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
@@ -1077,7 +1105,7 @@ const Registration = () => {
                   )}
                 </View>
               </View>
-            ))}s
+            ))}
           </ScrollView>
         </View>
 
@@ -1238,7 +1266,10 @@ const Registration = () => {
             <TextInput
               value={cash ? String(cash) : ""}
               keyboardType="numeric"
-              onChangeText={setCash}
+              onChangeText={(txt) => {
+                setIsCashAuto(false);
+                setCash(parseMoney(txt));
+              }}
               style={[styles.inputBox, { color: colors.text }]}
               placeholder='100'
               placeholderTextColor={colors.placeholder}
@@ -1253,7 +1284,10 @@ const Registration = () => {
               <TextInput
                 value={debitCardAmt ? String(debitCardAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setDebitCardAmt}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setDebitCardAmt(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='10'
                 placeholderTextColor={colors.placeholder}
@@ -1265,7 +1299,10 @@ const Registration = () => {
               <TextInput
                 value={creditCardAmt ? String(creditCardAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setCreditCardAmt}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setCreditCardAmt(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='19'
                 placeholderTextColor={colors.placeholder}
@@ -1281,7 +1318,10 @@ const Registration = () => {
               <TextInput
                 value={chequeAmt ? String(chequeAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setChequeAmt}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setChequeAmt(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='22'
                 placeholderTextColor={colors.placeholder}
@@ -1293,7 +1333,10 @@ const Registration = () => {
               <TextInput
                 value={neftrtgsAmt ? String(neftrtgsAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setNeftRtgsAmt}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setNeftRtgsAmt(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='25'
                 placeholderTextColor={colors.placeholder}
@@ -1309,7 +1352,10 @@ const Registration = () => {
               <TextInput
                 value={phonePayAmt ? String(phonePayAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setPhonePayAmt}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setPhonePayAmt(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='123'
                 placeholderTextColor={colors.placeholder}
@@ -1321,7 +1367,10 @@ const Registration = () => {
               <TextInput
                 value={payTmAmt ? String(payTmAmt) : ""}
                 keyboardType="numeric"
-                onChangeText={setPayTm}
+                onChangeText={(txt) => {
+                  setIsCashAuto(false);
+                  setPayTm(parseMoney(txt));
+                }}
                 style={[styles.inputBox]}
                 placeholder='333'
                 placeholderTextColor={colors.placeholder}
@@ -1431,21 +1480,8 @@ const Registration = () => {
           <TouchableWithoutFeedback onPress={() => setSearchSelectModal(false)}>
             <View style={tw`flex-1 justify-end bg-black/40`}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white w-full h-[70%] rounded-t-3xl pt-3 pb-4 px-4`}>
-                  <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-                  <View style={tw`flex-1`}>
-                    <SearchSelectService
-                      onClose={() => setSearchSelectModal(false)}
-                    />
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setSearchSelectModal(false)}
-                    style={tw`bg-purple-500 py-4 rounded-full mt-3`}
-                  >
-                    <Text style={tw`text-white text-center font-semibold`}>
-                      Close
-                    </Text>
-                  </TouchableOpacity>
+                <View style={tw`bg-white w-full h-[70%] rounded-t-3xl overflow-hidden`}>
+                  <SearchSelectService onClose={() => setSearchSelectModal(false)} />
                 </View>
               </TouchableWithoutFeedback>
             </View>

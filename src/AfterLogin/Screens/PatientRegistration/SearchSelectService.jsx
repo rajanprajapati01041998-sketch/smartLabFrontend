@@ -6,11 +6,11 @@ import {
     View,
     Text,
     TouchableOpacity,
-    Modal,
     Pressable,
     FlatList,
     ActivityIndicator,
     TextInput,
+    Keyboard,
 } from 'react-native';
 
 import SearchSelectServiceItem from './SearchSelectServiceItem';
@@ -68,6 +68,7 @@ const SearchSelectService = ({ onClose }) => {
 
     // 🔹 MULTI SELECT ADD
     const handleSelectItem = (item) => {
+        Keyboard.dismiss();
     setSelectedServices((prev) => {
       const exists = prev.find(i => i.itemId === item.itemId);
       if (exists) {
@@ -96,24 +97,24 @@ const SearchSelectService = ({ onClose }) => {
   const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
 
     return (
-        <View style={tw`flex-1 bg-white`}>
+        <View style={tw`flex-1 bg-white relative`}>
+            {/* Drag Handle */}
+            <View style={tw`px-4 pt-3`}>
+                <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+            </View>
 
             {/* 🔍 Search */}
-
-            <View style={tw`flex-row items-center border border-gray-300 rounded-xl px-3 bg-white`}>
-
-                {/* 🔍 ICON */}
-                <Icon name="search" size={18} color="#6B7280" />
-
-                {/* INPUT */}
-                <TextInput
-                    placeholder="Search Investigation..."
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    style={tw`flex-1 ml-2 py-3 text-base`}
-                    placeholderTextColor="#9CA3AF"
-                />
-
+            <View style={tw`px-4`}>
+                <View style={tw`flex-row items-center border border-gray-300 rounded-xl px-3 bg-white`}>
+                    <Icon name="search" size={18} color="#6B7280" />
+                    <TextInput
+                        placeholder="Search Investigation..."
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        style={tw`flex-1 ml-2 py-3 text-base`}
+                        placeholderTextColor="#9CA3AF"
+                    />
+                </View>
             </View>
 
             {/* 🔄 Loader */}
@@ -122,10 +123,12 @@ const SearchSelectService = ({ onClose }) => {
             {/* 📋 Results */}
             <FlatList
                 data={results}
-                keyExtractor={(item, index) => index.toString()}
-                contentContainerStyle={tw`p-3`}
+                keyExtractor={(item, index) => String(item?.itemId ?? item?.serviceItemId ?? item?.id ?? index)}
+                style={tw`flex-1`}
+                contentContainerStyle={tw`px-4 pt-3 pb-6`}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
+                keyboardDismissMode="on-drag"
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => handleSelectItem(item)}
@@ -136,21 +139,24 @@ const SearchSelectService = ({ onClose }) => {
                 )}
             />
 
-            {/* 📦 Modal */}
-            <Modal
-                visible={modalVisible}
-                transparent
-                animationType="slide"
-                presentationStyle="overFullScreen"
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={tw`flex-1 justify-end`}>
+            <View style={tw`px-4 pb-4`}>
+                <TouchableOpacity
+                    onPress={onClose}
+                    style={tw`bg-purple-500 py-4 rounded-full`}
+                >
+                    <Text style={tw`text-white text-center font-semibold`}>
+                        Close
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* iOS: avoid nested native Modals (Registration already renders this inside a Modal) */}
+            {modalVisible && (
+                <View style={tw`absolute inset-0 justify-end`}>
                     <Pressable style={tw`absolute inset-0 bg-black/40`} onPress={() => setModalVisible(false)} />
-                    <View style={tw`bg-white w-full h-[80%] rounded-t-3xl pt-3 px-4`}>
-                        {/* Drag Handle */}
+                    <View style={tw`bg-white w-full h-full rounded-t-3xl pt-3 px-4`}>
                         <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
 
-                        {/* 🔥 CONTENT (takes available space) */}
                         <View style={tw`flex-1`}>
                             <SearchSelectServiceItem
                                 data={selectedServices}
@@ -161,10 +167,8 @@ const SearchSelectService = ({ onClose }) => {
                             />
                         </View>
 
-                        {/* 🔹 FIXED FOOTER */}
                         <View style={tw`pb-4 pt-2 bg-white`}>
                             <View style={tw`flex-row gap-3`}>
-                                {/* Select Another */}
                                 <TouchableOpacity
                                     style={tw`flex-1 bg-blue-50 border border-blue-200 py-3 rounded-full`}
                                     onPress={() => setModalVisible(false)}
@@ -174,7 +178,6 @@ const SearchSelectService = ({ onClose }) => {
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Next Button */}
                                 {showNext && (
                                     <TouchableOpacity
                                         style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
@@ -192,7 +195,7 @@ const SearchSelectService = ({ onClose }) => {
                         </View>
                     </View>
                 </View>
-            </Modal>
+            )}
         </View>
     );
 };
