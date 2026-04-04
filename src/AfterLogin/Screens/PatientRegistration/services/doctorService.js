@@ -40,41 +40,41 @@ export const searchInvestigation = async (query) => {
         return response.data;
     } catch (error) {
         console.error('API Error:', error);
-        throw error;   
+        throw error;
     }
-}   
+}
 
 
 export const SearchGetInvestigationListDetails = async ({
-  corporateId,
-  doctorId,
-  serviceItemId,
-  categoryId,
-  subCategoryId,
-  subSubCategoryId,
-  bedTypeId,
+    corporateId,
+    doctorId,
+    serviceItemId,
+    categoryId,
+    subCategoryId,
+    subSubCategoryId,
+    bedTypeId,
 }) => {
-  try {
-    const response = await api.get(
-      '/ServiceAllDetailsForOPDBilling/GetServiceDetails',
-      {
-        params: {
-          corporateId,
-          doctorId,
-          serviceItemId,
-          categoryId,
-          subCategoryId,
-          subSubCategoryId,
-          bedTypeId,
-        },
-      }
-    );
+    try {
+        const response = await api.get(
+            '/ServiceAllDetailsForOPDBilling/GetServiceDetails',
+            {
+                params: {
+                    corporateId,
+                    doctorId,
+                    serviceItemId,
+                    categoryId,
+                    subCategoryId,
+                    subSubCategoryId,
+                    bedTypeId,
+                },
+            }
+        );
 
-    return response.data;
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
-  }
+        return response.data;
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
 };
 
 export const fetchFieldBoy = async () => {
@@ -83,6 +83,16 @@ export const fetchFieldBoy = async () => {
         return response.data;
     } catch (error) {
         console.error('API Error:', error);
-        throw error;   
+        throw error;
     }
-}    
+}
+
+
+export const allBankList = async () => {
+    try {
+        const reaponse = await api.get(`PaymentMode/GetBankList`)
+        return reaponse.data;
+    } catch (error) {
+        throw error
+    }
+}

@@ -6,7 +6,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   referLabList,
   searchInvestigation,
-  SearchGetInvestigationListDetails
+  SearchGetInvestigationListDetails,
+  allBankList
 } from './services/doctorService';
 import ReferDoctor from './ReferDoctor';
 import DoctorList from './DoctorList';
@@ -27,6 +28,7 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import BottomModal from '../../../utils/BottomModal';
 import CenterModal from '../../../utils/CenterModal';
 import { useTheme } from '../../../../Authorization/ThemeContext';
+import SelectBank from './SelectBank';
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
@@ -93,6 +95,14 @@ const Registration = () => {
   const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
   const [responseSuccess, setResponseSuccess] = useState(false)
+  const [selectedBank, setSelectedBank] = useState(null)
+  const [bankModal, setBankModal] = useState(false)
+  const [chequeRefrence, setChequeRefrence] = useState('')
+  const [neftRefrence, setNeftReference] = useState('')
+  const [debitCardReference, setDebitCardReference] = useState('')
+  const [paytmRefrence, setPaytmRefrence] = useState('')
+  const [phonePayReference, setPhonePayReference] = useState("")
+  const [credicardReference, setCrediCardReference] = useState('')
 
   // console.log(patientData)
   useEffect(() => {
@@ -548,7 +558,7 @@ const Registration = () => {
       if (selectedTime && collectionDateTime) {
         const now = new Date();
         const selectedDateTime = new Date(selectedTime);
-        
+
         if (
           collectionDateTime &&
           collectionDateTime.toDateString() === now.toDateString()
@@ -562,7 +572,7 @@ const Registration = () => {
             return;
           }
         }
-        
+
         const updated = new Date(collectionDateTime);
         updated.setHours(selectedTime.getHours());
         updated.setMinutes(selectedTime.getMinutes());
@@ -585,7 +595,7 @@ const Registration = () => {
     if (tempTime && collectionDateTime) {
       const now = new Date();
       const selectedDateTime = new Date(tempTime);
-      
+
       if (
         collectionDateTime &&
         collectionDateTime.toDateString() === now.toDateString()
@@ -600,7 +610,7 @@ const Registration = () => {
           return;
         }
       }
-      
+
       const updated = new Date(collectionDateTime);
       updated.setHours(tempTime.getHours());
       updated.setMinutes(tempTime.getMinutes());
@@ -633,6 +643,8 @@ const Registration = () => {
       console.error('Error fetching investigation list:', error);
     }
   };
+
+
 
   const formatDateTime = (dateTime) => {
     if (!dateTime || !(dateTime instanceof Date)) return '- Collection Date Time -';
@@ -1082,7 +1094,7 @@ const Registration = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`flex-row items-center`}
-            >
+          >
             {serviceItem?.Services?.map((s, index) => (
               <View key={index} style={tw`mr-2 mb-2 pt-2`}>
                 <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
@@ -1278,8 +1290,8 @@ const Registration = () => {
           </View>
 
           {/* Row 1 */}
-          <View style={tw`flex-row justify-between mb-2`}>
-            <View style={tw`w-[48%]`}>
+          <View style={tw`flex flex-col justify-between mb-2`}>
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>Debit Card</Text>
               <TextInput
                 value={debitCardAmt ? String(debitCardAmt) : ""}
@@ -1293,8 +1305,37 @@ const Registration = () => {
                 placeholderTextColor={colors.placeholder}
 
               />
+
             </View>
-            <View style={tw`w-[48%]`}>
+            {debitCardAmt &&
+              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
+                <View>
+                  <Text style={styles.labelText}>Select Bank</Text>
+                  <TouchableOpacity
+                    onPress={() => setBankModal(true)}
+                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
+                  >
+                    <Text style={styles.insideDropDownText}  >
+                      {selectedBank
+                        ? selectedBank.bankName
+                        : 'Select Bank'}
+                    </Text>
+                    <Icon name="chevron-down" size={18} color="gray" />
+                  </TouchableOpacity>
+                </View>
+
+                <View>
+                  <Text style={styles.labelText}>Refrence</Text>
+                  <TextInput style={styles.inputBox}
+                    value={debitCardReference}
+                    onChangeText={(text) => setDebitCardReference(text)}
+                    maxLength={60}
+                  />
+                </View>
+
+              </View>
+            }
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>Credit Card</Text>
               <TextInput
                 value={creditCardAmt ? String(creditCardAmt) : ""}
@@ -1309,11 +1350,40 @@ const Registration = () => {
 
               />
             </View>
+            {creditCardAmt &&
+              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
+                <View>
+                  <Text style={styles.labelText}>Select Bank</Text>
+
+                  <TouchableOpacity
+                    onPress={() => setBankModal(true)}
+                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
+                  >
+                    <Text style={styles.insideDropDownText}  >
+                      {selectedBank
+                        ? selectedBank.bankName
+                        : 'Select Bank'}
+                    </Text>
+
+                    <Icon name="chevron-down" size={18} color="gray" />
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <Text style={styles.labelText}>Refrence</Text>
+                  <TextInput style={styles.inputBox}
+                    value={credicardReference}
+                    onChangeText={(text) => setCrediCardReference(text)}
+                    maxLength={60}
+                  />
+                </View>
+              </View>
+
+            }
           </View>
 
           {/* Row 2 */}
-          <View style={tw`flex-row justify-between mb-2`}>
-            <View style={tw`w-[48%]`}>
+          <View style={tw`flex-col justify-between mb-2`}>
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>Cheque</Text>
               <TextInput
                 value={chequeAmt ? String(chequeAmt) : ""}
@@ -1328,7 +1398,36 @@ const Registration = () => {
 
               />
             </View>
-            <View style={tw`w-[48%]`}>
+            {chequeAmt &&
+              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
+                <View>
+                  <Text style={styles.labelText}>Select Bank</Text>
+
+                  <TouchableOpacity
+                    onPress={() => setBankModal(true)}
+                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
+                  >
+                    <Text style={styles.insideDropDownText}  >
+                      {selectedBank
+                        ? selectedBank.bankName
+                        : 'Select Bank'}
+                    </Text>
+
+                    <Icon name="chevron-down" size={18} color="gray" />
+                  </TouchableOpacity>
+                </View>
+                <View>
+                  <Text style={styles.labelText}>Refrence</Text>
+                  <TextInput style={styles.inputBox}
+                    value={chequeRefrence}
+                    onChangeText={(text) => setChequeRefrence(text)}
+                    maxLength={60}
+                  />
+                </View>
+              </View>
+
+            }
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>NEFT/RTGS</Text>
               <TextInput
                 value={neftrtgsAmt ? String(neftrtgsAmt) : ""}
@@ -1346,8 +1445,8 @@ const Registration = () => {
           </View>
 
           {/* Row 3 */}
-          <View style={tw`flex-row justify-between mb-2`}>
-            <View style={tw`w-[48%]`}>
+          <View style={tw`flex-col justify-between mb-2`}>
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>PhonePe</Text>
               <TextInput
                 value={phonePayAmt ? String(phonePayAmt) : ""}
@@ -1362,7 +1461,19 @@ const Registration = () => {
 
               />
             </View>
-            <View style={tw`w-[48%]`}>
+
+            {phonePayAmt &&
+              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
+                <Text style={styles.labelText}>Refrence</Text>
+                <TextInput style={styles.inputBox}
+                  value={phonePayReference}
+                  onChangeText={(text) => setPhonePayReference(text)}
+                  maxLength={60}
+                />
+              </View>
+
+            }
+            <View style={tw`flex-1`}>
               <Text style={styles.labelText}>PayTM</Text>
               <TextInput
                 value={payTmAmt ? String(payTmAmt) : ""}
@@ -1377,6 +1488,17 @@ const Registration = () => {
 
               />
             </View>
+            {payTmAmt &&
+              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
+                <Text style={styles.labelText}>Refrence</Text>
+                <TextInput style={styles.inputBox}
+                  value={paytmRefrence}
+                  onChangeText={(text) => setPaytmRefrence(text)}
+                  maxLength={60}
+                />
+              </View>
+
+            }
           </View>
         </View>
 
@@ -1519,17 +1641,49 @@ const Registration = () => {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-        
+
         {/* title modal */}
         <BottomModal
           visible={selectTitleModal}
           onClose={() => setSelectTitleModal(false)}
-         >
+        >
           <SelectTitle
             onClose={() => setSelectTitleModal(false)}
             onSelectTitle={setSelectedTitle}
           />
         </BottomModal>
+
+        {/* bank Modal */}
+        <Modal
+          visible={bankModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setBankModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setBankModal(false)}>
+            <View style={tw`flex-1 justify-end bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white rounded-t-3xl w-full h-[60%] p-4`}>
+                  <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+                  <View style={tw`flex-1`}>
+                    <SelectBank
+                      onSelectBankItem={setSelectedBank}
+                      onClose={() => setBankModal(false)}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setBankModal(false)}
+                    style={tw`bg-purple-500 py-4 rounded-xl mt-2`}
+                  >
+                    <Text style={tw`text-white text-center font-semibold`}>
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
