@@ -34,7 +34,7 @@ import PaymentInfo from './PaymentInfo';
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId } = useAuth();
   const { showToast } = useToast()
   const { colors } = useTheme()
   const [error, setError] = useState(false)
@@ -73,6 +73,7 @@ const Registration = () => {
 
   const [discountLastEdited, setDiscountLastEdited] = useState('percent');
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
+  const [isOverPaid, setIsOverPaid] = useState(false);
   const [netAmount, setNetAmount] = useState(null);
   const [cash, setCash] = useState(null);
   const [isCashAuto, setIsCashAuto] = useState(true);
@@ -122,6 +123,8 @@ const Registration = () => {
   useEffect(() => {
     setGender("MALE")
   }, [])
+
+  console.log("check amount", balanceAmount)
 
   useFocusEffect(
     useCallback(() => {
@@ -236,7 +239,11 @@ const Registration = () => {
     }));
 
   const handleSavePatient = async () => {
-    console.log(loginBranchId)
+    if (isOverPaid) {
+      showToast('Your Cash Amount is Greater from Net Amount', 'error');
+      return;
+    }
+
     if (!firstName) {
       showToast('Enter full name', 'error');
       return;
@@ -307,7 +314,7 @@ const Registration = () => {
       CityId: 1,
       City: city,
 
-      UserId: 1,
+      UserId: userId,
       IpAddress: currentIpAddress,
 
       GrossAmount: Number(grossAmount || 0),
@@ -411,58 +418,9 @@ const Registration = () => {
   // user hasn't entered other payment modes. This prevents cases like:
   // gross=7200, discount=200 => net=7000 but cash remains 7200 (balance becomes 0).
   useEffect(() => {
-    if (!isCashAuto) return;
-
-    const otherPaid =
-      Number(debitCardAmt || 0) +
-      Number(creditCardAmt || 0) +
-      Number(chequeAmt || 0) +
-      Number(neftrtgsAmt || 0) +
-      Number(phonePayAmt || 0) +
-      Number(payTmAmt || 0);
-
-    if (otherPaid > 0) return;
-
-    const nextNet = Number(netAmount || 0);
-    if (!nextNet) return;
-
-    setCash(nextNet);
-  }, [
-    isCashAuto,
-    netAmount,
-    debitCardAmt,
-    creditCardAmt,
-    chequeAmt,
-    neftrtgsAmt,
-    phonePayAmt,
-    payTmAmt,
-  ]);
-
-  useEffect(() => {
-    const totalPaid =
-      Number(cash || 0) +
-      Number(debitCardAmt || 0) +
-      Number(creditCardAmt || 0) +
-      Number(chequeAmt || 0) +
-      Number(neftrtgsAmt || 0) +
-      Number(phonePayAmt || 0) +
-      Number(payTmAmt || 0);
-
-    const net = Number(netAmount || 0);
-    let balance = net - totalPaid;
-    if (balance < 0) balance = 0;
-
-    setBalanceAmount(balance);
-  }, [
-    cash,
-    debitCardAmt,
-    creditCardAmt,
-    chequeAmt,
-    neftrtgsAmt,
-    phonePayAmt,
-    payTmAmt,
-    netAmount
-  ]);
+    const totalPaid = Object.values(paymentData || {}).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    setIsOverPaid(totalPaid > (netAmount || 0));
+  }, [paymentData, netAmount]);
 
   const onChangeDate1 = (event, selectedDate) => {
     setShowPicker(false);
@@ -693,11 +651,16 @@ const Registration = () => {
               </View>
               <TextInput
                 value={firstName}
-                onChangeText={(text) => setFirstName(text)}
-                style={styles.inputBox}
+                onChangeText={(text) => {
+                  // Allow only letters + space, max 50 chars
+                  const filtered = text.replace(/[^a-zA-Z ]/g, '').slice(0, 50)
+                  setFirstName(filtered)
+                }}
+                style={[styles.inputBox]}
+                autoCapitalize="words"
                 placeholder='Name'
                 placeholderTextColor={colors.placeholder}
-
+                keyboardType='default'
               />
               {/* {error&&<Text style={tw`text-red-500`}>Enter Name</Text>} */}
             </View>
@@ -708,33 +671,59 @@ const Registration = () => {
               <Text style={styles.labelText}>Age Y</Text>
               <TextInput
                 value={ageYears}
-                onChangeText={(text) => setAgeYears(text)}
+                onChangeText={(text) => {
+                  let numeric = text.replace(/[^0-9]/g, '')
+                  let num = Number(numeric)
+                  if (numeric === '') {
+                    setAgeYears('')
+                  } else if (num < 200) {
+                    setAgeYears(String(num))
+                  }
+                }}
                 style={styles.inputBox}
                 placeholder='29'
                 placeholderTextColor={colors.placeholder}
-
+                keyboardType='numeric'
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
               <Text style={styles.labelText}>Age M</Text>
               <TextInput
                 value={ageMonths}
-                onChangeText={(text) => setAgeMonths(text)}
+                onChangeText={(text) => {
+                  let numeric = text.replace(/[^0-9]/g, '')
+                  let num = Number(numeric)
+                  if (numeric === '') {
+                    setAgeMonths('')
+                  } else if (num <= 12) {
+                    setAgeMonths(String(num))
+                  }
+                }}
                 style={styles.inputBox}
                 placeholder='04'
                 placeholderTextColor={colors.placeholder}
-
+                keyboardType='numeric'
+                maxLength={2}
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
               <Text style={styles.labelText}>Age D</Text>
               <TextInput
                 value={ageDays}
-                onChangeText={(text) => setAgeDays(text)}
+                onChangeText={(text) => {
+                  let numeric = text.replace(/[^0-9]/g, '')
+                  let num = Number(numeric)
+                  if (numeric === '') {
+                    setAgeDays('')
+                  } else if (num <= 31) {
+                    setAgeDays(String(num))
+                  }
+                }}
                 style={styles.inputBox}
                 placeholder='12'
                 placeholderTextColor={colors.placeholder}
-
+                keyboardType='numeric'
+                maxLength={2}
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[30%]`}>
@@ -808,7 +797,7 @@ const Registration = () => {
               <TouchableOpacity
                 onPress={() => setReferDoctorModal(true)}
                 style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-               >
+              >
                 <Text style={styles.insideDropDownText} >
                   {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor-'}
                 </Text>
@@ -841,14 +830,16 @@ const Registration = () => {
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <TextInput
-                keyboardType='numeric'
-                maxLength={10}
                 value={contactNumber}
-                onChangeText={(text) => setContactNumber(text)}
-                style={[styles.inputBox, { color: colors.text }]}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/[^0-9]/g, '').slice(0, 10)
+                  setContactNumber(numeric)
+                }}
+                style={styles.inputBox}
                 placeholder='8991212131'
                 placeholderTextColor={colors.placeholder}
-
+                keyboardType='numeric'
+                maxLength={10}
               />
             </View>
             <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
@@ -1308,14 +1299,19 @@ const Registration = () => {
 
           parseMoney={parseMoney}
           onPaymentChange={setPaymentData}
+          onBalanceChange={setBalanceAmount}
 
         />
 
 
         <TouchableOpacity
           onPress={handleSavePatient}
-          style={[styles.saveButton, tw`flex-row justify-center items-center `]}
-          disabled={loading}
+          style={[
+            styles.saveButton,
+            tw`flex-row justify-center items-center `,
+            (!serviceItem?.Services?.length) && tw`bg-gray-400 opacity-50`
+          ]}
+          disabled={loading || !serviceItem?.Services?.length}
         >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />

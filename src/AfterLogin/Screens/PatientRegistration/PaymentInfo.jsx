@@ -17,7 +17,7 @@ import SelectBank from './SelectBank'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useTheme } from '../../../../Authorization/ThemeContext'
 
-const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
+const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount,onBalanceChange }) => {
   const [paymentModes, setPaymentModes] = useState([])
   const [paymentData, setPaymentData] = useState({})
   const [bankModal, setBankModal] = useState(false)
@@ -75,7 +75,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
         }
       }
 
-      if (field === "amount") {
+      if (field === "amount" && id !== cashModeId.current) {
         let totalOther = 0
 
         Object.keys(updated).forEach(key => {
@@ -111,6 +111,11 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
   }
 
   const animateCard = (id, show) => {
+    // ✅ Fix: prevent crash if animation not initialized yet
+    if (!animations.current[id]) {
+      animations.current[id] = new Animated.Value(0)
+    }
+
     Animated.timing(animations.current[id], {
       toValue: show ? 1 : 0,
       duration: 300,
@@ -142,6 +147,12 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
   const toggleAllModes = () => {
     setShowAllModes(!showAllModes)
   }
+
+  useEffect(() => {
+    const totalPaid = Object.values(paymentData).reduce(function(sum, p) { return sum + Number(p.amount || 0); }, 0);
+    const balance = Math.max((netAmount || 0) - totalPaid, 0);
+    if (onBalanceChange) onBalanceChange(balance);
+  }, [paymentData, netAmount]);
 
   return (
     <View style={tw`mt-6 mb-4`}>
@@ -186,9 +197,9 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
           return (
             <Animated.View
               key={item.paymentModeId}
-              
+
             >
-              <View style={[tw``,styles.cardShadow]}>
+              <View style={[tw``, styles.cardShadow]}>
                 {/* Header */}
                 <View style={tw`flex-row justify-between items-center mb-3`}>
                   <View style={tw`flex-row items-center flex-1`}>
@@ -201,7 +212,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
                       <Icon name={PaymentIcon} size={22} color={paymentColor} />
                     </View>
                     <View style={tw`flex-1`}>
-                      <Text style={[tw`text-base font-semibold`, { color: colors.text }]}>
+                      <Text style={[tw`text-base font-semibold`]}>
                         {item.paymentModeName}
                       </Text>
                       {isCash && !showAllModes && (
@@ -215,10 +226,14 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
                     <TouchableOpacity
                       onPress={() => {
                         if (data.amount > 0) {
-                          setExpandedCards(prev => ({
-                            ...prev,
-                            [item.paymentModeId]: !prev[item.paymentModeId]
-                          }))
+                          setExpandedCards(prev => {
+                            const newValue = !prev[item.paymentModeId]
+                            animateCard(item.paymentModeId, newValue)
+                            return {
+                              ...prev,
+                              [item.paymentModeId]: newValue
+                            }
+                          })
                           animateCard(item.paymentModeId, !expandedCards[item.paymentModeId])
                         }
                       }}
@@ -249,7 +264,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
                         const amount = parseMoney(txt)
                         updatePayment(item.paymentModeId, "amount", amount)
                       }}
-                      style={[tw`flex-1 py-2 text-base`, { color: colors.text }]}
+                      style={[tw`flex-1 py-2 text-base text-gray-500`]}
                     />
                   </View>
                 </View>
@@ -288,7 +303,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
                           >
                             <Text
                               numberOfLines={1}
-                              style={[tw`flex-1 text-base`, { color: data.bank?.bankName ? colors.text : '#9CA3AF' }]}
+                              style={[tw`flex-1 text-base`]}
                             >
                               {data.bank?.bankName || "Choose Bank"}
                             </Text>
@@ -312,7 +327,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
                             }
                             placeholder="Enter reference number"
                             placeholderTextColor="#9CA3AF"
-                            style={[tw`flex-1 py-2 ml-2 text-base`, { color: colors.text }]}
+                            style={[tw`flex-1 py-2 ml-2 text-base`]}
                           />
                         </View>
                       </View>
@@ -324,7 +339,6 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
           )
         })}
       </ScrollView>
-
       {/* Bank Modal with Improved Design */}
       <Modal visible={bankModal} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={() => setBankModal(false)}>
@@ -339,6 +353,7 @@ const PaymentInfo = ({ parseMoney, onPaymentChange, netAmount }) => {
               <View style={tw`min-h-[60%] `}>
                 <SelectBank
                   onSelectBankItem={(bank) => {
+                    if (!selectedPaymentId) return // ✅ prevent crash
                     updatePayment(selectedPaymentId, "bank", bank)
                     setBankModal(false)
                   }}

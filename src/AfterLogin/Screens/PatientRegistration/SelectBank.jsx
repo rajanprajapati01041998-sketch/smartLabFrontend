@@ -5,7 +5,7 @@ import { allBankList } from './services/doctorService'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import tw from 'twrnc'
 
-const SelectBank = ({ onSelectBankItem, onClose }) => {
+const SelectBank = ({ onSelectBankItem = () => {}, onClose = () => {} }) => {
     const [allBankListData, setAllBankListData] = useState([])
     const [filteredBankList, setFilteredBankList] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
@@ -94,7 +94,7 @@ const SelectBank = ({ onSelectBankItem, onClose }) => {
             <View style={tw`flex-1`}>
                 <View style={tw`flex-row items-center`}>
                     <Icon name="bank" size={14} color="#545557" />
-                    <Text style={tw`text-base font-semibold text-gray-700 ml-1`}>
+                    <Text style={tw`text-base font-semibold  ml-1`}>
                         {item.bankName}
                     </Text>
                 </View>
