@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,18 +17,20 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import FilterDate from '../FilterDate';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import DashboardCollection from './DashboardCollection';
 import { Checkbox } from 'react-native-paper';
 import ButtonStyles from '../../../utils/ButtonStyle';
+import api from '../../../../Authorization/api';
 
 const LabDashboard = () => {
-  const { userData, allBranchInfo, deviceData } = useAuth();
+  const { userData, allBranchInfo, deviceData, loginBranchId } = useAuth();
   const navigation = useNavigation();
   const dashboardRef = React.useRef(null);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [walletBal, setWalletBal] = useState(0)
+  const [walletAllData, setWalletAlldata] = useState([])
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
@@ -40,14 +42,29 @@ const LabDashboard = () => {
   // ✅ MULTI SELECT STATE
   const [selectedBranches, setSelectedBranches] = useState([]);
 
-  // ✅ Set today's date
-  useEffect(() => {
-    const today = new Date();
-    const formattedDate = today.toISOString().split("T")[0];
 
-    setFromDate(formattedDate);
-    setToDate(formattedDate);
-  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const today = new Date();
+      const formattedDate = today.toISOString().split("T")[0];
+
+      setFromDate(formattedDate);
+      setToDate(formattedDate);
+      getWalletBalance(loginBranchId)
+    }, [])
+  )
+
+  const getWalletBalance = async (ids) => {
+    try {
+      const response = await api.get(`Dashboard/wallet?clientIds=${ids}`)
+      console.log("wallet balance", response)
+      setWalletBal(response?.data?.balanceMain)
+      setWalletAlldata(response?.data)
+    } catch (error) {
+      console.log('wallte balance error', error)
+    }
+  }
 
 
   // ✅ Convert dd-MM-yyyy → yyyy-MM-dd
@@ -271,9 +288,31 @@ const LabDashboard = () => {
           </View>
         </View>
       </View>}
-
-
       {/* MAIN */}
+      <View style={tw`px-4 py-4 bg-white rounded-xl shadow-sm mb-4`}>
+        <View style={tw`flex-row justify-between items-center`}>
+          {/* Wallet Section */}
+          <View style={tw`flex-row items-center gap-3`}>
+            <View style={tw`w-10 h-10 rounded-full bg-blue-100 items-center justify-center`}>
+              <Icon name="wallet" size={22} color="#3B82F6" />
+            </View>
+            <View>
+              <Text style={tw`text-gray-500 text-xs font-medium`}>Wallet Balance</Text>
+              <Text style={tw` ${walletBal > 0 ? "text-green-800" : "text-red-500"} text-xl font-bold`}>₹ {walletBal}</Text>
+            </View>
+          </View>
+
+          {/* Action Button */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('DashboardPayment', { data: walletAllData })}
+            style={tw`bg-blue-500 px-4 py-2 rounded-lg flex-row items-center gap-2`}
+            activeOpacity={0.8}
+          >
+            <Icon name="plus" size={18} color="#fff" />
+            <Text style={tw`text-white font-semibold text-sm`}>Add Money</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={tw`px-4 py-4`}>
 
         {/* Dashboard */}
@@ -282,25 +321,9 @@ const LabDashboard = () => {
           fromDate={fromDate}
           toDate={toDate}
           branchId={selectedBranchIds}
+
+
         />
-
-        {/* Support Ticket Section */}
-        {/* <TouchableOpacity
-          style={tw`bg-white border border-gray-200 p-4 mt-4 rounded-xl shadow-sm`}
-          activeOpacity={0.8}
-         >
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`bg-blue-50 p-2 rounded-lg mr-3`}>
-              <MaterialIcons name="support-agent" size={24} color="#3b82f6" />
-            </View>
-            <View style={tw`flex-1`}>
-              <Text style={tw`text-base font-semibold text-gray-800`}>Raise Support Ticket</Text>
-              <Text style={tw`text-xs text-gray-500 mt-1`}>Get help with your queries</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
-          </View>
-        </TouchableOpacity> */}
-
       </View>
 
       {/* DATE FILTER MODAL */}

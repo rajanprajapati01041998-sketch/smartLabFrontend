@@ -31,13 +31,13 @@ const styles = {
     mb-1.5
     tracking-wide
   `,
-    saveButton: tw`bg-green-600 py-4 mb-6 mt-2 rounded`,
+    saveButton: tw`bg-green-600 py-3 px-4 mb-6 mt-2 rounded-lg`,
     saveButtonText:tw`text-white text-center font-semibold`,
     dropDownButton: tw`
     border 
     border-gray-200 
     px-4 
-    py-3 
+    py-3.5 
     rounded-xl 
     bg-white 
     shadow-sm

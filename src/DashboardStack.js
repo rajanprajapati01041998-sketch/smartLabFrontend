@@ -9,6 +9,8 @@ import Registration from './AfterLogin/Screens/PatientRegistration/Registration'
 import UserLoginHistory from './AfterLogin/Screens/Profile/UserLoginHistory';
 import Profile from './AfterLogin/Screens/Profile/Profile';
 import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatient';
+import DashboardPayment from './AfterLogin/Screens/DashboardData/DashboardPayment';
+import DashboardPaymentHistoryDetails from './AfterLogin/Screens/DashboardData/DashboardPaymentHistoryDetails';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,6 +78,22 @@ export default function DashboardStack() {
                 component={Profile}
                 options={{
                     title: 'My Profile',
+                    headerShown: true,
+                }}
+            />
+            <Stack.Screen
+                name="DashboardPayment"
+                component={DashboardPayment}
+                options={{
+                    title: 'Payment',
+                    headerShown: true,
+                }}
+            />
+            <Stack.Screen
+                name="DashboardPaymentHistoryDetails"
+                component={DashboardPaymentHistoryDetails}
+                options={{
+                    title: 'History',
                     headerShown: true,
                 }}
             />

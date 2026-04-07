@@ -29,6 +29,8 @@ import BottomModal from '../../../utils/BottomModal';
 import CenterModal from '../../../utils/CenterModal';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import SelectBank from './SelectBank';
+import PaymentInfo from './PaymentInfo';
+
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
@@ -67,8 +69,8 @@ const Registration = () => {
   const [grossAmount, setGrossAmount] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(null);
   const [discountPercent, setDiscountPercent] = useState(0);
-  // Keeps track of which field user edited last, so we can update the other field
-  // without fighting each other.
+  const [paymentData, setPaymentData] = useState({})
+
   const [discountLastEdited, setDiscountLastEdited] = useState('percent');
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
   const [netAmount, setNetAmount] = useState(null);
@@ -223,6 +225,16 @@ const Registration = () => {
     });
   };
 
+
+  const payments = Object.entries(paymentData)
+    .filter(([_, val]) => Number(val?.amount) > 0)
+    .map(([id, val]) => ({
+      paymentModeId: Number(id),
+      amount: Number(val?.amount || 0),
+      bankId: val?.bank?.bankId ? Number(val.bank.bankId) : 0,
+      referenceNo: val?.reference ? String(val.reference) : ""
+    }));
+
   const handleSavePatient = async () => {
     console.log(loginBranchId)
     if (!firstName) {
@@ -313,15 +325,7 @@ const Registration = () => {
       })) || [],
 
       // ✅ Payments
-      payments: [
-        cash > 0 && { paymentModeId: 1, amount: Number(cash) },
-        debitCardAmt > 0 && { paymentModeId: 2, amount: Number(debitCardAmt) },
-        creditCardAmt > 0 && { paymentModeId: 3, amount: Number(creditCardAmt) },
-        chequeAmt > 0 && { paymentModeId: 4, amount: Number(chequeAmt) },
-        neftrtgsAmt > 0 && { paymentModeId: 5, amount: Number(neftrtgsAmt) },
-        phonePayAmt > 0 && { paymentModeId: 6, amount: Number(phonePayAmt) },
-        payTmAmt > 0 && { paymentModeId: 7, amount: Number(payTmAmt) },
-      ].filter(Boolean),
+      payments: payments,
 
       // ✅ Investigations (sample static or modify as needed)
       Investigations: [
@@ -332,7 +336,8 @@ const Registration = () => {
         }
       ]
     };
-
+    setLoading(false)
+    // console.log("paymentData 👉", paymentData);
     console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
       // console.log(payload)
@@ -803,7 +808,7 @@ const Registration = () => {
               <TouchableOpacity
                 onPress={() => setReferDoctorModal(true)}
                 style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-              >
+               >
                 <Text style={styles.insideDropDownText} >
                   {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor-'}
                 </Text>
@@ -1271,236 +1276,41 @@ const Registration = () => {
         </View>
 
         {/* Payment Fields */}
-        <View style={styles.cardShadow}>
-          <Text style={styles.patientInfoText}>Payment Info:</Text>
-          <View style={tw`mb-2`}>
-            <Text style={styles.labelText}>Cash</Text>
-            <TextInput
-              value={cash ? String(cash) : ""}
-              keyboardType="numeric"
-              onChangeText={(txt) => {
-                setIsCashAuto(false);
-                setCash(parseMoney(txt));
-              }}
-              style={[styles.inputBox, { color: colors.text }]}
-              placeholder='100'
-              placeholderTextColor={colors.placeholder}
+        <PaymentInfo
+          netAmount={netAmount}   // ✅ ADD THIS
+          cash={cash}
+          setCash={setCash}
+          debitCardAmt={debitCardAmt}
+          setDebitCardAmt={setDebitCardAmt}
+          chequeAmt={chequeAmt}
+          setChequeAmt={setChequeAmt}
+          neftrtgsAmt={neftrtgsAmt}
+          setNeftRtgsAmt={setNeftRtgsAmt}
+          payTmAmt={payTmAmt}
+          setPayTm={setPayTm}
+          phonePayAmt={phonePayAmt}
+          setPhonePayAmt={setPhonePayAmt}
 
-            />
-          </View>
+          selectedBank={selectedBank}
+          openBankModal={() => setBankModal(true)}
+          setSelectedBank={setSelectedBank}
 
-          {/* Row 1 */}
-          <View style={tw`flex flex-col justify-between mb-2`}>
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>Debit Card</Text>
-              <TextInput
-                value={debitCardAmt ? String(debitCardAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setDebitCardAmt(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='10'
-                placeholderTextColor={colors.placeholder}
+          chequeRefrence={chequeRefrence}
+          setChequeRefrence={setChequeRefrence}
+          neftRefrence={neftRefrence}
+          setNeftReference={setNeftReference}
+          paytmRefrence={paytmRefrence}
+          setPaytmRefrence={setPaytmRefrence}
+          phonePayReference={phonePayReference}
+          setPhonePayReference={setPhonePayReference}
+          debitCardReference={debitCardReference}
+          setDebitCardReference={setDebitCardReference}
 
-              />
+          parseMoney={parseMoney}
+          onPaymentChange={setPaymentData}
 
-            </View>
-            {debitCardAmt &&
-              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
-                <View>
-                  <Text style={styles.labelText}>Select Bank</Text>
-                  <TouchableOpacity
-                    onPress={() => setBankModal(true)}
-                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-                  >
-                    <Text style={styles.insideDropDownText}  >
-                      {selectedBank
-                        ? selectedBank.bankName
-                        : 'Select Bank'}
-                    </Text>
-                    <Icon name="chevron-down" size={18} color="gray" />
-                  </TouchableOpacity>
-                </View>
+        />
 
-                <View>
-                  <Text style={styles.labelText}>Refrence</Text>
-                  <TextInput style={styles.inputBox}
-                    value={debitCardReference}
-                    onChangeText={(text) => setDebitCardReference(text)}
-                    maxLength={60}
-                  />
-                </View>
-
-              </View>
-            }
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>Credit Card</Text>
-              <TextInput
-                value={creditCardAmt ? String(creditCardAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setCreditCardAmt(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='19'
-                placeholderTextColor={colors.placeholder}
-
-              />
-            </View>
-            {creditCardAmt &&
-              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
-                <View>
-                  <Text style={styles.labelText}>Select Bank</Text>
-
-                  <TouchableOpacity
-                    onPress={() => setBankModal(true)}
-                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-                  >
-                    <Text style={styles.insideDropDownText}  >
-                      {selectedBank
-                        ? selectedBank.bankName
-                        : 'Select Bank'}
-                    </Text>
-
-                    <Icon name="chevron-down" size={18} color="gray" />
-                  </TouchableOpacity>
-                </View>
-                <View>
-                  <Text style={styles.labelText}>Refrence</Text>
-                  <TextInput style={styles.inputBox}
-                    value={credicardReference}
-                    onChangeText={(text) => setCrediCardReference(text)}
-                    maxLength={60}
-                  />
-                </View>
-              </View>
-
-            }
-          </View>
-
-          {/* Row 2 */}
-          <View style={tw`flex-col justify-between mb-2`}>
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>Cheque</Text>
-              <TextInput
-                value={chequeAmt ? String(chequeAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setChequeAmt(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='22'
-                placeholderTextColor={colors.placeholder}
-
-              />
-            </View>
-            {chequeAmt &&
-              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
-                <View>
-                  <Text style={styles.labelText}>Select Bank</Text>
-
-                  <TouchableOpacity
-                    onPress={() => setBankModal(true)}
-                    style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-                  >
-                    <Text style={styles.insideDropDownText}  >
-                      {selectedBank
-                        ? selectedBank.bankName
-                        : 'Select Bank'}
-                    </Text>
-
-                    <Icon name="chevron-down" size={18} color="gray" />
-                  </TouchableOpacity>
-                </View>
-                <View>
-                  <Text style={styles.labelText}>Refrence</Text>
-                  <TextInput style={styles.inputBox}
-                    value={chequeRefrence}
-                    onChangeText={(text) => setChequeRefrence(text)}
-                    maxLength={60}
-                  />
-                </View>
-              </View>
-
-            }
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>NEFT/RTGS</Text>
-              <TextInput
-                value={neftrtgsAmt ? String(neftrtgsAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setNeftRtgsAmt(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='25'
-                placeholderTextColor={colors.placeholder}
-
-              />
-            </View>
-          </View>
-
-          {/* Row 3 */}
-          <View style={tw`flex-col justify-between mb-2`}>
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>PhonePe</Text>
-              <TextInput
-                value={phonePayAmt ? String(phonePayAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setPhonePayAmt(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='123'
-                placeholderTextColor={colors.placeholder}
-
-              />
-            </View>
-
-            {phonePayAmt &&
-              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
-                <Text style={styles.labelText}>Refrence</Text>
-                <TextInput style={styles.inputBox}
-                  value={phonePayReference}
-                  onChangeText={(text) => setPhonePayReference(text)}
-                  maxLength={60}
-                />
-              </View>
-
-            }
-            <View style={tw`flex-1`}>
-              <Text style={styles.labelText}>PayTM</Text>
-              <TextInput
-                value={payTmAmt ? String(payTmAmt) : ""}
-                keyboardType="numeric"
-                onChangeText={(txt) => {
-                  setIsCashAuto(false);
-                  setPayTm(parseMoney(txt));
-                }}
-                style={[styles.inputBox]}
-                placeholder='333'
-                placeholderTextColor={colors.placeholder}
-
-              />
-            </View>
-            {payTmAmt &&
-              <View style={tw`border mt-2 p-2 border-gray-200 rounded-xl`}>
-                <Text style={styles.labelText}>Refrence</Text>
-                <TextInput style={styles.inputBox}
-                  value={paytmRefrence}
-                  onChangeText={(text) => setPaytmRefrence(text)}
-                  maxLength={60}
-                />
-              </View>
-
-            }
-          </View>
-        </View>
 
         <TouchableOpacity
           onPress={handleSavePatient}

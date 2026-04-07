@@ -91,7 +91,7 @@ export default function BottomTabNavigation() {
           const routeName =
             getFocusedRouteNameFromRoute(route) ?? 'DashboardHome';
 
-          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory','ViewLabReport'];
+          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory','ViewLabReport','DashboardPayment','DashboardPaymentHistoryDetails'];
 
           return {
             tabBarStyle: [
@@ -112,7 +112,7 @@ export default function BottomTabNavigation() {
         options={({ route }) => {
           const routeName =
             getFocusedRouteNameFromRoute(route) ?? 'HelpDeskHome';
-          const hideOnScreens = ['ListHelpDeskPatient', 'ViewLabReport'];
+          const hideOnScreens = ['ListHelpDeskPatient', 'ViewLabReport','DashboardPayment','DashboardPaymentHistoryDetails'];
           return {
             tabBarStyle: [
               baseTabBarStyle,
