@@ -1,8 +1,8 @@
 import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -16,6 +16,7 @@ import RNFetchBlob from 'react-native-blob-util';
 import FileViewer from 'react-native-file-viewer';
 import { useToast } from '../../../../Authorization/ToastContext';
 import { useAuth } from '../../../../Authorization/AuthContext';
+import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 
 
 
@@ -40,7 +41,8 @@ const ListHelpDeskPatient = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [openItemIndex, setOpenItemIndex] = useState(null); // Track which item is open
-  const animationRefs = useRef({}); // Store animation values for each item
+  const animationRefs = useRef({});
+  const [walletBalance, setWalletBalance] = useState(null)
 
   // Status legend items
   const statusLegend = [
@@ -73,6 +75,21 @@ const ListHelpDeskPatient = () => {
       setLoading(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      getWalletBalance(loginBranchId)
+    }, [])
+  )
+  const getWalletBalance = async (ids) => {
+    try {
+      const response = await dashboardWallet(ids)
+      console.log("wallet balance list help desk", response)
+      setWalletBalance(response?.data?.balanceMain)
+    } catch (error) {
+      console.log('wallte balance error', error)
+    }
+  }
 
   const toggleItem = (index) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -512,46 +529,62 @@ const ListHelpDeskPatient = () => {
               )}
             </View>
             {/* {console.log("request",item?.IsResultDone)} */}
-            {item?.IsReportApproved === 1 && (
-              <View style={tw`flex-row gap-2 mt-4`}>
+            {
+              walletBalance > 0 &&
+              item?.IsReportApproved === 1 && (
+                <View style={tw`flex-row gap-2 mt-4`}>
 
-                {/* DOWNLOAD */}
-                <TouchableOpacity
-                  onPress={() =>
-                    handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)
-                  }
-                  style={tw`flex-1 flex-row items-center justify-center border border-gray-300 py-2 rounded-lg bg-white`}
-                  activeOpacity={0.7}
-                  disabled={downloadingId === item?.PatientInvestigationId}
-                >
-                  {downloadingId === item?.PatientInvestigationId ? (
-                    <ActivityIndicator size="small" color="#4b5563" />
-                  ) : (
-                    <>
-                      <Feather name="download" size={14} color="#4b5563" />
-                      <Text numberOfLines={1} adjustsFontSizeToFit style={tw`ml-1 text-xs text-gray-700 font-medium`} >  Download  </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                  {/* DOWNLOAD */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)
+                    }
+                    style={tw`flex-1 flex-row items-center justify-center border border-gray-300 py-2 rounded-lg bg-white`}
+                    activeOpacity={0.7}
+                    disabled={downloadingId === item?.PatientInvestigationId}
+                  >
+                    {downloadingId === item?.PatientInvestigationId ? (
+                      <ActivityIndicator size="small" color="#4b5563" />
+                    ) : (
+                      <>
+                        <Feather name="download" size={14} color="#4b5563" />
+                        <Text
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          style={tw`ml-1 text-xs text-gray-700 font-medium`}
+                        >
+                          Download
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
 
-                {/* VIEW */}
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate('ViewLabReport', {
-                      patientInvestigationId: item?.PatientInvestigationId,
-                      patientName: item?.PatientName,
-                      branchId: payload?.branchId,
-                    })
-                  }
-                  style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="eye" size={14} color="#3b82f6" />
-                  <Text numberOfLines={1} adjustsFontSizeToFit style={tw`ml-1 text-xs text-blue-600 font-medium`} >  View </Text>
-                </TouchableOpacity>
+                  {/* VIEW */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('ViewLabReport', {
+                        patientInvestigationId: item?.PatientInvestigationId,
+                        patientName: item?.PatientName,
+                        branchId: payload?.branchId,
+                      })
+                    }
+                    style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
+                    activeOpacity={0.7}
+                  >
+                    <Feather name="eye" size={14} color="#3b82f6" />
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      style={tw`ml-1 text-xs text-blue-600 font-medium`}
+                    >
+                      View
+                    </Text>
+                  </TouchableOpacity>
 
-              </View>
-            )}
+                </View>
+              )
+            }
+
           </View>
         )}
       </View>

@@ -20,15 +20,15 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const HelpDeskHome = () => {
-  const { loginBranchId, user, userId } = useAuth()
+  const { loginBranchId, user, userId, allBranchInfo } = useAuth()
   const [departmentModal, setDepartmentModal] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState("--Department--");
   const [clientModal, setClientModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState([])
   const [finalPayload, setFinalPayload] = useState(null)
-  const [allBranchInfo, setAllBranchInfo] = useState([]);   // ✅ API data
+  const [allBranchInfos, setAllBranchInfos] = useState([]);   // ✅ API data
   const [showFilter, setShowFilter] = useState(false)
-
+  // console.log("all branch infi",allBranchInfo)
   // Animation refs for filter toggle
   const filterHeightAnim = useRef(new Animated.Value(0)).current
   const filterRotateAnim = useRef(new Animated.Value(0)).current
@@ -66,11 +66,11 @@ const HelpDeskHome = () => {
   )
 
   const getAllActiveBranch = async (branchId, userId) => {
-    console.log("id only", branchId, userId)
+    // console.log("id only", branchId, userId)
     try {
       const response = await api.get(`Branch/branch-user-list?branchId=${branchId}&userId=${userId}`)
       console.log("API response", response.data)
-      setAllBranchInfo(response.data)
+      setAllBranchInfos(response.data)
       // ✅ Auto-select all branches when data loads
       if (response.data && response.data.length > 0) {
         setSelectedClient(response.data)
@@ -317,7 +317,7 @@ const HelpDeskHome = () => {
           style={tw`flex-row justify-between items-center py-3 px-2 border-b border-gray-200`}
         >
           <Text style={tw`text-base ${isSelected ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
-            {item.BranchCode} - {item.BranchName}
+            {item.BranchCode || item.branchCode} - {item.BranchName ||item.branchName}
           </Text>
 
           <MaterialIcons
@@ -356,8 +356,10 @@ const HelpDeskHome = () => {
         {/* List */}
         <FlatList
           data={BranchData}
-          keyExtractor={(item) => item.BranchId.toString()}
-          renderItem={renderItem}
+          keyExtractor={(item, index) => {
+            const id = item?.branchId ?? item?.BranchId;
+            return id ? id.toString() : index.toString();
+          }} renderItem={renderItem}
           showsVerticalScrollIndicator={false}
         />
 
@@ -547,7 +549,7 @@ const HelpDeskHome = () => {
                       style={tw`text-gray-700 flex-1`}
                     >
                       {selectedClient?.length > 0
-                        ? `${selectedClient[0].BranchName}${selectedClient.length > 1
+                        ? `${selectedClient[0].BranchName||selectedClient[0].branchName}${selectedClient.length > 1
                           ? ` +${selectedClient.length - 1}`
                           : ''
                         }`
@@ -669,7 +671,7 @@ const HelpDeskHome = () => {
                 <View style={tw`w-10 h-1 bg-gray-300 rounded-full`} />
               </View>
               <ClientPanelList
-                BranchData={allBranchInfo}
+                BranchData={allBranchInfos.length > 0 ? allBranchInfos : allBranchInfo}
                 onClose={() => closeModal('client')}
                 onSelect={(item) => setSelectedClient(item)}
               />

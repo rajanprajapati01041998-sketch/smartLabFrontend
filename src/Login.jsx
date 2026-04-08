@@ -22,7 +22,7 @@ import loginLogo from '../Assets/Login/login_logo.jpg'
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
-    const { setSessionId, loadDeviceInfo, user, login, logout, isAuthenticated, setToken, setUserData, token, userData, setUserId, setLoginBranchId, deviceData } = useAuth();
+    const { setSessionId, loadDeviceInfo, user, login, logout, isAuthenticated, setToken, setUserData, token, userData, setUserId, setLoginBranchId, deviceData,setAllBranchInfo } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [theme1, setTheme1] = useState(false);
     const [theme2, setTheme2] = useState(false);
@@ -182,6 +182,7 @@ export default function LoginScreen({ navigation }) {
             const token = response.data?.token;
             const userInfo = response.data;
             await AsyncStorage.setItem('AllBranch', JSON.stringify(branches));
+            setAllBranchInfo(branches)
             //console.log("branc", branches);
             if (token) {
                 await login(token, userInfo);

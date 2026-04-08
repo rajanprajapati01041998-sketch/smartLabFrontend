@@ -12,6 +12,7 @@ export default function App() {
 
   useEffect(() => {
     requestStoragePermission();
+    console.log("token",token)
   }, []);
 
   const requestStoragePermission = async () => {

@@ -23,6 +23,7 @@ import DashboardCollection from './DashboardCollection';
 import { Checkbox } from 'react-native-paper';
 import ButtonStyles from '../../../utils/ButtonStyle';
 import api from '../../../../Authorization/api';
+import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 
 const LabDashboard = () => {
   const { userData, allBranchInfo, deviceData, loginBranchId } = useAuth();
@@ -57,7 +58,7 @@ const LabDashboard = () => {
 
   const getWalletBalance = async (ids) => {
     try {
-      const response = await api.get(`Dashboard/wallet?clientIds=${ids}`)
+      const response = await dashboardWallet(ids)
       console.log("wallet balance", response)
       setWalletBal(response?.data?.balanceMain)
       setWalletAlldata(response?.data)
