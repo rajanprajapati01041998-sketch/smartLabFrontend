@@ -194,11 +194,11 @@ const DashboardCollection = forwardRef(({ fromDate, toDate, branchId }, ref) => 
                                     </View>
 
                                     <Text style={[
-                                        tw`text-white font-bold`,
-                                        { fontSize: Platform.OS === 'ios' ? 14 : 24 } // ✅ font fix
+                                        tw`text-white test-[12px] font-bold`,
+                                        { fontSize: Platform.OS === 'ios' ? 14 : 18 } // ✅ font fix
                                     ]}>
                                         {item.value}
-                                    </Text>
+                                    </Text> 
                                 </View>
 
                                 {/* Title */}

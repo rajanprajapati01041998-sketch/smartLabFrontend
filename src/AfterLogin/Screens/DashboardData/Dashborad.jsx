@@ -168,7 +168,7 @@ const LabDashboard = () => {
           progressBackgroundColor="white"
         />
       }
-    >
+     >
       {/* HEADER */}
       <View style={tw`px-4 pt-2 pb-1 bg-white border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-start`}>

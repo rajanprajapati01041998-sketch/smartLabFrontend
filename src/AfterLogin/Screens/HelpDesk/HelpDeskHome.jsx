@@ -199,7 +199,7 @@ const HelpDeskHome = () => {
       patientName: form.patientName,
       branchIdList: branchIdList,
       corporateId: "",
-      roleId: user.roles.map(e => e).join(','),
+      // roleId: user.roles.map(e => e).join(','),
       filter: null
     };
     setFinalPayload(payload)

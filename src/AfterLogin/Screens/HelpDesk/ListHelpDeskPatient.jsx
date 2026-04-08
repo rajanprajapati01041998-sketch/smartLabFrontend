@@ -15,6 +15,7 @@ import styles from '../../../utils/InputStyle';
 import RNFetchBlob from 'react-native-blob-util';
 import FileViewer from 'react-native-file-viewer';
 import { useToast } from '../../../../Authorization/ToastContext';
+import { useAuth } from '../../../../Authorization/AuthContext';
 
 
 
@@ -33,7 +34,7 @@ const ListHelpDeskPatient = () => {
   const [showStatusLegend, setShowStatusLegend] = useState(false);
   const { showToast } = useToast()
   const [downloadingId, setDownloadingId] = useState(null)
-
+  const { loginBranchId } = useAuth()
   // Filter states
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -316,7 +317,8 @@ const ListHelpDeskPatient = () => {
   };
 
   const handleDownloadReport = async (id, name) => {
-    // console.log("download report:", id, name)
+    console.log("download report:", id, name)
+    console.log("download branch:", loginBranchId)
     try {
       setDownloadingId(id)
       const { config, fs } = RNFetchBlob;
@@ -330,7 +332,7 @@ const ListHelpDeskPatient = () => {
           description: 'Downloading report...',
         },
       }).fetch('GET',
-        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${branchId}`
+        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
       );
       showToast('File downloaded', 'success');
     } catch (error) {
@@ -527,7 +529,7 @@ const ListHelpDeskPatient = () => {
                   ) : (
                     <>
                       <Feather name="download" size={14} color="#4b5563" />
-                      <Text  numberOfLines={1}  adjustsFontSizeToFit style={tw`ml-1 text-xs text-gray-700 font-medium`} >  Download  </Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit style={tw`ml-1 text-xs text-gray-700 font-medium`} >  Download  </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -538,14 +540,14 @@ const ListHelpDeskPatient = () => {
                     navigation.navigate('ViewLabReport', {
                       patientInvestigationId: item?.PatientInvestigationId,
                       patientName: item?.PatientName,
-                      branchId: payload?.branchId ,
+                      branchId: payload?.branchId,
                     })
                   }
                   style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
                   activeOpacity={0.7}
                 >
                   <Feather name="eye" size={14} color="#3b82f6" />
-                  <Text numberOfLines={1} adjustsFontSizeToFit  style={tw`ml-1 text-xs text-blue-600 font-medium`} >  View </Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit style={tw`ml-1 text-xs text-blue-600 font-medium`} >  View </Text>
                 </TouchableOpacity>
 
               </View>

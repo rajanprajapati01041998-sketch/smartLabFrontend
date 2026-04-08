@@ -16,6 +16,8 @@ import { useNavigation } from "@react-navigation/native";
 import api from "../Authorization/api";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useToast } from "../Authorization/ToastContext";
+import loginLogo from '../Assets/Login/login_logo.jpg'
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +35,7 @@ export default function LoginScreen({ navigation }) {
     const [isLoading, setIsLoading] = useState(false);
     const [branches, setBranches] = useState([]);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const { showToast } = useToast()
 
     // Animation values
     const cardScale = useSharedValue(0.9);
@@ -55,7 +58,7 @@ export default function LoginScreen({ navigation }) {
             logoScale.value = withTiming(0.7, { duration: 300 });
             logoTranslateY.value = withTiming(-80, { duration: 300 });
         });
-        
+
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
             setKeyboardVisible(false);
             // Restore logo size when keyboard hides
@@ -126,17 +129,28 @@ export default function LoginScreen({ navigation }) {
     const colors = getThemeColors();
 
     const handleLogin = async () => {
+        if (!username) {
+            showToast("Enter username", 'warning')
+            return;
+        }
+        if(!password){
+             showToast("Enter correct password", 'warning')
+            return;
+        }
         setIsLoading(true);
         try {
             const formData = {
                 userName: username,
                 userPassword: password
             };
+
             const response = await api.post(`Login/branch-list`, formData);
-            //console.log("branch response", response);
+            console.log("branch response", response);
             setBranches(response.data);
         } catch (error) {
-            //console.log("Branch error", error);
+            // console.log("Branch error", error.response);
+            showToast('Invalid username or password', 'error');
+
         } finally {
             setIsLoading(false);
         }
@@ -284,11 +298,11 @@ export default function LoginScreen({ navigation }) {
                             <Animated.View style={[tw`mb-3 items-center`, animatedLogoStyle]}>
                                 <Animated.View entering={BounceIn.delay(300).springify()}>
                                     <Image
+                                        source={loginLogo}
                                         style={[
-                                            tw`rounded-full border-2 border-white/80`,
-                                            keyboardVisible ? tw`h-16 w-16` : tw`h-24 w-24`
+                                            tw` border-2 border-white h-20 w-50 rounded-md`,
+                                            // keyboardVisible ? { height: 64, width: 64 } : { height: 96, width: 96 }
                                         ]}
-                                        source={{ uri: 'https://media.licdn.com/dms/image/v2/C4D22AQG2a4AmCHUZ0Q/feedshare-shrink_800/feedshare-shrink_800/0/1651481432466?e=2147483647&v=beta&t=ZXn7Uc65tim6IpuhfXmxjeZznvJVynG64RRhX8ls0zc' }}
                                     />
                                 </Animated.View>
                             </Animated.View>
@@ -449,7 +463,7 @@ export default function LoginScreen({ navigation }) {
                             {!keyboardVisible && (
                                 <Animated.View entering={FadeInUp.delay(700)} style={tw`mt-8`}>
                                     <Text style={tw`text-white/60 text-sm`}>
-                                        Version 2.0.0 | © 2024 Gravity Healthcare
+                                        Version 2.0.0 | © 2024 Gravity Web Technology
                                     </Text>
                                 </Animated.View>
                             )}
