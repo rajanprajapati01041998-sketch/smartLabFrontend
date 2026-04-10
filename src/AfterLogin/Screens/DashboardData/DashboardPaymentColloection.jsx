@@ -60,7 +60,7 @@ const DashboardPaymentColloection = ({ selectedBranches }) => {
                             </View>
 
                             <View style={tw`p-4`}>
-                                <DashboardAddFund />
+                                <DashboardAddFund onClose={()=>setModalVisible(false)} />
                             </View>
                         </View>
                     </View>

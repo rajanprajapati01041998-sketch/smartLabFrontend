@@ -8,7 +8,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   TextInput,
-  FlatList, Platform
+  FlatList, Platform,
+  Alert
 } from 'react-native';
 import tw from 'twrnc';
 import CustomStyles from '../../../../Custom.styles';
@@ -26,7 +27,7 @@ import api from '../../../../Authorization/api';
 import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 
 const LabDashboard = () => {
-  const { userData, allBranchInfo, deviceData, loginBranchId } = useAuth();
+  const { userData, allBranchInfo, deviceData, loginBranchId, updateFlag } = useAuth();
   const navigation = useNavigation();
   const dashboardRef = React.useRef(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,12 +50,14 @@ const LabDashboard = () => {
     useCallback(() => {
       const today = new Date();
       const formattedDate = today.toISOString().split("T")[0];
-
       setFromDate(formattedDate);
       setToDate(formattedDate);
       getWalletBalance(loginBranchId)
     }, [])
   )
+  
+
+ 
 
   const getWalletBalance = async (ids) => {
     try {
@@ -169,7 +172,7 @@ const LabDashboard = () => {
           progressBackgroundColor="white"
         />
       }
-     >
+    >
       {/* HEADER */}
       <View style={tw`px-4 pt-2 pb-1 bg-white border-b border-gray-200`}>
         <View style={tw`flex-row justify-between items-start`}>

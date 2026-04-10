@@ -1,5 +1,5 @@
 import { View, Text, FlatList, TouchableOpacity, Modal, TouchableWithoutFeedback } from 'react-native'
-import React, { useCallback, useState, useRef } from 'react'
+import React, { useCallback, useState, useRef, useEffect } from 'react'
 import tw from 'twrnc'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useAuth } from '../../../../Authorization/AuthContext'
@@ -12,7 +12,7 @@ import ButtonStyles from '../../../utils/ButtonStyle'
 import FilterDate from '../FilterDate'
 
 const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
-    const { loginBranchId } = useAuth()
+    const { loginBranchId, updateFlag } = useAuth()
     const navigation = useNavigation()
     const [filter, setFilter] = useState('all')
     const [paymentHistoryList, setPaymentHistoryList] = useState([])
@@ -48,12 +48,14 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
             if (fromDate && toDate) {
                 getAllDashboardPaymentHistory(filter);
             }
-        }, [filter, selectedBranches, fromDate, toDate])
+        }, [filter, selectedBranches, fromDate, toDate, updateFlag])
     );
+
+
+
 
     const getAllDashboardPaymentHistory = async (selectedFilter) => {
         if (loading) return
-
         try {
             setLoading(true)
 
