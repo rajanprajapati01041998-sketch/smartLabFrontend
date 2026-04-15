@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image, ScrollView, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image, ScrollView, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, FadeInDown, FadeInUp, SlideInRight, SlideInLeft, BounceIn } from 'react-native-reanimated';
 import tw from "twrnc";
 import { SelectList } from "react-native-dropdown-select-list";
@@ -51,6 +51,7 @@ export default function LoginScreen({ navigation }) {
     const image3 = LoginBgImg3;
 
     // Keyboard listeners
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true);
@@ -71,6 +72,7 @@ export default function LoginScreen({ navigation }) {
             keyboardDidHideListener.remove();
         };
     }, []);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // Dropdown data function
     const getDropdownData = () => {
@@ -80,6 +82,7 @@ export default function LoginScreen({ navigation }) {
         }));
     };
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         // Entrance animations
         cardScale.value = withSpring(1, { damping: 12, stiffness: 100 });
@@ -87,11 +90,14 @@ export default function LoginScreen({ navigation }) {
         logoTranslateY.value = withSpring(0, { damping: 10, stiffness: 80 });
         logoOpacity.value = withTiming(1, { duration: 1000 });
     }, []);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     // Menu animation
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         menuRotate.value = withSpring(menuVisible ? 0.5 : 0);
     }, [menuVisible]);
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     const animatedCardStyle = useAnimatedStyle(() => {
         return {
@@ -156,23 +162,23 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
-    useEffect(() => {
-        if (selected) {
-            handleFinalLogin();
+    const handleFinalLogin = async (branchId) => {
+        if (branchId === null || branchId === undefined || branchId === "") {
+            showToast("Please select a branch", "warning");
+            return;
         }
-    }, [selected]);
 
-    const handleFinalLogin = async () => {
-        const formData = {
-            userName: username,
-            userPassword: password,
-            branchId: selected,
-            browser: deviceData.type,
-            device: deviceData.device,
-            os: deviceData.os
-        };
-
+        setIsLoading(true);
         try {
+            const formData = {
+                userName: username,
+                userPassword: password,
+                branchId: Number.isFinite(Number(branchId)) ? Number(branchId) : branchId,
+                browser: deviceData?.type ?? "",
+                device: deviceData?.device ?? "",
+                os: deviceData?.os ?? ""
+            };
+
             const response = await api.post(`Login/login`, formData);
             //console.log("final Login", response.data);
             setUserId(response?.data?.user.id);
@@ -190,11 +196,11 @@ export default function LoginScreen({ navigation }) {
             } else {
                 Alert.alert("Error", "Invalid response from server");
             }
-
-            navigation.replace('Dashboard');
-
         } catch (error) {
-            //console.log("Final Login error", error);
+            console.log("Final Login error", error?.response || error);
+            showToast("Login failed. Please try again.", "error");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -389,7 +395,10 @@ export default function LoginScreen({ navigation }) {
 
                                             <Animated.View entering={SlideInRight.delay(450).springify()}>
                                                 <SelectList
-                                                    setSelected={(val) => setSelected(val)}
+                                                    setSelected={(val) => {
+                                                        setSelected(val);
+                                                        handleFinalLogin(val);
+                                                    }}
                                                     data={getDropdownData()}
                                                     save="key"
                                                     placeholder="Choose your branch"
