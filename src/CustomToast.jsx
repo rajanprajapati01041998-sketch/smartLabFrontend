@@ -68,7 +68,7 @@ const CustomToast = ({ message, visible, type = 'success', onHide }) => {
     return (
         <Animated.View
             style={[
-                tw`absolute top-10 left-4 right-4 z-50`,
+                tw`absolute top-10 left-4 right-4 z-100`,
                 { transform: [{ translateY }] },
             ]}
         >

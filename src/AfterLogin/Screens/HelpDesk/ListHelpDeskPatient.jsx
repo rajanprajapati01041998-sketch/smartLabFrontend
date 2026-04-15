@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator } from 'react-native';
+import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator, Alert } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
@@ -17,6 +17,7 @@ import FileViewer from 'react-native-file-viewer';
 import { useToast } from '../../../../Authorization/ToastContext';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
+import { useDash } from '../../../../Authorization/DashContext';
 
 
 
@@ -35,14 +36,14 @@ const ListHelpDeskPatient = () => {
   const [showStatusLegend, setShowStatusLegend] = useState(false);
   const { showToast } = useToast()
   const [downloadingId, setDownloadingId] = useState(null)
-  const { loginBranchId } = useAuth()
+  const { loginBranchId,userId } = useAuth()
   // Filter states
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [openItemIndex, setOpenItemIndex] = useState(null); // Track which item is open
   const animationRefs = useRef({});
-  const [walletBalance, setWalletBalance] = useState(null)
+  const { walletData } = useDash()
 
   // Status legend items
   const statusLegend = [
@@ -76,20 +77,7 @@ const ListHelpDeskPatient = () => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      getWalletBalance(loginBranchId)
-    }, [])
-  )
-  const getWalletBalance = async (ids) => {
-    try {
-      const response = await dashboardWallet(ids)
-      console.log("wallet balance list help desk", response)
-      setWalletBalance(response?.data?.balanceMain)
-    } catch (error) {
-      console.log('wallte balance error', error)
-    }
-  }
+
 
   const toggleItem = (index) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -103,25 +91,9 @@ const ListHelpDeskPatient = () => {
     }
   };
 
-  const requestStoragePermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-        );
 
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
-    }
-    return true;
-  };
 
-  useEffect(() => {
-    requestStoragePermission()
-  }, [])
+
 
   // Create animation values for each item when needed
   const getAnimationValue = (index) => {
@@ -333,9 +305,40 @@ const ListHelpDeskPatient = () => {
     }
   };
 
-  const handleDownloadReport = async (id, name) => {
-    console.log("download report:", id, name)
-    console.log("download branch:", loginBranchId)
+  const handleDownloadReport = async (id, name, reporTypeId) => {
+    // console.log("download report:", id, name)
+    // console.log("download branch:", loginBranchId)
+    // console.log("report type id:", reporTypeId)
+    if (reporTypeId === 1) {
+      try {
+        setDownloadingId(id)
+        const { config, fs } = RNFetchBlob;
+        const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
+        const branchId = payload?.branchId ? String(payload.branchId) : '1'
+        const res = await config({
+          addAndroidDownloads: {
+            useDownloadManager: true,
+            notification: true,
+            path: path,
+            description: 'Downloading report...',
+          },
+        }).fetch('GET',
+          `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
+        );
+        showToast('File downloaded', 'success');
+      } catch (error) {
+        console.error("Download failed", error);
+      } finally {
+        setDownloadingId(null); // STOP loading (always runs)
+      }
+    } else {
+      handleDownloadTebularReport(id, name, reporTypeId)
+    }
+
+
+  };
+
+  const handleDownloadTebularReport = async (id, name, reporTypeId) => {
     try {
       setDownloadingId(id)
       const { config, fs } = RNFetchBlob;
@@ -349,7 +352,8 @@ const ListHelpDeskPatient = () => {
           description: 'Downloading report...',
         },
       }).fetch('GET',
-        `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
+        // `http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=0&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=false`
+        `http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=0&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=false`
       );
       showToast('File downloaded', 'success');
     } catch (error) {
@@ -530,14 +534,14 @@ const ListHelpDeskPatient = () => {
             </View>
             {/* {console.log("request",item?.IsResultDone)} */}
             {
-              walletBalance > 0 &&
+              walletData.balanceMain > 0 &&
               item?.IsReportApproved === 1 && (
                 <View style={tw`flex-row gap-2 mt-4`}>
 
                   {/* DOWNLOAD */}
                   <TouchableOpacity
                     onPress={() =>
-                      handleDownloadReport(item?.PatientInvestigationId, item?.PatientName)
+                      handleDownloadReport(item?.PatientInvestigationId, item?.PatientName, item?.ReportTypeId)
                     }
                     style={tw`flex-1 flex-row items-center justify-center border border-gray-300 py-2 rounded-lg bg-white`}
                     activeOpacity={0.7}
@@ -561,13 +565,20 @@ const ListHelpDeskPatient = () => {
 
                   {/* VIEW */}
                   <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate('ViewLabReport', {
-                        patientInvestigationId: item?.PatientInvestigationId,
-                        patientName: item?.PatientName,
-                        branchId: payload?.branchId,
-                      })
-                    }
+                    onPress={() => {
+                      if (item?.reportTypeId === 1) {
+                        navigation.navigate('ViewTebularReport', {
+                          item: item
+                        });
+                      } else {
+                        navigation.navigate('ViewLabReport', {
+                          patientInvestigationId: item?.PatientInvestigationId,
+                          patientName: item?.PatientName,
+                          branchId: payload?.branchId,
+                          item: item
+                        });
+                      }
+                    }}
                     style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
                     activeOpacity={0.7}
                   >
@@ -581,6 +592,27 @@ const ListHelpDeskPatient = () => {
                     </Text>
                   </TouchableOpacity>
 
+                </View>
+              )
+            }
+            {
+              console.log("on help desk", walletData)
+            }
+            {
+              walletData?.balanceMain < 0 && (
+                <View style={tw`bg-amber-50 border-l-4 border-amber-500 rounded-lg px-2 py-1 mt-2 mb-4`}>
+                  <View style={tw`flex-row items-center`}>
+                    <MaterialCommunityIcons name="alert-circle" size={24} color="#D97706" />
+                    <View style={tw`ml-3 flex-1`}>
+                      <Text style={tw`text-amber-800 font-semibold text-sm`}>
+                        Low Balance Alert
+                      </Text>
+                      <Text style={tw`text-amber-700 text-xs mt-0.5`}>
+                        Please add funds to download report. Current balance:
+                        <Text style={tw`font-bold text-red-500`}> ₹{walletData?.balanceMain}</Text>
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               )
             }

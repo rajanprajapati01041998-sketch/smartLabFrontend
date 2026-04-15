@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HelpDeskHome from './AfterLogin/Screens/HelpDesk/HelpDeskHome';
 import ListHelpDeskPatient from './AfterLogin/Screens/HelpDesk/ListHelpDeskPatient';
 import ViewLabReport from './AfterLogin/Screens/HelpDesk/ViewLabReport';
+import ViewTebularReport from './AfterLogin/Screens/HelpDesk/ViewTebularReport';
 
 const Stack = createNativeStackNavigator();
 
@@ -39,6 +40,14 @@ export default function HelpDeskStack() {
       <Stack.Screen
         name="ViewLabReport"
         component={ViewLabReport}
+        options={{
+          title: 'Report',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="ViewTebularReport"
+        component={ViewTebularReport}
         options={{
           title: 'Report',
           headerShown: true,

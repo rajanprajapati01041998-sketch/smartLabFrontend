@@ -10,43 +10,41 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import styles from '../../../utils/InputStyle'
 import ButtonStyles from '../../../utils/ButtonStyle'
 import FilterDate from '../FilterDate'
+import { useDash } from '../../../../Authorization/DashContext'
 
 const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const { loginBranchId, updateFlag } = useAuth()
+    const {
+        paymentHistoryList,
+        summaryData,
+        paymentHistoryLoading,
+        getAllDashboardPaymentHistory
+    } = useDash()
     const navigation = useNavigation()
     const [filter, setFilter] = useState('all')
-    const [paymentHistoryList, setPaymentHistoryList] = useState([])
-    const [loading, setLoading] = useState(false)
-    const isMounted = useRef(false)
-    const lastApiCallRef = useRef('') // ✅ FIX ADDED
     const [filetrModal, setFilterModal] = useState(false);
     const [fromDate, setFromDate] = useState(null);
     const [toDate, setToDate] = useState(null);
 
 
-
-    useFocusEffect(
-        useCallback(() => {
+    useEffect(() => {
+        if (!fromDate || !toDate) {
             const today = new Date().toISOString().split("T")[0];
-
-            // ✅ set default date only once
-            if (!fromDate || !toDate) {
-                setFromDate(today);
-                setToDate(today);
-            }
-
-            isMounted.current = true;
-
-            return () => {
-                isMounted.current = false;
-            };
-        }, [])
-    );
+            setFromDate(today);
+            setToDate(today);
+        }
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
             if (fromDate && toDate) {
-                getAllDashboardPaymentHistory(filter);
+                getAllDashboardPaymentHistory({
+                    selectedFilter: filter,
+                    selectedBranches,
+                    loginBranchId,
+                    fromDate,
+                    toDate,
+                });
             }
         }, [filter, selectedBranches, fromDate, toDate, updateFlag])
     );
@@ -54,46 +52,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
 
 
 
-    const getAllDashboardPaymentHistory = async (selectedFilter) => {
-        if (loading) return
-        try {
-            setLoading(true)
 
-            const branchIds = selectedBranches?.length
-                ? selectedBranches.map(item => item.BranchId).join(',')
-                : loginBranchId
-
-            let url = `Dashboard/bill-advance?clientIdList=${branchIds}&fromDate=${fromDate}&toDate=${toDate}`
-
-            if (selectedFilter !== 'all') {
-                url += `&filter=${selectedFilter}`
-            }
-
-            // ✅ Prevent duplicate API calls
-            if (lastApiCallRef.current === url) return
-            lastApiCallRef.current = url
-
-            console.log("API URL:", url)
-
-            const response = await api.get(url)
-            setSummaryData(response?.data?.summary)
-            console.log("history", response?.data?.summary)
-            if (isMounted.current) {
-                setPaymentHistoryList(response?.data?.transactions || [])
-            }
-
-        } catch (error) {
-            console.log("history error", error?.response)
-
-            if (isMounted.current) {
-                setPaymentHistoryList([])
-            }
-        } finally {
-            if (isMounted.current) {
-                setLoading(false)
-            }
-        }
-    }
 
     const handleSearchFilter = (data) => {
         const formattedFrom = formatDateToAPI(data.fromDate);
@@ -203,7 +162,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
         navigation.navigate('DashboardPaymentHistoryDetails')
     }
 
-    if (loading && paymentHistoryList.length === 0) {
+    if (paymentHistoryLoading && paymentHistoryList.length === 0) {
         return (
             <View style={[styles.cardShadow, tw`p-3 bg-white rounded-lg m-2 items-center justify-center h-40`]}>
                 <MaterialCommunityIcons name="loading" size={32} color="#3B82F6" />

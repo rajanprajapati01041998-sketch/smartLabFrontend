@@ -25,14 +25,15 @@ import { Checkbox } from 'react-native-paper';
 import ButtonStyles from '../../../utils/ButtonStyle';
 import api from '../../../../Authorization/api';
 import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
+import { useDash } from '../../../../Authorization/DashContext';
 
 const LabDashboard = () => {
   const { userData, allBranchInfo, deviceData, loginBranchId, updateFlag } = useAuth();
+  const { dashboardWallet, walletData } = useDash()
   const navigation = useNavigation();
   const dashboardRef = React.useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [walletBal, setWalletBal] = useState(0)
-  const [walletAllData, setWalletAlldata] = useState([])
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
@@ -46,29 +47,21 @@ const LabDashboard = () => {
 
 
 
+
+
   useFocusEffect(
     useCallback(() => {
       const today = new Date();
       const formattedDate = today.toISOString().split("T")[0];
       setFromDate(formattedDate);
       setToDate(formattedDate);
-      getWalletBalance(loginBranchId)
+      dashboardWallet(loginBranchId)
     }, [])
   )
-  
 
- 
 
-  const getWalletBalance = async (ids) => {
-    try {
-      const response = await dashboardWallet(ids)
-      console.log("wallet balance", response)
-      setWalletBal(response?.data?.balanceMain)
-      setWalletAlldata(response?.data)
-    } catch (error) {
-      console.log('wallte balance error', error)
-    }
-  }
+
+
 
 
   // ✅ Convert dd-MM-yyyy → yyyy-MM-dd
@@ -302,13 +295,13 @@ const LabDashboard = () => {
             </View>
             <View>
               <Text style={tw`text-gray-500 text-xs font-medium`}>Wallet Balance</Text>
-              <Text style={tw` ${walletBal > 0 ? "text-green-800" : "text-red-500"} text-xl font-bold`}>₹ {walletBal}</Text>
+              <Text style={tw` ${walletData?.balanceMain > 0 ? "text-green-800" : "text-red-500"} text-xl font-bold`}>₹ {walletData?.balanceMain}</Text>
             </View>
           </View>
 
           {/* Action Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('DashboardPayment', { data: walletAllData })}
+            onPress={() => navigation.navigate('DashboardPayment')}
             style={tw`bg-blue-500 px-4 py-2 rounded-lg flex-row items-center gap-2`}
             activeOpacity={0.8}
           >

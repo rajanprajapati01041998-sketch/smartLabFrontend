@@ -32,6 +32,7 @@ const styles = {
     tracking-wide
   `,
     saveButton: tw`bg-green-600 py-3 px-4 mb-6 mt-2 rounded-lg`,
+    closeButton: tw`bg-gray-300 py-3 px-4 mb-6 mt-2 rounded-lg`,
     saveButtonText:tw`text-white text-center font-semibold`,
     dropDownButton: tw`
     border 
@@ -184,6 +185,22 @@ const styles = {
     text-xs
     font-medium
   `,
+  addButton: tw`
+    bg-gray-800
+    px-3
+    py-3
+    rounded-xl
+    shadow-md
+    active:bg-gray-700
+    transition-all
+    duration-200
+  `,
+  buttonTextAdd: tw`
+    text-white
+    text-center
+    font-bold
+    text-lg
+  `
 
 
   

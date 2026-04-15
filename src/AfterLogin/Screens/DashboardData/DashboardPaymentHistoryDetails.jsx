@@ -117,9 +117,9 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
         return (
             <TouchableOpacity
                 onPress={() => setFilter(value)}
-                style={tw` px-4 py-2.5 rounded-xl flex-row items-center ${isActive ? 'bg-blue-600 shadow-sm' : 'bg-gray-50 border border-gray-200'}`}
+                style={tw` px-4 py-2.5  rounded-xl flex-row items-center ${isActive ? 'bg-blue-600 shadow-sm' : 'bg-gray-50 border border-gray-200'}`}
                 activeOpacity={0.7}
-            >
+             >
                 <Icon
                     name={icon}
                     size={18}
@@ -186,7 +186,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
                 <TouchableOpacity
                     style={[
                         styles.cardShadow,
-                        tw`bg-white rounded-2xl overflow-hidden border border-gray-100`,
+                        tw`bg-white mx-2 rounded-2xl overflow-hidden border border-gray-100`,
                         isExpanded && tw`border-blue-200 shadow-lg`
                     ]}
                     activeOpacity={0.7}
@@ -273,7 +273,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
     const FilterHeader = () => (
         <Animated.View style={[
             tw`bg-white`,
-            isFilterSticky && tw`shadow-md border-b border-gray-100`,
+            isFilterSticky && tw``,
             { paddingTop: isFilterSticky ? 8 : 0, paddingBottom: isFilterSticky ? 8 : 0 }
         ]}>
             {/* Summary Cards */}
@@ -295,7 +295,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
             )}
 
             {/* Filter Buttons */}
-            <View style={tw`mb-3`}>
+            <View style={tw`mb-3 `}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -361,7 +361,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
                 data={recentTransactions}
                 keyExtractor={(item, index) => item.id?.toString() || index.toString()}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={tw`p-3 pt-0`}
+                contentContainerStyle={tw` pt-0`}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 ListHeaderComponent={() => (

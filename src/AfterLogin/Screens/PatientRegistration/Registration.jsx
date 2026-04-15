@@ -7,7 +7,8 @@ import {
   referLabList,
   searchInvestigation,
   SearchGetInvestigationListDetails,
-  allBankList
+  allBankList,
+  referDoctorList
 } from './services/doctorService';
 import ReferDoctor from './ReferDoctor';
 import DoctorList from './DoctorList';
@@ -30,6 +31,7 @@ import CenterModal from '../../../utils/CenterModal';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import SelectBank from './SelectBank';
 import PaymentInfo from './PaymentInfo';
+import AddReferDoctor from './AddReferDoctor';
 
 
 const Registration = () => {
@@ -86,6 +88,7 @@ const Registration = () => {
   const [discountReason, setDiscountReason] = useState(" ");
   const [remark, setRemark] = useState(" ");
   const [refrDoctrorModal, setReferDoctorModal] = useState(false);
+  const [addreferDoctorModal, setAddReferDoctorModal] = useState(false)
   const [selectedReferDoctor, setSelectedReferDoctor] = useState(null);
   const [doctorlistModal, setDoctorListModal] = useState(false);
   const [selectedDoctorList, setSelectedDoctorList] = useState(null);
@@ -261,10 +264,10 @@ const Registration = () => {
     //   showToast('Select Doctor', 'error');
     //   return;
     // }
-    if (!contactNumber) {
-      showToast('Enter Contact number', 'error');
-      return;
-    }
+    // if (!contactNumber) {
+    //   showToast('Enter Contact number', 'error');
+    //   return;
+    // }
 
     const finalLoginBranchId = centerLoginBranchId || loginBranchId;
     setLoading(true)
@@ -272,6 +275,7 @@ const Registration = () => {
       HospId: 1,
       BranchId: finalLoginBranchId,
       LoginBranchId: finalLoginBranchId,
+      CorporateId: corporateId,
 
       Title: title,
       FirstName: firstName,
@@ -326,9 +330,11 @@ const Registration = () => {
         ServiceItemId: item.ServiceItemId,
         SubSubCategoryId: item.SubSubCategoryId,
         ServiceName: item.ServiceName,
-        Amount: item.Amount,
-        qty: item.qty || 1,
-        IsUrgent: item.IsUrgent || 0
+        Amount: Number(item.Amount || 0),
+        qty: Number(item.qty || 1),
+        IsUrgent: Number(item.IsUrgent ?? item.isUrgent ?? 0),
+        Barcode: item.Barcode ?? item.barcode ?? "",
+        TestRemark: item.TestRemark ?? item.testRemark ?? ""
       })) || [],
 
       // ✅ Payments
@@ -791,40 +797,64 @@ const Registration = () => {
             </RadioButton.Group>
           </View>
 
-          <View style={tw`mt-2 flex flex-col justify-center items-center gap-2`}>
-            <View style={tw`flex flex-col w-full`}>
-              <Text style={styles.labelText}>Referred Doctor</Text>
-              <TouchableOpacity
-                onPress={() => setReferDoctorModal(true)}
-                style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
-              >
-                <Text style={styles.insideDropDownText} >
-                  {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor-'}
-                </Text>
+          <View style={tw`mt-2`}>
+            <View style={tw`flex-row items-end `}>
+              <View style={tw`flex-1 mr-2`}>
+                <Text style={styles.labelText}>Referred Doctor</Text>
 
-                <Icon name="chevron-down" size={18} color="gray" />
+                <TouchableOpacity
+                  onPress={() => setReferDoctorModal(true)}
+                  style={[
+                    styles.dropDownButton,
+                    tw`mt-1 mb-3 flex-row justify-between items-center `
+                  ]}
+                >
+                  <Text
+                    style={[styles.insideDropDownText, tw`flex-1 mr-2`]}
+                    numberOfLines={1}
+                  >
+                    {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor -'}
+                  </Text>
+
+                  <Icon name="chevron-down" size={18} color="gray" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setAddReferDoctorModal(true)}
+                style={[
+                  styles.addButton,
+                  tw`mb-3 w-[15%]  items-center justify-center rounded-lg border border-gray-300`
+                ]}
+              >
+                <Text style={styles.buttonTextAdd}>+</Text>
               </TouchableOpacity>
             </View>
-            <View style={tw`flex flex-col w-full`}>
+
+            {/* <View style={tw`w-full`}>
               <Text style={styles.labelText}>Referred Lab</Text>
 
               <TouchableOpacity
                 onPress={() => setReferLabListModal(true)}
-                style={[styles.dropDownButton, tw` mb-3 mt-1 flex-row justify-between items-center`]}
+                style={[
+                  styles.dropDownButton,
+                  tw`mt-1 mb-3 flex-row justify-between items-center`
+                ]}
               >
-                <Text style={styles.insideDropDownText}  >
-                  {selectedReferLab
-                    ? selectedReferLab.outSourceLab
-                    : 'Select Refer Lab'}
+                <Text
+                  style={[styles.insideDropDownText, tw`flex-1 mr-2`]}
+                  numberOfLines={1}
+                >
+                  {selectedReferLab ? selectedReferLab.outSourceLab : 'Select Refer Lab'}
                 </Text>
 
                 <Icon name="chevron-down" size={18} color="gray" />
               </TouchableOpacity>
-            </View>
+            </View> */}
           </View>
 
           <View style={tw`mt-1 flex flex-row justify-center items-center gap-2`}>
-            <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
+            {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
               <View style={tw`flex flex-row items-center`}>
                 <Text style={styles.labelText}>Contact No (Self)</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
@@ -841,8 +871,8 @@ const Registration = () => {
                 keyboardType='numeric'
                 maxLength={10}
               />
-            </View>
-            <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
+            </View> */}
+            {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
               <Text style={styles.labelText}>Email</Text>
               <TextInput
                 placeholder='test@gmail.com'
@@ -852,10 +882,10 @@ const Registration = () => {
                 placeholderTextColor={colors.placeholder}
 
               />
-            </View>
+            </View> */}
           </View>
 
-          <View style={tw`mt-2`}>
+          {/* <View style={tw`mt-2`}>
             <Text style={styles.labelText}>Address</Text>
             <TextInput
               placeholder="Enter address"
@@ -868,9 +898,9 @@ const Registration = () => {
               placeholderTextColor={colors.placeholder}
 
             />
-          </View>
+          </View> */}
 
-          <View style={tw`mt-2`}>
+          {/* <View style={tw`mt-2`}>
             <Text style={styles.labelText}>Medical history</Text>
             <TextInput
               placeholder="history"
@@ -883,10 +913,10 @@ const Registration = () => {
               placeholderTextColor={colors.placeholder}
 
             />
-          </View>
+          </View> */}
 
           <View style={tw`my-3`}>
-            <View>
+            {/* <View>
               <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>
                 Visit type
               </Text>
@@ -898,7 +928,6 @@ const Registration = () => {
 
                 <View style={tw`flex-row items-center`}>
 
-                  {/* Clinic Visit */}
                   <TouchableOpacity
                     style={tw`flex-row items-center mr-5`}
                     onPress={() => setVisitype('Clinic Visit')}
@@ -907,7 +936,6 @@ const Registration = () => {
                     <Text>Clinic Visit</Text>
                   </TouchableOpacity>
 
-                  {/* Home Collection */}
                   <TouchableOpacity
                     style={tw`flex-row items-center`}
                     onPress={() => setVisitype('Home Collection')}
@@ -919,7 +947,7 @@ const Registration = () => {
                 </View>
 
               </RadioButton.Group>
-            </View>
+            </View> */}
 
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
@@ -1071,7 +1099,7 @@ const Registration = () => {
           {/* Search Service */}
           <View style={tw`flex-1`}>
             <View style={tw`flex flex-row items-center`}>
-              <Text style={styles.labelText}>Search Service</Text>
+              <Text style={styles.labelText}>Search Test</Text>
               <Text style={tw`text-red-500 -mt-2`}>* </Text>
             </View>
 
@@ -1081,7 +1109,7 @@ const Registration = () => {
             >
               <MaterialCommunityIcons name="magnify" size={20} color="gray" style={tw`mr-2`} />
               <Text style={styles.insideDropDownText}>
-                Search Service
+                Search Tests
               </Text>
             </TouchableOpacity>
           </View>
@@ -1267,8 +1295,8 @@ const Registration = () => {
         </View>
 
         {/* Payment Fields */}
-        <PaymentInfo
-          netAmount={netAmount}   // ✅ ADD THIS
+        {/* <PaymentInfo
+          netAmount={netAmount}  
           cash={cash}
           setCash={setCash}
           debitCardAmt={debitCardAmt}
@@ -1301,7 +1329,7 @@ const Registration = () => {
           onPaymentChange={setPaymentData}
           onBalanceChange={setBalanceAmount}
 
-        />
+        /> */}
 
 
         <TouchableOpacity
@@ -1339,6 +1367,26 @@ const Registration = () => {
                       setSelectedReferDoctor(doctor);
                     }}
                     onClose={() => setReferDoctorModal(false)}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* Add refer doctor modal */}
+        <Modal
+          visible={addreferDoctorModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setAddReferDoctorModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setAddReferDoctorModal(false)}>
+            <View style={tw`flex-1 justify-end bg-black/50`}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={tw`bg-white rounded-t-2xl w-full  p-4`}>
+                  <AddReferDoctor
+                    onClose={() => { setAddReferDoctorModal(false), referDoctorList() }}
                   />
                 </View>
               </TouchableWithoutFeedback>

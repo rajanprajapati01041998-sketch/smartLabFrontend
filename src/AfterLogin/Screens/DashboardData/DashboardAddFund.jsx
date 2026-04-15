@@ -15,6 +15,8 @@ import { dashboardWallet } from '../../../utils/dashboardService/dashboard'
 import Razorpay from './RazorPay'
 import { useAuth } from '../../../../Authorization/AuthContext'
 import api from '../../../../Authorization/api'
+import { useNavigation } from '@react-navigation/native'
+import { useDash } from '../../../../Authorization/DashContext'
 
 const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   const [amount, setAmount] = useState(0)
@@ -25,12 +27,23 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   const [paymentMode] = useState('Online')
   const [paymentModeId] = useState(1)
   const [receipt] = useState(null)
-
+  const navigation = useNavigation()
   const { showToast } = useToast()
   const { loginBranchId, userId, hosId, triggerUpdate, updateFlag } = useAuth()
+  const { dashboardWallet, getAllDashboardPaymentHistory } = useDash()
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
   console.log(loginBranchId, userId, hosId)
 
   const razorpayRef = useRef(null)
+
+  useEffect(() => {
+    if (!fromDate || !toDate) {
+      const today = new Date().toISOString().split("T")[0];
+      setFromDate(today);
+      setToDate(today);
+    }
+  }, []);
 
   useEffect(() => {
     if (!error) return
@@ -101,9 +114,12 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
             showToast?.('Payment successful', 'success')
             setAmount('')
             setRemarks('')
-            // triggerUpdate?.()
-            const response = await dashboardWallet?.(loginBranchId)
-            console.log("wallet",response)
+            await dashboardWallet(loginBranchId)
+            await getAllDashboardPaymentHistory({
+              loginBranchId,
+              fromDate,
+              toDate,
+            });
             onClose?.()
           } catch (err) {
             console.log('onSuccess callback error:', err)

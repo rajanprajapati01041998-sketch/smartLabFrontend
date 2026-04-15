@@ -5,110 +5,114 @@ import {
     Modal,
     FlatList,
     TouchableWithoutFeedback,
-    ScrollView
-} from 'react-native'
-import React, { useCallback, useState } from 'react'
-import api from '../../../../Authorization/api'
-import { useAuth } from '../../../../Authorization/AuthContext'
-import { useFocusEffect, useRoute } from '@react-navigation/native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import tw from 'twrnc'
-import DashboardPaymentColloection from './DashboardPaymentColloection'
-import DashboardPaymentHistory from './DashboardPaymentHistory'
+    ScrollView,
+} from 'react-native';
+import React, { useCallback, useState } from 'react';
+import api from '../../../../Authorization/api';
+import { useAuth } from '../../../../Authorization/AuthContext';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import tw from 'twrnc';
+import DashboardPaymentColloection from './DashboardPaymentColloection';
+import DashboardPaymentHistory from './DashboardPaymentHistory';
+import { useDash } from '../../../../Authorization/DashContext';
 
 const DashboardPayment = () => {
-    const { loginBranchId, userId } = useAuth()
-    const route = useRoute()
-    const { data } = route.params
-    const [branchList, setBranchList] = useState([])
-    const [summaryData, setSummaryData] = useState([])
-    const [selectedBranches, setSelectedBranches] = useState([])
-    const [modalVisible, setModalVisible] = useState(false)
+    const { loginBranchId, userId } = useAuth();
+    const { walletData } = useDash();
+
+    const route = useRoute();
+    const data = route?.params?.data ?? null;
+
+    const [branchList, setBranchList] = useState([]);
+    const [summaryData, setSummaryData] = useState([]);
+    const [selectedBranches, setSelectedBranches] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
     const [dashboardSummary, setDashboardSummary] = useState({
         totalLimit: 0,
         usedLimit: 0,
         remaining: 0,
-        balance: 0
-    })
+        balance: 0,
+    });
 
-
-
-    console.log("history", summaryData)
 
     useFocusEffect(
         useCallback(() => {
-            getAllActiveBranch(loginBranchId, userId)
-        }, [])
-    )
-
+            getAllActiveBranch(loginBranchId, userId);
+        }, [loginBranchId, userId])
+    );
 
     const getAllActiveBranch = async (branchId, userId) => {
         try {
             const response = await api.get(
                 `Branch/branch-user-list?branchId=${branchId}&userId=${userId}`
-            )
-            setBranchList(response.data)
-            setSelectedBranches(response.data)
+            );
+            setBranchList(response?.data || []);
+            setSelectedBranches(response?.data || []);
         } catch (error) {
-            console.log("API error", error)
+            console.log('API error', error);
         }
-    }
-
-
+    };
 
     const handleSelect = (item) => {
         const exists = selectedBranches.some(
             (b) => b.BranchId === item.BranchId
-        )
+        );
 
         if (exists) {
-            setSelectedBranches(prev =>
-                prev.filter(b => b.BranchId !== item.BranchId)
-            )
+            setSelectedBranches((prev) =>
+                prev.filter((b) => b.BranchId !== item.BranchId)
+            );
         } else {
-            setSelectedBranches(prev => [...prev, item])
+            setSelectedBranches((prev) => [...prev, item]);
         }
-    }
+    };
 
     const handleSelectAll = () => {
         if (selectedBranches.length === branchList.length) {
-            setSelectedBranches([])
+            setSelectedBranches([]);
         } else {
-            setSelectedBranches([...branchList])
+            setSelectedBranches([...branchList]);
         }
-    }
+    };
 
     const getSelectedText = () => {
-        if (selectedBranches.length === 0) return "Select Branch"
-        if (selectedBranches.length === branchList.length) return `${selectedBranches.length} Branches Selected`
-        if (selectedBranches.length === 1) return selectedBranches[0].BranchName
-        return `${selectedBranches.length} Branches Selected`
-    }
+        if (selectedBranches.length === 0) return 'Select Branch';
+        if (selectedBranches.length === branchList.length) {
+            return `${selectedBranches.length} Branches Selected`;
+        }
+        if (selectedBranches.length === 1) return selectedBranches[0].BranchName;
+        return `${selectedBranches.length} Branches Selected`;
+    };
 
     const getSelectedCount = () => {
-        if (selectedBranches.length === 0) return ""
-        if (selectedBranches.length === branchList.length) return " (All)"
-        return ` (${selectedBranches.length})`
-    }
+        if (selectedBranches.length === 0) return '';
+        if (selectedBranches.length === branchList.length) return ' (All)';
+        return ` (${selectedBranches.length})`;
+    };
 
     const StatCard = ({ title, value, icon, bgColor, textColor, iconColor }) => (
         <View style={tw`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex-1 mx-1`}>
             <View style={tw`flex-row justify-between items-start mb-2`}>
                 <Text style={tw`text-xs text-gray-500 font-medium`}>{title}</Text>
-                <View style={[tw`w-8 h-8 rounded-full items-center justify-center`, { backgroundColor: bgColor }]}>
+                <View
+                    style={[
+                        tw`w-8 h-8 rounded-full items-center justify-center`,
+                        { backgroundColor: bgColor },
+                    ]}
+                >
                     <Icon name={icon} size={16} color={iconColor} />
                 </View>
             </View>
             <Text style={[tw`text-lg font-bold`, { color: textColor }]}>
-                ₹ {typeof value === 'number' ? value.toLocaleString('en-IN') : value}
+                ₹ {typeof value === 'number' ? value.toLocaleString('en-IN') : value ?? 0}
             </Text>
         </View>
-    )
+    );
 
     return (
         <ScrollView style={tw`flex-1 bg-gray-50`}>
             <View style={tw`px-4 py-3`}>
-                {/* Dropdown Trigger */}
                 <TouchableOpacity
                     onPress={() => setModalVisible(true)}
                     style={tw`bg-white border border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm mb-4`}
@@ -123,7 +127,6 @@ const DashboardPayment = () => {
                                 <Text style={tw`text-gray-500 text-xs font-medium`}>
                                     Dashboard View
                                 </Text>
-                                {/* Total Branches Badge */}
                                 <View style={tw`bg-gray-100 px-2 py-0.5 rounded-full`}>
                                     <Text style={tw`text-gray-600 text-xs font-medium`}>
                                         Total: {branchList.length}
@@ -138,7 +141,6 @@ const DashboardPayment = () => {
                     <Icon name="chevron-down" size={24} color="#6B7280" />
                 </TouchableOpacity>
 
-                {/* Dashboard Overview Header */}
                 <View style={tw`mb-3`}>
                     <Text style={tw`text-lg font-bold text-gray-800`}>Dashboard Overview</Text>
                     <View style={tw`flex-row items-center mt-1`}>
@@ -148,24 +150,30 @@ const DashboardPayment = () => {
                             </Text>
                         </View>
                         <Text style={tw`text-xs text-gray-500`}>
-                            {selectedBranches.length === branchList.length ? '(All selected)' : `${selectedBranches.length} of ${branchList.length} selected`}
+                            {selectedBranches.length === branchList.length
+                                ? '(All selected)'
+                                : `${selectedBranches.length} of ${branchList.length} selected`}
                         </Text>
                     </View>
                 </View>
 
-                {/* Stats Cards Grid */}
                 <View style={tw`mb-4`}>
                     <View style={tw`flex-row mb-2`}>
                         <StatCard
                             title="Your Balance"
-                            value={ data?.balanceMain > 0? `+${data.balanceMain}` : data?.balanceMain} icon="wallet"
+                            value={
+                                walletData?.balanceMain > 0
+                                    ? `+${walletData.balanceMain}`
+                                    : walletData?.balanceMain ?? 0
+                            }
+                            icon="wallet"
                             bgColor="#f4bbb7"
-                            textColor={data?.balanceMain > 0 ? '#057d05' : "#c53d28"}
+                            textColor={walletData?.balanceMain > 0 ? '#057d05' : '#c53d28'}
                             iconColor="#822608"
                         />
                         <StatCard
                             title="Total Limit"
-                            value={data?.totalCredit}
+                            value={walletData?.totalCredit ?? 0}
                             icon="trending-up"
                             bgColor="#abd5b9"
                             textColor="#085f03"
@@ -175,7 +183,7 @@ const DashboardPayment = () => {
                     <View style={tw`flex-row`}>
                         <StatCard
                             title="Used Limit"
-                            value={data?.totalDebit}
+                            value={walletData?.totalDebit ?? 0}
                             icon="progress-clock"
                             bgColor="#ecf1b8"
                             textColor="#816605"
@@ -183,7 +191,7 @@ const DashboardPayment = () => {
                         />
                         <StatCard
                             title="Remaining limit"
-                            value={data?.balance}
+                            value={walletData?.balance ?? 0}
                             icon="bank-transfer"
                             bgColor="#f9dec3"
                             textColor="#cd6d06"
@@ -191,26 +199,20 @@ const DashboardPayment = () => {
                         />
                     </View>
                 </View>
-                {/* Dashboard Payment Collection */}
-                <DashboardPaymentColloection
-                    selectedBranches={selectedBranches}
-                // summaryData={summaryData}
-                />
 
-                {/* Dashboard Payment History */}
+                <DashboardPaymentColloection selectedBranches={selectedBranches} />
+
                 <DashboardPaymentHistory
                     selectedBranches={selectedBranches}
+
                     setSummaryData={setSummaryData}
                 />
             </View>
 
-            {/* Modal */}
             <Modal visible={modalVisible} transparent animationType="slide">
                 <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
                     <View style={tw`flex-1 bg-black/50 justify-end`}>
                         <View style={tw`bg-white rounded-t-3xl max-h-[80%]`}>
-
-                            {/* Modal Header */}
                             <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-100`}>
                                 <View>
                                     <Text style={tw`text-xl font-bold text-gray-800`}>
@@ -235,7 +237,6 @@ const DashboardPayment = () => {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Select All Button */}
                             <View style={tw`px-4 pb-2 pt-2`}>
                                 <TouchableOpacity
                                     onPress={handleSelectAll}
@@ -244,9 +245,17 @@ const DashboardPayment = () => {
                                 >
                                     <View style={tw`flex-row items-center`}>
                                         <Icon
-                                            name={selectedBranches.length === branchList.length ? "checkbox-marked" : "checkbox-blank-outline"}
+                                            name={
+                                                selectedBranches.length === branchList.length
+                                                    ? 'checkbox-marked'
+                                                    : 'checkbox-blank-outline'
+                                            }
                                             size={22}
-                                            color={selectedBranches.length === branchList.length ? "#3B82F6" : "#9CA3AF"}
+                                            color={
+                                                selectedBranches.length === branchList.length
+                                                    ? '#3B82F6'
+                                                    : '#9CA3AF'
+                                            }
                                         />
                                         <Text style={tw`text-base font-semibold text-gray-800 ml-3`}>
                                             Select All Branches
@@ -260,16 +269,16 @@ const DashboardPayment = () => {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Selected Count Indicator */}
-                            {selectedBranches.length > 0 && selectedBranches.length !== branchList.length && (
-                                <View style={tw`px-4 pt-2 pb-1`}>
-                                    <Text style={tw`text-sm text-blue-600 font-medium`}>
-                                        ✓ {selectedBranches.length} branch{selectedBranches.length > 1 ? 'es' : ''} selected
-                                    </Text>
-                                </View>
-                            )}
+                            {selectedBranches.length > 0 &&
+                                selectedBranches.length !== branchList.length && (
+                                    <View style={tw`px-4 pt-2 pb-1`}>
+                                        <Text style={tw`text-sm text-blue-600 font-medium`}>
+                                            ✓ {selectedBranches.length} branch
+                                            {selectedBranches.length > 1 ? 'es' : ''} selected
+                                        </Text>
+                                    </View>
+                                )}
 
-                            {/* Branches List */}
                             <FlatList
                                 data={branchList}
                                 keyExtractor={(item) => item.BranchId.toString()}
@@ -278,7 +287,7 @@ const DashboardPayment = () => {
                                 renderItem={({ item }) => {
                                     const isSelected = selectedBranches.some(
                                         (b) => b.BranchId === item.BranchId
-                                    )
+                                    );
 
                                     return (
                                         <TouchableOpacity
@@ -301,17 +310,16 @@ const DashboardPayment = () => {
 
                                             <View style={tw`ml-3`}>
                                                 <Icon
-                                                    name={isSelected ? "check-circle" : "circle-outline"}
+                                                    name={isSelected ? 'check-circle' : 'circle-outline'}
                                                     size={24}
-                                                    color={isSelected ? "#3B82F6" : "#D1D5DB"}
+                                                    color={isSelected ? '#3B82F6' : '#D1D5DB'}
                                                 />
                                             </View>
                                         </TouchableOpacity>
-                                    )
+                                    );
                                 }}
                             />
 
-                            {/* Apply Button */}
                             <View style={tw`p-4 border-t border-gray-100`}>
                                 <TouchableOpacity
                                     onPress={() => setModalVisible(false)}
@@ -327,7 +335,7 @@ const DashboardPayment = () => {
                 </TouchableWithoutFeedback>
             </Modal>
         </ScrollView>
-    )
-}
+    );
+};
 
-export default DashboardPayment
+export default DashboardPayment;
