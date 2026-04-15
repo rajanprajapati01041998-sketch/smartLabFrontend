@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform, FlatList } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import tw from 'twrnc';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ import { useAuth } from '../../../../Authorization/AuthContext';
 import ReferLab from './ReferLab';
 import SearchSelectService from './SearchSelectService';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { RadioButton } from 'react-native-paper';
+import { RadioButton, Checkbox } from 'react-native-paper';
 import FieldBoy from './FieldBoy';
 import api from '../../../../Authorization/api';
 import SelectTitle from './SelectTitle';
@@ -36,7 +36,7 @@ import AddReferDoctor from './AddReferDoctor';
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode } = useAuth();
   const { showToast } = useToast()
   const { colors } = useTheme()
   const [error, setError] = useState(false)
@@ -109,6 +109,9 @@ const Registration = () => {
   const [paytmRefrence, setPaytmRefrence] = useState('')
   const [phonePayReference, setPhonePayReference] = useState("")
   const [credicardReference, setCrediCardReference] = useState('')
+  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
+  const [barcodeDraft, setBarcodeDraft] = useState({});
+  const [remarkExpanded, setRemarkExpanded] = useState({});
 
   // console.log(patientData)
   useEffect(() => {
@@ -139,11 +142,7 @@ const Registration = () => {
     }, [])
   );
 
-  useEffect(() => {
-    resetForm()
-  }, [responseSuccess])
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     // Basic Info
     setTitle('');
     setFirstName('');
@@ -209,7 +208,11 @@ const Registration = () => {
 
     // Services reset
     setServiceItem({ Services: [] });
-  };
+  }, [setServiceItem]);
+
+  useEffect(() => {
+    resetForm()
+  }, [responseSuccess, resetForm])
 
   const parseMoney = (txt) => {
     const cleaned = String(txt ?? '').replace(/[^0-9.]/g, '');
@@ -241,25 +244,57 @@ const Registration = () => {
       referenceNo: val?.reference ? String(val.reference) : ""
     }));
 
-  const handleSavePatient = async () => {
+  const validateBeforeSave = () => {
     if (isOverPaid) {
       showToast('Your Cash Amount is Greater from Net Amount', 'error');
-      return;
+      return false;
     }
 
     if (!firstName) {
       showToast('Enter full name', 'error');
-      return;
+      return false;
     }
 
     if (!ageYears && !ageMonths && !ageDays && !dob) {
       showToast('Enter age or DOB', 'error');
-      return;
+      return false;
     }
     if (!gender) {
       showToast('Select Gender', 'error');
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const initBarcodeDraftFromServices = (services) => {
+    const next = {};
+    const nextExpanded = {};
+    (services || []).forEach((s) => {
+      const id = s?.ServiceItemId;
+      if (!id) return;
+      const existingRemark = s?.TestRemark ?? s?.testRemark ?? '';
+      next[id] = {
+        barcode: s?.Barcode ?? s?.barcode ?? '',
+        testRemark: existingRemark,
+      };
+      nextExpanded[id] = false;
+    });
+    setBarcodeDraft(next);
+    setRemarkExpanded(nextExpanded);
+  };
+
+  const openBarcodeModal = () => {
+    const services = Array.isArray(serviceItem?.Services) ? serviceItem.Services : [];
+    initBarcodeDraftFromServices(services);
+    setBarcodeModalVisible(true);
+  };
+
+  const savePatientApi = async (servicesOverride) => {
+    const services = Array.isArray(servicesOverride)
+      ? servicesOverride
+      : Array.isArray(serviceItem?.Services)
+        ? serviceItem.Services
+        : [];
     // if (!selectedDoctor) {
     //   showToast('Select Doctor', 'error');
     //   return;
@@ -326,7 +361,7 @@ const Registration = () => {
       NetAmount: Number(netAmount || 0),
 
       // ✅ Services from context
-      Services: serviceItem?.Services?.map(item => ({
+      Services: services.map(item => ({
         ServiceItemId: item.ServiceItemId,
         SubSubCategoryId: item.SubSubCategoryId,
         ServiceName: item.ServiceName,
@@ -349,9 +384,8 @@ const Registration = () => {
         }
       ]
     };
-    setLoading(false)
     // console.log("paymentData 👉", paymentData);
-    console.log("Payload 👉", JSON.stringify(payload, null, 2));
+    // console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
       // console.log(payload)
       const response = await api.post(`Patient/save`, payload)
@@ -367,6 +401,37 @@ const Registration = () => {
       setLoading(false)
     }
 
+  };
+
+  const handleBarcodeModalSave = () => {
+    const currentServices = Array.isArray(serviceItem?.Services) ? serviceItem.Services : [];
+    const updatedServices = currentServices.map((s) => {
+      const draft = barcodeDraft?.[s.ServiceItemId];
+      return {
+        ...s,
+        Barcode: draft?.barcode ?? s?.Barcode ?? '',
+        TestRemark: draft?.testRemark ?? s?.TestRemark ?? '',
+      };
+    });
+
+    setServiceItem((prev) => ({
+      ...(prev || {}),
+      Services: updatedServices,
+    }));
+
+    setBarcodeModalVisible(false);
+    savePatientApi(updatedServices);
+  };
+
+  const handleSavePatient = () => {
+    if (!validateBeforeSave()) return;
+
+    if (addBarcode) {
+      openBarcodeModal();
+      return;
+    }
+
+    savePatientApi();
   };
 
   useEffect(() => {
@@ -1143,6 +1208,16 @@ const Registration = () => {
               </View>
             ))}
           </ScrollView>
+
+          <View style={tw`flex-row items-center mt-1`}>
+            <Checkbox
+              status={addBarcode ? 'checked' : 'unchecked'}
+              disabled={true}   // ✅ makes it read-only
+            />
+            <Text style={tw`text-sm text-gray-700`}>
+              Add Barcode & Test Remark on save
+            </Text>
+          </View>
         </View>
 
         <View style={styles.cardShadow}>
@@ -1350,6 +1425,183 @@ const Registration = () => {
             </>
           )}
         </TouchableOpacity>
+
+        {/* Barcode + remark modal (shown only when addBarcode is enabled) */}
+        <Modal
+          visible={barcodeModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setBarcodeModalVisible(false)}
+        >
+          <View style={tw`flex-1 justify-end bg-black/40`}>
+            <TouchableWithoutFeedback onPress={() => setBarcodeModalVisible(false)}>
+              <View style={tw`absolute inset-0`} />
+            </TouchableWithoutFeedback>
+
+            <View style={tw`bg-white w-full h-[85%] rounded-t-3xl overflow-hidden`}>
+              {/* Fixed Header */}
+              <View style={tw`px-4 pt-4 pb-3 border-b border-gray-100 bg-white`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <View style={tw`flex-1 pr-3`}>
+                    <Text style={tw`text-lg font-bold text-gray-800`}>
+                      Barcodes & Remarks
+                    </Text>
+                    <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                      Enter details for selected tests
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setBarcodeModalVisible(false)}
+                    style={tw`w-9 h-9 rounded-full bg-gray-100 items-center justify-center`}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons name="close" size={18} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Proper Scrollable List */}
+              <FlatList
+                data={Array.isArray(serviceItem?.Services) ? serviceItem.Services : []}
+                keyExtractor={(item, index) =>
+                  String(item?.ServiceItemId ?? index)
+                }
+                style={tw`flex-1`}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 }}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled={true}
+                removeClippedSubviews={false}
+                initialNumToRender={8}
+                maxToRenderPerBatch={8}
+                windowSize={10}
+                renderItem={({ item: s, index: idx }) => {
+                  const id = s?.ServiceItemId;
+                  const draft = id ? barcodeDraft?.[id] : null;
+                  const isRemarkOpen = Boolean(id && remarkExpanded?.[id]);
+
+                  return (
+                    <View
+                      style={[
+                        styles.cardShadow,
+                        tw`p-4 mb-4 bg-white rounded-2xl border border-gray-100`
+                      ]}
+                    >
+                      <Text style={tw`text-md font-semibold text-gray-800 mb-1`}>
+                        {s?.ServiceName || ''}
+                      </Text>
+
+                      {/* Barcode Input */}
+                      <View style={tw`mb-4`}>
+                        <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
+                          Barcode Number
+                        </Text>
+                        <TextInput
+                          value={draft?.barcode ?? ''}
+                          onChangeText={(txt) => {
+                            if (!id) return;
+                            setBarcodeDraft((prev) => ({
+                              ...(prev || {}),
+                              [id]: { ...(prev?.[id] || {}), barcode: txt },
+                            }));
+                          }}
+                          placeholder="Enter barcode"
+                          placeholderTextColor="#9CA3AF"
+                          style={tw`border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50`}
+                        />
+                      </View>
+
+                      {/* Remark Input */}
+                      <View>
+                        <View style={tw`flex-row items-center justify-between`}>
+                          <Text style={tw`text-xs font-medium text-gray-600 ml-1`}>
+                            Test Remark
+                          </Text>
+
+                          <TouchableOpacity
+                            onPress={() => {
+                              if (!id) return;
+                              setRemarkExpanded((prev) => ({
+                                ...(prev || {}),
+                                [id]: !prev?.[id],
+                              }));
+                            }}
+                            style={tw`flex-row items-center`}
+                            activeOpacity={0.7}
+                          >
+                            {String(draft?.testRemark ?? '').trim() ? (
+                              <View style={tw`bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full mr-2`}>
+                                <Text style={tw`text-blue-600 text-[10px] font-medium`}>
+                                  Added
+                                </Text>
+                              </View>
+                            ) : null}
+
+                            <MaterialCommunityIcons
+                              name={isRemarkOpen ? 'message-text' : 'message-text-outline'}
+                              size={20}
+                              color="#6B7280"
+                            />
+                          </TouchableOpacity>
+                        </View>
+
+                        {isRemarkOpen && (
+                          <TextInput
+                            value={draft?.testRemark ?? ''}
+                            onChangeText={(txt) => {
+                              if (!id) return;
+                              setBarcodeDraft((prev) => ({
+                                ...(prev || {}),
+                                [id]: { ...(prev?.[id] || {}), testRemark: txt },
+                              }));
+                            }}
+                            placeholder="Enter test remark (optional)"
+                            placeholderTextColor="#9CA3AF"
+                            multiline
+                            numberOfLines={3}
+                            textAlignVertical="top"
+                            style={tw`border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white min-h-[90px] mt-2`}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={
+                  <View style={tw`flex-1 justify-center items-center py-10`}>
+                    <Text style={tw`text-gray-500`}>No tests found</Text>
+                  </View>
+                }
+              />
+
+              {/* Fixed Footer */}
+              <View style={tw`px-4 pt-3 pb-5 border-t border-gray-100 bg-white`}>
+                <View style={tw`flex-row gap-3`}>
+                  <TouchableOpacity
+                    onPress={() => setBarcodeModalVisible(false)}
+                    style={tw`flex-1 bg-gray-100 py-3.5 rounded-xl`}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={tw`text-gray-700 text-center font-semibold text-base`}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleBarcodeModalSave}
+                    style={tw`flex-1 bg-blue-600 py-3.5 rounded-xl shadow-sm`}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={tw`text-white text-center font-semibold text-base`}>
+                      Save & Continue
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* refer doctor modal */}
         <Modal

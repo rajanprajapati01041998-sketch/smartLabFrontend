@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   ActivityIndicator,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   Modal,
   TouchableWithoutFeedback,
+  FlatList,
+  Pressable,
 } from 'react-native';
 import tw from 'twrnc';
 import { Checkbox } from 'react-native-paper';
@@ -62,8 +63,6 @@ const SearchSelectServiceItem = ({
             ...res.data,
             urgent: false,
             qty: 1,
-            barcode: '',
-            testRemark: '',
           }));
 
         setDetailsList(formatted);
@@ -85,14 +84,19 @@ const SearchSelectServiceItem = ({
     };
   }, [data, corporateId, selectedDoctor]);
 
-  const toggleUrgent = index => {
-    const updated = [...detailsList];
-    updated[index].urgent = !updated[index].urgent;
-    setDetailsList(updated);
+  const toggleUrgent = useCallback((index) => {
+    setDetailsList(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        urgent: !updated[index].urgent,
+      };
+      return updated;
+    });
     onDirtyChange?.(true);
-  };
+  }, [onDirtyChange]);
 
-  const updateRate = (index, txt) => {
+  const updateRate = useCallback((index, txt) => {
     const cleaned = String(txt).replace(/[^0-9.]/g, '');
     const next = cleaned === '' ? '' : Number(cleaned);
 
@@ -106,57 +110,37 @@ const SearchSelectServiceItem = ({
     });
 
     onDirtyChange?.(true);
-  };
+  }, [onDirtyChange]);
 
-  const updateBarcode = (index, txt) => {
-    setDetailsList(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        barcode: txt,
-      };
-      return updated;
-    });
-
-    onDirtyChange?.(true);
-  };
-
-  const updateTestRemark = (index, txt) => {
-    setDetailsList(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        testRemark: txt,
-      };
-      return updated;
-    });
-
-    onDirtyChange?.(true);
-  };
-
-  const handleDeleteLocal = item => {
+  const handleDeleteLocal = useCallback((item) => {
     setDetailsList(prev =>
       prev.filter(i => i.serviceItemId !== item.serviceItemId)
     );
 
     onDelete?.(item);
     onDirtyChange?.(true);
-  };
+  }, [onDelete, onDirtyChange]);
 
   const createPayload = () => {
-    const newServices = detailsList.map(item => ({
-      ServiceItemId: item.serviceItemId,
-      SubSubCategoryId: item.subSubCategoryId,
-      ServiceName: item.serviceName,
-      Amount: item.rate,
-      qty: item.qty,
-      isUrgent: item.urgent ? 1 : 0,
-      Barcode: item.barcode || '',
-      TestRemark: item.testRemark || '',
-    }));
-
     setServiceItem(prev => {
       const existingServices = Array.isArray(prev?.Services) ? prev.Services : [];
+      const existingById = new Map(
+        existingServices.map(service => [service.ServiceItemId, service])
+      );
+
+      const newServices = detailsList.map(item => {
+        const existing = existingById.get(item.serviceItemId);
+        return {
+          ServiceItemId: item.serviceItemId,
+          SubSubCategoryId: item.subSubCategoryId,
+          ServiceName: item.serviceName,
+          Amount: item.rate,
+          qty: item.qty,
+          isUrgent: item.urgent ? 1 : 0,
+          Barcode: existing?.Barcode ?? existing?.barcode ?? '',
+          TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
+        };
+      });
 
       const mergedMap = new Map(
         existingServices.map(service => [service.ServiceItemId, service])
@@ -166,7 +150,7 @@ const SearchSelectServiceItem = ({
         mergedMap.set(service.ServiceItemId, service);
       });
 
-      const payload = {
+      return {
         ...(prev || {}),
         Services: Array.from(mergedMap.values()),
         Investigations: {
@@ -175,156 +159,148 @@ const SearchSelectServiceItem = ({
           ReportingBranchId: loginBranchId,
         },
       };
-
-      console.log('FINAL PAYLOAD:', payload);
-      return payload;
     });
 
     onDirtyChange?.(false);
     onSaved?.();
   };
 
-  const handleViewRange = item => {
+  const handleViewRange = useCallback((item) => {
     setSelectedServiceItemName(item?.serviceName);
     setSelectedServiceItemId(item.serviceItemId);
     setRangeModalVisible(true);
+  }, []);
+
+  const renderItem = ({ item, index }) => {
+    const colorCode = getColorCode(item?.containerColor);
+
+    return (
+      <View style={tw`bg-white border border-gray-200 rounded-xl p-3 mb-3 `}>
+        <View style={tw`flex-row justify-between items-center`}>
+          <View style={tw`flex-row items-center flex-1`}>
+            <View
+              style={[
+                tw`w-3 h-3 rounded-full mr-2`,
+                { backgroundColor: colorCode || '#ccc' },
+              ]}
+            />
+            <Text style={tw`text-sm font-semibold flex-1`}>
+              {item.serviceName}
+            </Text>
+          </View>
+
+          <TouchableOpacity onPress={() => handleDeleteLocal(item)}>
+            <MaterialIcons name="delete" size={22} color="red" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={tw`h-[1px] bg-gray-200 my-2`} />
+
+        <View style={tw`flex-row justify-between items-center`}>
+          <View>
+            <Text style={tw`text-[10px] text-gray-400`}>MRP</Text>
+            <Text style={tw`text-xs`}>₹ {item.mrp}</Text>
+          </View>
+
+          <View>
+            <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
+            {item.isRateEditable === false ? (
+              <View style={tw`flex-row items-center`}>
+                <Text style={tw`text-green-600 font-bold mr-1`}>₹</Text>
+                <TextInput
+                  value={
+                    item.rate === '' ||
+                    item.rate === null ||
+                    item.rate === undefined
+                      ? ''
+                      : String(item.rate)
+                  }
+                  onChangeText={txt => updateRate(index, txt)}
+                  keyboardType="numeric"
+                  style={tw`min-w-[70px] px-2 py-1 border border-green-200 rounded-lg text-green-700 font-bold`}
+                  placeholder="0"
+                />
+              </View>
+            ) : (
+              <Text style={tw`text-sm font-bold text-green-600`}>
+                ₹ {item.rate}
+              </Text>
+            )}
+          </View>
+
+          {item.sampleVolume ? (
+            <View>
+              <Text style={tw`text-[10px] text-gray-400`}>Volume</Text>
+              <Text style={tw`text-xs`}>{item.sampleVolume}</Text>
+            </View>
+          ) : null}
+
+          {/* ✅ urgent area fixed for smooth scroll */}
+          <Pressable
+            onPress={() => toggleUrgent(index)}
+            android_ripple={null}
+            style={tw`flex-row items-center px-1 py-1`}
+            hitSlop={6}
+          >
+            <View pointerEvents="none" style={tw`flex-row items-center`}>
+              <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
+              <Text style={tw`text-[10px] text-gray-700`}>Urgent</Text>
+            </View>
+          </Pressable>
+
+          <TouchableOpacity
+            onPress={() => handleViewRange(item)}
+            style={tw`flex-row items-center`}
+          >
+            <MaterialIcons name="visibility" size={20} color="#4b5563" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
+  const renderEmpty = () => (
+    <View style={tw`flex-1 justify-center items-center`}>
+      <Text style={tw`text-gray-500`}>No tests found</Text>
+    </View>
+  );
+
   return (
-    <View style={tw`flex-1`}>
+    <View style={tw`flex-1 min-h-0 `}>
       {loading ? (
         <View style={tw`flex-1 justify-center items-center`}>
           <ActivityIndicator size="large" />
         </View>
       ) : (
         <>
-          <ScrollView
-            style={tw`flex-1`}
-            contentContainerStyle={tw`pb-24`}
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled={true}
-            keyboardShouldPersistTaps="handled"
-          >
-            {detailsList.map((item, index) => {
-              const colorCode = getColorCode(item?.containerColor);
-
-              return (
-                <View
-                  key={item.serviceItemId}
-                  style={tw`bg-white border border-gray-200 rounded-xl p-3 mb-3`}
-                >
-                  <View style={tw`flex-row justify-between items-center`}>
-                    <View style={tw`flex-row items-center flex-1`}>
-                      <View style={tw`flex-row items-center mr-2`}>
-                        <View
-                          style={[
-                            tw`w-3 h-3 rounded-full mr-2`,
-                            {
-                              backgroundColor: colorCode || '#ccc',
-                            },
-                          ]}
-                        />
-                      </View>
-
-                      <Text style={tw`text-sm font-semibold flex-1`}>
-                        {item.serviceName}
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity onPress={() => handleDeleteLocal(item)}>
-                      <MaterialIcons name="delete" size={22} color="red" />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={tw`h-[1px] bg-gray-200 my-2`} />
-
-                  <View style={tw`flex-row justify-between items-center`}>
-                    <View>
-                      <Text style={tw`text-[10px] text-gray-400`}>MRP</Text>
-                      <Text style={tw`text-xs`}>₹ {item.mrp}</Text>
-                    </View>
-
-                    <View>
-                      <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
-                      {item.isRateEditable === false ? (
-                        <View style={tw`flex-row items-center`}>
-                          <Text style={tw`text-green-600 font-bold mr-1`}>₹</Text>
-                          <TextInput
-                            value={
-                              item.rate === '' ||
-                              item.rate === null ||
-                              item.rate === undefined
-                                ? ''
-                                : String(item.rate)
-                            }
-                            onChangeText={txt => updateRate(index, txt)}
-                            keyboardType="numeric"
-                            style={tw`min-w-[70px] px-2 py-1 border border-green-200 rounded-lg text-green-700 font-bold`}
-                            placeholder="0"
-                          />
-                        </View>
-                      ) : (
-                        <Text style={tw`text-sm font-bold text-green-600`}>
-                          ₹ {item.rate}
-                        </Text>
-                      )}
-                    </View>
-
-                    {item.sampleVolume ? (
-                      <View>
-                        <Text style={tw`text-[10px] text-gray-400`}>Volume</Text>
-                        <Text style={tw`text-xs`}>{item.sampleVolume}</Text>
-                      </View>
-                    ) : null}
-
-                    <TouchableOpacity
-                      onPress={() => toggleUrgent(index)}
-                      style={tw`flex-row items-center`}
-                    >
-                      <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
-                      <Text style={tw`text-[10px]`}>Urgent</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => handleViewRange(item)}
-                      style={tw`flex-row items-center`}
-                    >
-                      <Text style={tw`text-[10px]`}>View</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* ✅ Barcode + Test Remark per item */}
-                  <View style={tw`mt-3`}>
-                    <Text style={tw`text-[11px] text-gray-500 mb-1`}>Barcode</Text>
-                    <TextInput
-                      value={item.barcode}
-                      onChangeText={txt => updateBarcode(index, txt)}
-                      placeholder="Enter barcode"
-                      placeholderTextColor="#9ca3af"
-                      style={tw`border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white`}
-                    />
-                  </View>
-
-                  <View style={tw`mt-3`}>
-                    <Text style={tw`text-[11px] text-gray-500 mb-1`}>Test Remark</Text>
-                    <TextInput
-                      value={item.testRemark}
-                      onChangeText={txt => updateTestRemark(index, txt)}
-                      placeholder="Enter test remark"
-                      placeholderTextColor="#9ca3af"
-                      multiline={true}
-                      numberOfLines={3}
-                      style={tw`border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white min-h-[80px]`}
-                      textAlignVertical="top"
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
+          <View style={tw`flex-1 min-h-0`}>
+            <FlatList
+              data={detailsList}
+              keyExtractor={(item, index) =>
+                String(item?.serviceItemId ?? index)
+              }
+              renderItem={renderItem}
+              ListEmptyComponent={renderEmpty}
+              style={tw`flex-1`}
+              contentContainerStyle={{
+                paddingTop: 12,
+                paddingBottom: isDirty && detailsList.length > 0 ? 110 : 20,
+                flexGrow: detailsList.length === 0 ? 1 : 0,
+              }}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              nestedScrollEnabled={true}
+              scrollEventThrottle={16}
+              removeClippedSubviews={false}
+              initialNumToRender={12}
+              maxToRenderPerBatch={12}
+              windowSize={15}
+            />
+          </View>
 
           {isDirty && detailsList.length > 0 && (
-            <View style={tw`absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200`}>
+            <View style={tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3 bg-white border-t border-gray-200`}>
               <TouchableOpacity
                 onPress={createPayload}
                 style={tw`bg-blue-500 p-3 rounded-lg`}
@@ -340,7 +316,7 @@ const SearchSelectServiceItem = ({
 
       <Modal
         visible={rangeModalVisible}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={() => setRangeModalVisible(false)}
       >

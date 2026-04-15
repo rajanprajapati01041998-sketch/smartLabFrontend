@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
   const [sessionId, setSessionId] = useState(null)
   const [centerLoginBranchId, setCenterLoginBranchId] = useState(null)
   const [updateFlag, setUpdateFlag] = useState(0);
+  const [addBarcode, setAddBarcode] = useState(false)
 
   const triggerUpdate = () => {
     setUpdateFlag(prev => prev + 1);
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     loadDeviceInfo();
     getLocalIP();
   }, []);
-  
+
 
 
 
@@ -87,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  
+
 
 
 
@@ -190,7 +191,8 @@ export const AuthProvider = ({ children }) => {
         deviceData, setDeviceData, loadDeviceInfo,
         sessionId, setSessionId,
         centerLoginBranchId, setCenterLoginBranchId,
-        hosId, setHosId
+        hosId, setHosId,
+        addBarcode, setAddBarcode
       }}
     >
       {!isLoading && children}
