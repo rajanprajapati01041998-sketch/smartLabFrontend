@@ -143,6 +143,17 @@ const Registration = () => {
   );
 
   const resetForm = useCallback(() => {
+    // Close any open modals
+    setBarcodeModalVisible(false);
+    setSearchSelectModal(false);
+    setReferDoctorModal(false);
+    setAddReferDoctorModal(false);
+    setDoctorListModal(false);
+    setReferLabListModal(false);
+    setFieldBoyModal(false);
+    setSelectTitleModal(false);
+    setBankModal(false);
+
     // Basic Info
     setTitle('');
     setFirstName('');
@@ -193,6 +204,8 @@ const Registration = () => {
     setNetAmount(null);
     setBalanceAmount(null);
     setIsCashAuto(true);
+    setIsOverPaid(false);
+    setShowBillingInfo(false);
 
     // Payments
     setCash(null);
@@ -201,10 +214,14 @@ const Registration = () => {
     setChequeAmt(null);
     setPhonePayAmt(null);
     setPayTm(null);
+    setPaymentData({});
 
     // Others
     setDiscountReason('');
     setRemark('');
+    setBarcodeDraft({});
+    setRemarkExpanded({});
+    setSelectedBank(null);
 
     // Services reset
     setServiceItem({ Services: [] });
@@ -391,7 +408,8 @@ const Registration = () => {
       const response = await api.post(`Patient/save`, payload)
       console.log("booking suceess", response)
       showToast("Patinet Saved Sucessfully", 'success');
-      setResponseSuccess(true)
+      setResponseSuccess((prev) => !prev);
+      resetForm();
 
     } catch (error) {
       console.log("erroer", error.response)
