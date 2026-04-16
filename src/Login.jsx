@@ -1,8 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image, ScrollView, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, FadeInDown, FadeInUp, SlideInRight, SlideInLeft, BounceIn } from 'react-native-reanimated';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ImageBackground,
+    KeyboardAvoidingView,
+    Platform,
+    Dimensions,
+    StatusBar,
+    Image,
+    ScrollView,
+    Keyboard,
+    TouchableWithoutFeedback,
+    Modal,
+    FlatList,
+    Alert,
+} from "react-native";
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withTiming,
+    withSequence,
+    FadeInDown,
+    FadeInUp,
+    SlideInRight,
+    BounceIn
+} from 'react-native-reanimated';
 import tw from "twrnc";
-import { SelectList } from "react-native-dropdown-select-list";
 import LoginBgImg from "../Assets/Login/login.jpg";
 import LoginBgImg2 from '../Assets/Login/loginbg1.jpg';
 import LoginBgImg3 from '../Assets/Login/loginbg2.jpg';
@@ -11,33 +37,50 @@ import { useTheme } from '../Authorization/ThemeContext';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import axiosInstance from '../Authorization/AxiosInstance'
-import { useNavigation } from "@react-navigation/native";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import api from "../Authorization/api";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "../Authorization/ToastContext";
-import loginLogo from '../Assets/Login/login_logo.jpg'
+import loginLogo from '../Assets/Login/login_logo.jpg';
+import styles from "./utils/InputStyle";
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen({ navigation }) {
-    const { setSessionId, loadDeviceInfo, user, login, logout, isAuthenticated, setToken, setUserData, token, userData, setUserId, setLoginBranchId, deviceData,setAllBranchInfo } = useAuth();
+    const {
+        setSessionId,
+        loadDeviceInfo,
+        user,
+        login,
+        logout,
+        isAuthenticated,
+        setToken,
+        setUserData,
+        token,
+        userData,
+        setUserId,
+        setLoginBranchId,
+        deviceData,
+        setAllBranchInfo
+    } = useAuth();
+
     const { theme, toggleTheme } = useTheme();
     const [theme1, setTheme1] = useState(false);
     const [theme2, setTheme2] = useState(false);
     const [theme3, setTheme3] = useState(true);
-    const [selected, setSelected] = useState("");
+    const [selectedBranch, setSelectedBranch] = useState(null);
     const [togglePassword, setTogglePassword] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [branches, setBranches] = useState([]);
+    const [filteredBranches, setFilteredBranches] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const { showToast } = useToast()
+    const [branchModalVisible, setBranchModalVisible] = useState(false);
+    const { showToast } = useToast();
 
-    // Animation values
     const cardScale = useSharedValue(0.9);
     const cardOpacity = useSharedValue(0);
     const logoTranslateY = useSharedValue(-50);
@@ -50,19 +93,15 @@ export default function LoginScreen({ navigation }) {
     const image2 = LoginBgImg2;
     const image3 = LoginBgImg3;
 
-    // Keyboard listeners
-    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true);
-            // Shrink logo when keyboard appears
             logoScale.value = withTiming(0.7, { duration: 300 });
             logoTranslateY.value = withTiming(-80, { duration: 300 });
         });
 
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
             setKeyboardVisible(false);
-            // Restore logo size when keyboard hides
             logoScale.value = withTiming(1, { duration: 300 });
             logoTranslateY.value = withTiming(0, { duration: 300 });
         });
@@ -72,32 +111,31 @@ export default function LoginScreen({ navigation }) {
             keyboardDidHideListener.remove();
         };
     }, []);
-    /* eslint-enable react-hooks/exhaustive-deps */
 
-    // Dropdown data function
-    const getDropdownData = () => {
-        return branches.map((branch) => ({
-            key: branch.branchId,
-            value: branch.branchName
-        }));
-    };
-
-    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
-        // Entrance animations
         cardScale.value = withSpring(1, { damping: 12, stiffness: 100 });
         cardOpacity.value = withTiming(1, { duration: 800 });
         logoTranslateY.value = withSpring(0, { damping: 10, stiffness: 80 });
         logoOpacity.value = withTiming(1, { duration: 1000 });
     }, []);
-    /* eslint-enable react-hooks/exhaustive-deps */
 
-    // Menu animation
-    /* eslint-disable react-hooks/exhaustive-deps */
+    useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setFilteredBranches(branches);
+        } else {
+            const filtered = branches.filter(branch =>
+                branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                branch.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                branch.state?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                branch.branchCode?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            setFilteredBranches(filtered);
+        }
+    }, [searchQuery, branches]);
+
     useEffect(() => {
         menuRotate.value = withSpring(menuVisible ? 0.5 : 0);
     }, [menuVisible]);
-    /* eslint-enable react-hooks/exhaustive-deps */
 
     const animatedCardStyle = useAnimatedStyle(() => {
         return {
@@ -136,13 +174,14 @@ export default function LoginScreen({ navigation }) {
 
     const handleLogin = async () => {
         if (!username) {
-            showToast("Enter username", 'warning')
+            showToast("Enter username", 'warning');
             return;
         }
-        if(!password){
-             showToast("Enter correct password", 'warning')
+        if (!password) {
+            showToast("Enter correct password", 'warning');
             return;
         }
+
         setIsLoading(true);
         try {
             const formData = {
@@ -153,52 +192,54 @@ export default function LoginScreen({ navigation }) {
             const response = await api.post(`Login/branch-list`, formData);
             console.log("branch response", response);
             setBranches(response.data);
-        } catch (error) {
-            // console.log("Branch error", error.response);
-            showToast('Invalid username or password', 'error');
+            setFilteredBranches(response.data);
+            setSearchQuery("");
+            setBranchModalVisible(true);
 
+        } catch (error) {
+            showToast('Invalid username or password', 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleBranchSelect = (branch) => {
+        setSelectedBranch(branch);
+        setBranchModalVisible(false);
+        handleFinalLogin(branch.branchId);
+    };
+
     const handleFinalLogin = async (branchId) => {
-        if (branchId === null || branchId === undefined || branchId === "") {
-            showToast("Please select a branch", "warning");
-            return;
-        }
-
         setIsLoading(true);
-        try {
-            const formData = {
-                userName: username,
-                userPassword: password,
-                branchId: Number.isFinite(Number(branchId)) ? Number(branchId) : branchId,
-                browser: deviceData?.type ?? "",
-                device: deviceData?.device ?? "",
-                os: deviceData?.os ?? ""
-            };
+        const formData = {
+            userName: username,
+            userPassword: password,
+            branchId: branchId,
+            browser: deviceData.type,
+            device: deviceData.device,
+            os: deviceData.os
+        };
 
+        try {
             const response = await api.post(`Login/login`, formData);
-            //console.log("final Login", response.data);
             setUserId(response?.data?.user.id);
             setLoginBranchId(response.data?.branchId);
             setSessionId(response.data?.sessionId);
             setUserData(response.data?.user?.name);
             const token = response.data?.token;
             const userInfo = response.data;
+
             await AsyncStorage.setItem('AllBranch', JSON.stringify(branches));
-            setAllBranchInfo(branches)
-            //console.log("branc", branches);
+            setAllBranchInfo(branches);
+
             if (token) {
                 await login(token, userInfo);
-                navigation.replace('Dashboard');
             } else {
                 Alert.alert("Error", "Invalid response from server");
             }
         } catch (error) {
-            console.log("Final Login error", error?.response || error);
-            showToast("Login failed. Please try again.", "error");
+            console.log("Final Login error", error);
+            showToast('Login failed. Please try again.', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -206,7 +247,6 @@ export default function LoginScreen({ navigation }) {
 
     const handleMenuOption = (option) => {
         setMenuVisible(false);
-        // Add scale animation for theme change
         cardScale.value = withSequence(
             withTiming(0.95, { duration: 200 }),
             withTiming(1, { duration: 300 })
@@ -233,6 +273,102 @@ export default function LoginScreen({ navigation }) {
         }
     };
 
+    const clearSearch = () => {
+        setSearchQuery("");
+    };
+
+    const renderBranchModal = () => {
+        return (
+            <Modal
+                visible={branchModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setBranchModalVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setBranchModalVisible(false)}>
+                    <View style={tw`flex-1 justify-end bg-black/50`}>
+                        <TouchableWithoutFeedback onPress={() => { }}>
+                            <View style={tw`bg-white rounded-t-3xl w-full h-[70%] p-4`}>
+                                <View style={tw`items-start mb-4`}>
+                                    <View style={tw`w-12 h-1 bg-gray-300 rounded-full mb-2`} />
+                                    <Text style={tw`text-md font-bold text-gray-800`}>Select Branch</Text>
+                                    <Text style={tw`text-sm text-gray-500 mt-1`}>
+                                        {branches.length} branch{branches.length !== 1 ? 'es' : ''} available
+                                    </Text>
+                                </View>
+
+                                {branches.length > 0 && (
+                                    <View style={tw`mb-4`}>
+                                        <View style={tw`flex-row items-center rounded-xl`}>
+                                            <TextInput
+                                                placeholder="Search by branch name, city, or state..."
+                                                placeholderTextColor="#9ca3af"
+                                                style={[styles.searchInput, tw`flex-1 py-3 px-2 text-gray-800`]}
+                                                value={searchQuery}
+                                                onChangeText={setSearchQuery}
+                                            />
+                                            {searchQuery.length > 0 && (
+                                                <TouchableOpacity onPress={clearSearch}>
+                                                    <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    </View>
+                                )}
+
+                                {branches.length === 0 ? (
+                                    <View style={tw`flex-1 items-center justify-center`}>
+                                        <MaterialIcons name="business-center" size={60} color="#d1d5db" />
+                                        <Text style={tw`text-gray-400 text-center mt-4`}>
+                                            No branches available
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <>
+                                        {filteredBranches.length === 0 ? (
+                                            <View style={tw`flex-1 items-center justify-center`}>
+                                                <Ionicons name="search-outline" size={60} color="#d1d5db" />
+                                                <Text style={tw`text-gray-400 text-center mt-4`}>
+                                                    No branches found
+                                                </Text>
+                                                <Text style={tw`text-gray-400 text-sm text-center`}>
+                                                    Try a different search term
+                                                </Text>
+                                            </View>
+                                        ) : (
+                                            <FlatList
+                                                data={filteredBranches}
+                                                keyExtractor={(item, index) => item.branchId?.toString() || index.toString()}
+                                                showsVerticalScrollIndicator={false}
+                                                keyboardShouldPersistTaps="handled"
+                                                renderItem={({ item }) => (
+                                                    <TouchableOpacity
+                                                        onPress={() => handleBranchSelect(item)}
+                                                        style={tw`flex-row items-center p-4 mb-2 bg-gray-50 rounded-xl border border-gray-200`}
+                                                    >
+                                                        <View style={tw`bg-purple-100 rounded-full mr-3`}>
+                                                            <Ionicons name="business-outline" size={18} color="#8b5cf6" />
+                                                        </View>
+                                                        <View style={tw`flex-1`}>
+                                                            <Text style={tw`text-sm font-semibold text-gray-800`}>
+                                                                {item.branchName}
+                                                            </Text>
+                                                        </View>
+                                                        <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
+                                                    </TouchableOpacity>
+                                                )}
+                                            />
+                                        )}
+                                    </>
+                                )}
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+        );
+    };
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ImageBackground
@@ -242,10 +378,8 @@ export default function LoginScreen({ navigation }) {
             >
                 <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-                {/* Gradient Overlay */}
                 <View style={[tw`absolute inset-0`, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
 
-                {/* Three Dots Menu */}
                 <Animated.View style={[tw`absolute top-12 right-4 z-10`, animatedMenuStyle]}>
                     <TouchableOpacity
                         onPress={() => setMenuVisible(!menuVisible)}
@@ -292,43 +426,56 @@ export default function LoginScreen({ navigation }) {
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     style={tw`flex-1`}
-                    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
                 >
                     <ScrollView
-                        contentContainerStyle={tw`flex-grow justify-center`}
+                        style={tw`flex-1`}
+                        contentContainerStyle={[
+                            tw`flex-grow px-4`,
+                            {
+                                justifyContent: keyboardVisible ? "flex-start" : "center",
+                                paddingTop: keyboardVisible ? 60 : 20,
+                                paddingBottom: keyboardVisible ? 30 : 20,
+                            }
+                        ]}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="on-drag"
                         bounces={false}
                     >
-                        <View style={tw`flex-1 justify-center items-center px-4 py-8`}>
-                            {/* Logo/Icon - Animated with keyboard */}
-                            <Animated.View style={[tw`mb-3 items-center`, animatedLogoStyle]}>
+                        <View style={tw`w-full items-center`}>
+                            <Animated.View
+                                style={[
+                                    tw`mb-3 items-center`,
+                                    animatedLogoStyle,
+                                    keyboardVisible ? { marginBottom: 12 } : { marginBottom: 20 }
+                                ]}
+                            >
                                 <Animated.View entering={BounceIn.delay(300).springify()}>
                                     <Image
                                         source={loginLogo}
-                                        style={[
-                                            tw` border-2 border-white h-20 w-50 rounded-md`,
-                                            // keyboardVisible ? { height: 64, width: 64 } : { height: 96, width: 96 }
-                                        ]}
+                                        style={tw`border-2 border-white h-20 w-50 rounded-md`}
                                     />
                                 </Animated.View>
                             </Animated.View>
 
-                            {/* Login Card */}
-                            <Animated.View style={[
-                                tw`w-full rounded-3xl overflow-hidden`,
-                                animatedCardStyle,
-                                { maxWidth: 500 } // Limit max width on tablets
-                            ]}>
-                                <View style={[
-                                    tw`px-6 pt-8 pb-8`,
-                                    {
-                                        backgroundColor: `rgba(255, 255, 255, 0.1)`,
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                                    }
-                                ]}>
-                                    {/* Username */}
+                            <Animated.View
+                                style={[
+                                    tw`w-full rounded-3xl overflow-hidden`,
+                                    animatedCardStyle,
+                                    { maxWidth: 500 }
+                                ]}
+                            >
+                                <View
+                                    style={[
+                                        tw`px-6 pt-8 pb-8`,
+                                        {
+                                            backgroundColor: `rgba(255, 255, 255, 0.1)`,
+                                            borderWidth: 1,
+                                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                                        }
+                                    ]}
+                                >
                                     <Animated.View entering={FadeInDown.delay(200).springify()}>
                                         <Text style={tw`text-white/90 mb-2 font-semibold text-base`}>
                                             Username
@@ -350,7 +497,6 @@ export default function LoginScreen({ navigation }) {
                                         </View>
                                     </Animated.View>
 
-                                    {/* Password */}
                                     <Animated.View entering={FadeInDown.delay(300).springify()}>
                                         <Text style={tw`text-white/90 mb-2 font-semibold text-base`}>
                                             Password
@@ -368,11 +514,7 @@ export default function LoginScreen({ navigation }) {
                                                 value={password}
                                                 onChangeText={setPassword}
                                                 returnKeyType="done"
-                                                onSubmitEditing={() => {
-                                                    if (branches?.length === 0) {
-                                                        handleLogin();
-                                                    }
-                                                }}
+                                                onSubmitEditing={handleLogin}
                                             />
                                             <TouchableOpacity onPress={() => setTogglePassword(!togglePassword)}>
                                                 <Entypo
@@ -384,92 +526,53 @@ export default function LoginScreen({ navigation }) {
                                         </View>
                                     </Animated.View>
 
-                                    {/* Branch Dropdown */}
-                                    {branches?.length > 0 && (
-                                        <>
-                                            <Animated.View entering={FadeInDown.delay(400).springify()}>
-                                                <Text style={tw`text-white/90 mb-2 font-semibold text-base`}>
-                                                    Select Branch
+                                    {selectedBranch && (
+                                        <Animated.View entering={FadeInDown.delay(400).springify()}>
+                                            <View style={tw`bg-white/20 border border-white/30 rounded-2xl p-3 mb-5`}>
+                                                <Text style={tw`text-white/70 text-xs mb-1`}>Selected Branch</Text>
+                                                <Text style={tw`text-white font-semibold text-base`}>
+                                                    {selectedBranch.branchName}
                                                 </Text>
-                                            </Animated.View>
-
-                                            <Animated.View entering={SlideInRight.delay(450).springify()}>
-                                                <SelectList
-                                                    setSelected={(val) => {
-                                                        setSelected(val);
-                                                        handleFinalLogin(val);
-                                                    }}
-                                                    data={getDropdownData()}
-                                                    save="key"
-                                                    placeholder="Choose your branch"
-                                                    boxStyles={{
-                                                        borderRadius: 16,
-                                                        borderColor: "rgba(255, 255, 255, 0.3)",
-                                                        backgroundColor: "rgba(255, 255, 255, 0.2)",
-                                                        paddingVertical: 14,
-                                                        marginBottom: 25,
-                                                        borderWidth: 1,
-                                                    }}
-                                                    dropdownStyles={{
-                                                        backgroundColor: "rgba(255, 255, 255, 0.95)",
-                                                        borderRadius: 12,
-                                                        borderColor: "rgba(255, 255, 255, 0.3)",
-                                                        marginTop: 5,
-                                                    }}
-                                                    inputStyles={{
-                                                        color: "white",
-                                                        fontSize: 16,
-                                                    }}
-                                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                                />
-                                            </Animated.View>
-                                        </>
-                                    )}
-
-                                    {/* Login Button */}
-                                    {branches?.length === 0 && (
-                                        <Animated.View style={animatedButtonStyle}>
-                                            <TouchableOpacity
-                                                onPress={handleLogin}
-                                                disabled={isLoading}
-                                                activeOpacity={0.8}
-                                                style={[
-                                                    tw`py-4 rounded-2xl`,
-                                                    {
-                                                        backgroundColor: 'rgba(2, 37, 87, 0.55)',
-                                                        borderWidth: 1,
-                                                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                                                    }
-                                                ]}
-                                            >
-                                                {isLoading ? (
-                                                    <View style={tw`flex-row items-center justify-center`}>
-                                                        <MaterialIcons name="sync" size={24} color="white" style={tw`mr-2`} />
-                                                        <Text style={tw`text-center text-white font-bold text-lg`}>
-                                                            Logging in...
-                                                        </Text>
-                                                    </View>
-                                                ) : (
-                                                    <Text style={tw`text-center text-white font-bold text-lg`}>
-                                                        Login
+                                                {selectedBranch.city && (
+                                                    <Text style={tw`text-white/60 text-xs mt-1`}>
+                                                        {selectedBranch.city}, {selectedBranch.state}
                                                     </Text>
                                                 )}
-                                            </TouchableOpacity>
+                                            </View>
                                         </Animated.View>
                                     )}
 
-                                    {/* Loading indicator when branches are loading */}
-                                    {branches?.length > 0 && !selected && (
-                                        <View style={tw`mt-2`}>
-                                            <Text style={tw`text-white/60 text-center text-sm`}>
-                                                Please select a branch to continue
-                                            </Text>
-                                        </View>
-                                    )}
+                                    <Animated.View style={animatedButtonStyle}>
+                                        <TouchableOpacity
+                                            onPress={handleLogin}
+                                            disabled={isLoading}
+                                            activeOpacity={0.8}
+                                            style={[
+                                                tw`py-4 rounded-2xl`,
+                                                {
+                                                    backgroundColor: 'rgba(2, 37, 87, 0.55)',
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                                                }
+                                            ]}
+                                        >
+                                            {isLoading ? (
+                                                <View style={tw`flex-row items-center justify-center`}>
+                                                    <MaterialIcons name="sync" size={24} color="white" style={tw`mr-2`} />
+                                                    <Text style={tw`text-center text-white font-bold text-lg`}>
+                                                        Logging in...
+                                                    </Text>
+                                                </View>
+                                            ) : (
+                                                <Text style={tw`text-center text-white font-bold text-lg`}>
+                                                    Login
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </Animated.View>
                                 </View>
                             </Animated.View>
 
-                            {/* Footer - Hide when keyboard is visible */}
                             {!keyboardVisible && (
                                 <Animated.View entering={FadeInUp.delay(700)} style={tw`mt-8`}>
                                     <Text style={tw`text-white/60 text-sm`}>
@@ -481,7 +584,8 @@ export default function LoginScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
 
-                {/* Backdrop for menu */}
+                {renderBranchModal()}
+
                 {menuVisible && (
                     <TouchableOpacity
                         style={tw`absolute inset-0`}

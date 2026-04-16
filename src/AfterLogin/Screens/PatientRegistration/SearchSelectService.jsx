@@ -16,6 +16,7 @@ import {
 import SearchSelectServiceItem from './SearchSelectServiceItem';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { useToast } from '../../../../Authorization/ToastContext';
+import styles from '../../../utils/InputStyle';
 
 const SearchSelectService = ({ onClose }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -132,17 +133,17 @@ const SearchSelectService = ({ onClose }) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => handleSelectItem(item)}
-                        style={tw`p-3 mb-2 bg-gray-100 rounded`}
+                        style={tw`p-3 mb-2 bg-gray-50 border border-gray-200 rounded`}
                     >
                         <Text>{item?.name}</Text>
                     </TouchableOpacity>
                 )}
             />
 
-            <View style={tw`px-4 pb-4`}>
+            <View style={tw`px-4`}>
                 <TouchableOpacity
                     onPress={onClose}
-                    style={tw`bg-purple-500 py-4 rounded-full`}
+                    style={[styles.closeButton , tw` `]}
                 >
                     <Text style={tw`text-white text-center font-semibold`}>
                         Close

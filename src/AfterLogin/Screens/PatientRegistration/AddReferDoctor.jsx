@@ -30,10 +30,10 @@ const AddReferDoctor = ({ onClose }) => {
             return;
         }
 
-        if (!doctorMobile.trim()) {
-            showToast('Please enter doctor mobile number', 'error');
-            return;
-        }
+        // if (!doctorMobile.trim()) {
+        //     showToast('Please enter doctor mobile number', 'error');
+        //     return;
+        // }
 
         // if (!/^\d{10,15}$/.test(doctorMobile.trim())) {
         //     showToast('Please enter a valid mobile number', 'error');
