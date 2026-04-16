@@ -492,7 +492,7 @@ const ListHelpDeskPatient = () => {
                     <MaterialCommunityIcons name="calendar-clock" size={14} color="#9ca3af" />
                     <Text style={tw`text-xs text-gray-600 ml-2`}>Bill Date</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{formatDateOnly(item.BillDate)}</Text>
+                  <Text style={tw`text-xs text-gray-500`}>{item.CreatedOn}</Text>
                 </View>
               )}
               {item.SampleCollectedOn && (
