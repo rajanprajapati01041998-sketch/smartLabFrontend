@@ -31,8 +31,6 @@
        <activity
             android:name="com.razorpay.CheckoutActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize" />
-      <activity
-      android:name=".MainActivity"
-      android:windowSoftInputMode="adjustResize" />
+      
     </application>
 </manifest>

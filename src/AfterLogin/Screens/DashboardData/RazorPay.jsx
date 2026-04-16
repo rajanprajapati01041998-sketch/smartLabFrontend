@@ -1,270 +1,144 @@
 import React, {
   forwardRef,
   useImperativeHandle,
+  useRef,
   useState,
 } from 'react'
-import {
-  Alert,
-  NativeModules,
-  Platform,
-} from 'react-native'
+import { Platform } from 'react-native'
 import RazorpayCheckout from 'react-native-razorpay'
 
-const Razorpay = forwardRef(
-  (
-    {
-      apiBaseUrl,
-      payload,
-      customer = {},
-      onSuccess,
-      onFailure,
-    },
-    ref
-  ) => {
-    const [loading, setLoading] = useState(false)
+const RazorPay = forwardRef(
+  ({ apiBaseUrl, payload, customer, onSuccess, onFailure }, ref) => {
+    const [isLoading, setIsLoading] = useState(false)
+    const loadingRef = useRef(false)
 
-    const parseResponseSafe = async (response) => {
-      const text = await response.text()
-      try {
-        return JSON.parse(text)
-      } catch {
-        return { raw: text }
+    const getApiClient = () => {
+      if (apiBaseUrl && typeof apiBaseUrl.post === 'function') {
+        return apiBaseUrl
       }
+      throw new Error('Invalid apiBaseUrl client passed to RazorPay component')
     }
 
-    const normalizeApiBaseUrl = (value) => {
-      if (!value) return ''
-
-      if (typeof value === 'string') {
-        return value.trim()
-      }
-
-      const axiosBaseUrl = value?.defaults?.baseURL
-      if (typeof axiosBaseUrl === 'string') {
-        return axiosBaseUrl.trim()
-      }
-
-      return String(value).trim()
-    }
-
-    const buildApiUrl = (base, pathWithoutLeadingSlash) => {
-      const trimmed = base.replace(/\/+$/, '')
-      return `${trimmed}/${pathWithoutLeadingSlash.replace(/^\/+/, '')}`
-    }
-
-    const assertRazorpayNativeModuleAvailable = () => {
-      if (NativeModules?.RNRazorpayCheckout) return
-
-      const platformHint =
-        Platform.OS === 'android'
-          ? 'Rebuild and reinstall the Android app after installing react-native-razorpay.'
-          : 'Run pod install and rebuild the iOS app.'
-
-      throw new Error(
-        `Razorpay native module not found. ${platformHint}`
-      )
-    }
-
-    const payNow = async (customPayload = null) => {
-      if (loading) return
-
-      const finalPayload = customPayload || payload
-      const resolvedApiBaseUrl = normalizeApiBaseUrl(apiBaseUrl)
-
-      if (!resolvedApiBaseUrl) {
-        Alert.alert('Error', 'API Base URL is missing')
-        return
-      }
-
-      if (!finalPayload?.amount || Number(finalPayload?.amount) <= 0) {
-        Alert.alert('Error', 'Amount is missing')
-        return
-      }
-
-      setLoading(true)
+    const payNow = async () => {
+      if (loadingRef.current) return
 
       try {
-        assertRazorpayNativeModuleAvailable()
+        loadingRef.current = true
+        setIsLoading(true)
 
-        const createOrderUrl = buildApiUrl(
-          resolvedApiBaseUrl,
-          'payment/create-order'
-        )
+        const api = getApiClient()
 
-        const verifyPaymentUrl = buildApiUrl(
-          resolvedApiBaseUrl,
-          'payment/verify-payment'
-        )
-
-        const createOrderPayload = {
-          hospId: Number(finalPayload?.hospId || 0),
-          branchId: Number(finalPayload?.branchId || 0),
-          clientId: Number(finalPayload?.clientId || 0),
-          paymentModeId: Number(finalPayload?.paymentModeId || 0),
-          createdBy: Number(finalPayload?.createdBy || 0),
-          amount: Number(finalPayload?.amount || 0),
-          currency: finalPayload?.currency || 'INR',
-          paymentMode: finalPayload?.paymentMode || 'Online',
-          receipt: finalPayload?.receipt || null,
-          remarks: finalPayload?.remarks?.trim()
-            ? finalPayload.remarks.trim()
-            : null,
+        const createPayload = {
+          hospId: Number(payload?.hospId) || 0,
+          branchId: Number(payload?.branchId) || 0,
+          clientId: Number(payload?.clientId) || 0,
+          paymentModeId: Number(payload?.paymentModeId) || 0,
+          createdBy: Number(payload?.createdBy) || 0,
+          amount: Number(payload?.amount) || 0,
+          currency: payload?.currency || 'INR',
+          paymentMode: payload?.paymentMode || 'Online',
+          receipt: payload?.receipt || null,
+          remarks: payload?.remarks || null,
         }
 
-        console.log('resolvedApiBaseUrl:', resolvedApiBaseUrl)
-        console.log('createOrderUrl:', createOrderUrl)
-        console.log('verifyPaymentUrl:', verifyPaymentUrl)
-        console.log('Creating order...', createOrderPayload)
+        console.log('Create Order Payload:', createPayload)
 
-        let createOrderResponse
-        let createOrderData
+        const createOrderResponse = await api.post(
+          'payment/create-order',
+          createPayload
+        )
 
-        try {
-          createOrderResponse = await fetch(createOrderUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(createOrderPayload),
-          })
-
-          createOrderData = await parseResponseSafe(createOrderResponse)
-        } catch (fetchError) {
-          console.log('Create order fetch failed:', fetchError)
-          Alert.alert(
-            'Network Error',
-            'Could not connect to create-order API'
-          )
-          onFailure?.({
-            message: 'Create order API failed',
-            raw: String(fetchError),
-          })
-          return
-        }
+        const createOrderData = createOrderResponse?.data || createOrderResponse
 
         console.log('Create Order Response:', createOrderData)
 
-        if (!createOrderResponse.ok) {
-          Alert.alert(
-            'Create Order Failed',
-            createOrderData?.message ||
-              createOrderData?.detail ||
-              'Unable to create order'
-          )
-          onFailure?.(createOrderData)
-          return
-        }
-
         const options = {
-          description: 'Add Fund Payment',
-          currency: String(createOrderData?.currency || 'INR'),
-          key: String(createOrderData?.key || ''),
-          amount: String(createOrderData?.amount || ''),
-          name: customer?.name || 'Gravity Web Technology',
-          order_id: String(createOrderData?.orderId || ''),
+          description: 'Lab Advance Payment',
+          image: '',
+          currency: createOrderData?.currency || createPayload.currency || 'INR',
+          key: createOrderData?.key,
+          amount: createOrderData?.amount,
+          name: 'Gravity Web Technology',
+          order_id: createOrderData?.orderId,
           prefill: {
-            name: customer?.name || '',
             email: customer?.email || '',
-            contact: customer?.contact ? String(customer.contact) : '',
+            contact: customer?.contact || '',
+            name: customer?.name || '',
           },
-          theme: { color: '#3399cc' },
+          theme: { color: '#0f62fe' },
         }
 
-        console.log('Razorpay options:', options)
-        console.log('Before RazorpayCheckout.open')
+        const razorpaySuccess = await RazorpayCheckout.open(options)
 
-        let razorpayResponse
-
-        try {
-          razorpayResponse = await RazorpayCheckout.open(options)
-          console.log('Razorpay Success:', razorpayResponse)
-        } catch (rzpError) {
-          console.log('Razorpay open failed:', rzpError)
-          console.log(
-            'Razorpay open failed JSON:',
-            JSON.stringify(rzpError, null, 2)
-          )
-
-          Alert.alert(
-            'Payment Failed',
-            rzpError?.description ||
-              rzpError?.message ||
-              'Razorpay UI did not open'
-          )
-
-          onFailure?.(rzpError)
-          return
-        }
+        console.log('Razorpay Success:', razorpaySuccess)
 
         const verifyPayload = {
-          razorpay_order_id: razorpayResponse?.razorpay_order_id,
-          razorpay_payment_id: razorpayResponse?.razorpay_payment_id,
-          razorpay_signature: razorpayResponse?.razorpay_signature,
+          hospId: Number(payload?.hospId) || 0,
+          branchId: Number(payload?.branchId) || 0,
+          clientId: Number(payload?.clientId) || 0,
+          paymentModeId: Number(payload?.paymentModeId) || 0,
+          createdBy: Number(payload?.createdBy) || 0,
+          amount: Number(payload?.amount) || 0,
+          paymentMode: payload?.paymentMode || 'Online',
+          remarks: payload?.remarks || null,
+          razorpay_order_id: razorpaySuccess?.razorpay_order_id || '',
+          razorpay_payment_id: razorpaySuccess?.razorpay_payment_id || '',
+          razorpay_signature: razorpaySuccess?.razorpay_signature || '',
         }
 
-        let verifyResponse
-        let verifyData
+        console.log('Verify Payload:', verifyPayload)
 
-        try {
-          verifyResponse = await fetch(verifyPaymentUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(verifyPayload),
-          })
+        const verifyResponse = await api.post(
+          'payment/verify-payment',
+          verifyPayload
+        )
 
-          verifyData = await parseResponseSafe(verifyResponse)
-        } catch (verifyError) {
-          console.log('Verify payment fetch failed:', verifyError)
-          Alert.alert(
-            'Verify Failed',
-            'Payment done, but verify API failed'
-          )
-          onFailure?.({
-            message: 'Verify API failed',
-            raw: String(verifyError),
-          })
-          return
-        }
+        const verifyData = verifyResponse?.data || verifyResponse
 
         console.log('Verify Response:', verifyData)
 
-        if (!verifyResponse.ok) {
-          Alert.alert(
-            'Verify Failed',
-            verifyData?.message ||
-              verifyData?.detail ||
-              'Payment verification failed'
-          )
-          onFailure?.(verifyData)
+        if (!verifyData?.status) {
+          onFailure?.(verifyData || { message: 'Payment failed' })
           return
         }
 
-        onSuccess?.({
-          paymentResponse: razorpayResponse,
-          verifyResponse: verifyData,
-          orderResponse: createOrderData,
-        })
+        onSuccess?.(verifyData)
       } catch (error) {
-        console.log('Payment Error:', error)
-        Alert.alert(
-          'Payment Error',
-          error?.message || 'Something went wrong during payment'
-        )
-        onFailure?.(error)
+        console.log('RazorPay Error:', error)
+
+        // ✅ Detect cancel
+        if (error?.code === 'PAYMENT_CANCELLED') {
+          onFailure?.({
+            message: 'Payment cancelled',
+            isCancelled: true,
+          })
+          return
+        }
+
+        if (error?.description) {
+          onFailure?.({
+            message: error.description || 'Payment failed',
+          })
+        } else if (error?.response?.data) {
+          onFailure?.(error.response.data)
+        } else {
+          onFailure?.({
+            message: error?.message || 'Payment failed',
+          })
+        }
       } finally {
-        setLoading(false)
+        loadingRef.current = false
+        setIsLoading(false)
       }
     }
 
     useImperativeHandle(ref, () => ({
       payNow,
-      isLoading: loading,
+      isLoading,
     }))
 
     return null
   }
 )
 
-export default Razorpay
+export default RazorPay
