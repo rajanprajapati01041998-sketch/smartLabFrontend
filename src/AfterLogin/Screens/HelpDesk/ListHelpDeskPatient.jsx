@@ -510,7 +510,7 @@ const ListHelpDeskPatient = () => {
                     <MaterialCommunityIcons name="file-check" size={14} color="#9ca3af" />
                     <Text style={tw`text-xs text-gray-600 ml-2`}>Result Done</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{formatDate(item.ResultDoneOn)}</Text>
+                  <Text style={tw`text-xs text-gray-500`}>{(item.ResultDoneOn)}</Text>
                 </View>
               )}
               {item.ReportApprovedOn && (
