@@ -8,7 +8,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   TextInput,
-  FlatList, Platform,
+  FlatList,
+  Platform,
   Alert
 } from 'react-native';
 import tw from 'twrnc';
@@ -26,14 +27,18 @@ import ButtonStyles from '../../../utils/ButtonStyle';
 import api from '../../../../Authorization/api';
 import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 import { useDash } from '../../../../Authorization/DashContext';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const LabDashboard = () => {
   const { userData, allBranchInfo, deviceData, loginBranchId, updateFlag } = useAuth();
-  const { dashboardWallet, walletData } = useDash()
+  const { dashboardWallet, walletData } = useDash();
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
   const navigation = useNavigation();
   const dashboardRef = React.useRef(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [walletBal, setWalletBal] = useState(0)
+  const [walletBal, setWalletBal] = useState(0);
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
@@ -42,35 +47,23 @@ const LabDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectAll, setSelectAll] = useState(false);
 
-  // ✅ MULTI SELECT STATE
   const [selectedBranches, setSelectedBranches] = useState([]);
-
-
-
-
 
   useFocusEffect(
     useCallback(() => {
       const today = new Date();
-      const formattedDate = today.toISOString().split("T")[0];
+      const formattedDate = today.toISOString().split('T')[0];
       setFromDate(formattedDate);
       setToDate(formattedDate);
-      dashboardWallet(loginBranchId)
+      dashboardWallet(loginBranchId);
     }, [])
-  )
+  );
 
-
-
-
-
-
-  // ✅ Convert dd-MM-yyyy → yyyy-MM-dd
   const formatDateToAPI = (date) => {
-    const [day, month, year] = date.split("-");
+    const [day, month, year] = date.split('-');
     return `${year}-${month}-${day}`;
   };
 
-  // ✅ Handle filter
   const handleSearchFilter = (data) => {
     const formattedFrom = formatDateToAPI(data.fromDate);
     const formattedTo = formatDateToAPI(data.toDate);
@@ -81,11 +74,8 @@ const LabDashboard = () => {
     setFilterModal(false);
   };
 
-  // ✅ MULTI SELECT LOGIC
   const toggleBranch = (branch) => {
-    const exists = selectedBranches.find(
-      (b) => b.branchId === branch.branchId
-    );
+    const exists = selectedBranches.find((b) => b.branchId === branch.branchId);
 
     if (exists) {
       setSelectedBranches((prev) =>
@@ -96,26 +86,24 @@ const LabDashboard = () => {
     }
   };
 
-  // ✅ Filter branches based on search
   const filteredBranches = useMemo(() => {
-    return allBranchInfo?.filter(branch =>
-      branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
+    return (
+      allBranchInfo?.filter((branch) =>
+        branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
+      ) || []
+    );
   }, [allBranchInfo, searchQuery]);
 
-  // ✅ Handle select all
   const handleSelectAll = () => {
     if (selectAll) {
-      // Deselect all - remove all filtered branches
-      filteredBranches.forEach(branch => {
-        if (selectedBranches.some(b => b.branchId === branch.branchId)) {
+      filteredBranches.forEach((branch) => {
+        if (selectedBranches.some((b) => b.branchId === branch.branchId)) {
           toggleBranch(branch);
         }
       });
     } else {
-      // Select all - add all filtered branches
-      filteredBranches.forEach(branch => {
-        if (!selectedBranches.some(b => b.branchId === branch.branchId)) {
+      filteredBranches.forEach((branch) => {
+        if (!selectedBranches.some((b) => b.branchId === branch.branchId)) {
           toggleBranch(branch);
         }
       });
@@ -123,22 +111,20 @@ const LabDashboard = () => {
     setSelectAll(!selectAll);
   };
 
-  // ✅ Update select all state when selection changes
   useEffect(() => {
-    const allFilteredSelected = filteredBranches.length > 0 &&
-      filteredBranches.every(branch =>
-        selectedBranches.some(b => b.branchId === branch.branchId)
+    const allFilteredSelected =
+      filteredBranches.length > 0 &&
+      filteredBranches.every((branch) =>
+        selectedBranches.some((b) => b.branchId === branch.branchId)
       );
     setSelectAll(allFilteredSelected);
   }, [selectedBranches, filteredBranches]);
 
-  // ✅ Convert to string for API
   const selectedBranchIds =
     selectedBranches.length > 0
-      ? selectedBranches.map((b) => b.branchId).join(",")
-      : allBranchInfo?.map((b) => b.branchId).join(",");
+      ? selectedBranches.map((b) => b.branchId).join(',')
+      : allBranchInfo?.map((b) => b.branchId).join(',');
 
-  // ✅ Clear all branches selection
   const clearAllBranches = () => {
     setSelectedBranches([]);
   };
@@ -154,7 +140,7 @@ const LabDashboard = () => {
 
   return (
     <ScrollView
-      style={tw`flex-1 bg-gray-50`}
+      style={themed.screen}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -162,71 +148,71 @@ const LabDashboard = () => {
           onRefresh={onRefresh}
           tintColor="#10b981"
           colors={['#10b981']}
-          progressBackgroundColor="white"
+          progressBackgroundColor={themed.progressBgColor}
         />
       }
     >
       {/* HEADER */}
-      <View style={tw`px-4 pt-2 pb-1 bg-white border-b border-gray-200`}>
+      <View style={themed.header}>
         <View style={tw`flex-row justify-between items-start`}>
-          <View style={tw`flex-1 `}>
-            <Text style={tw`text-xs text-gray-500 mb-1 `}>Welcome back,</Text>
-            {/* Branch Dropdown */}
+          <View style={tw`flex-1`}>
+            <Text style={themed.headerSubText}>
+              Welcome back,
+            </Text>
+
             <TouchableOpacity
               onPress={() => setBranchModal(true)}
               style={tw`flex-row items-center mb-1`}
               activeOpacity={0.7}
             >
-              <Text style={tw`text-md font-bold text-gray-800`}>
+              <Text style={themed.headerTitle}>
                 {userData?.user?.name || userData?.name}
               </Text>
-              <MaterialIcons name="arrow-drop-down" size={24} color="#6b7280" />
+              <MaterialIcons
+                name="arrow-drop-down"
+                size={24}
+                color={themed.iconMuted}
+              />
             </TouchableOpacity>
 
-            {/* Selected Branch Display */}
-
-
-            {/* Date */}
             <View style={tw`flex-row items-center`}>
               <Icon name="calendar" size={12} color="#9ca3af" />
-              <Text style={tw`text-xs text-gray-500 ml-1`}>
+              <Text style={themed.dateText}>
                 {fromDate} → {toDate}
               </Text>
             </View>
           </View>
 
-          {/* Right Buttons */}
           <View style={tw`flex-row gap-2`}>
             <TouchableOpacity
               onPress={() => setFilterModal(true)}
-              style={[
-                tw`flex-row items-center px-3 py-2 rounded-lg`,
-                ButtonStyles.button,
-              ]}
+              style={themed.filterButton}
             >
-              <MaterialIcons name="calendar-month" size={18} color="#374151" />
-              <Text style={tw`ml-2 text-sm text-gray-700`}>Filter</Text>
+              <MaterialIcons
+                name="calendar-month"
+                size={18}
+                color={themed.filterButtonIcon}
+              />
+              <Text style={themed.filterButtonText}>
+                Filter
+              </Text>
             </TouchableOpacity>
-
-
           </View>
-
         </View>
       </View>
-      {selectedBranches.length > 0 && <View style={tw`px-2 mb-2 mt-1`}>
-        <View style={tw`bg-white rounded-xl  shadow-sm overflow-hidden`}>
-          {/* Header Label */}
-          <View style={tw`px-3 pt-2 pb-1 border-b border-gray-100 bg-gray-50`}>
-            <Text style={tw`text-xs font-semibold text-gray-600 uppercase tracking-wide`}>
-              Selected Branches
-            </Text>
-          </View>
 
-          {/* Content */}
-          <View style={tw`flex-row items-center px-3 py-2`}>
-            <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+      {selectedBranches.length > 0 && (
+        <View style={tw`px-2 mb-2 mt-1`}>
+          <View style={themed.sectionCard}>
+            <View style={themed.sectionHeader}>
+              <Text style={themed.sectionHeaderText}>
+                Selected Branches
+              </Text>
+            </View>
 
-            {selectedBranches.length > 0 ? (
+            <View style={tw`flex-row items-center px-3 py-2`}>
+              <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -253,11 +239,10 @@ const LabDashboard = () => {
                   </TouchableOpacity>
                 ))}
 
-                {/* Clear All Button */}
                 {selectedBranches.length > 1 && (
                   <TouchableOpacity
                     onPress={clearAllBranches}
-                    style={tw`flex-row items-center bg-gray-100 rounded-full px-3 py-1.5`}
+                    style={themed.selectedBranchesClearBtn}
                     activeOpacity={0.7}
                   >
                     <Icon name="delete-outline" size={14} color="#ef4444" />
@@ -267,39 +252,34 @@ const LabDashboard = () => {
                   </TouchableOpacity>
                 )}
               </ScrollView>
-            ) : (
-              <View style={tw`flex-1 flex-row items-center`}>
-                <Text style={tw`text-xs text-gray-500 italic`}>No branches selected</Text>
-                <Text style={tw`text-xs text-gray-400 ml-1`}>(showing all)</Text>
-              </View>
-            )}
 
-            {/* Branch Count Badge */}
-            {selectedBranches.length > 0 && (
               <View style={tw`ml-2 bg-blue-500 rounded-full min-w-[24px] h-6 items-center justify-center px-1.5`}>
                 <Text style={tw`text-white text-xs font-bold`}>
                   {selectedBranches.length}
                 </Text>
               </View>
-            )}
+            </View>
           </View>
         </View>
-      </View>}
+      )}
+
       {/* MAIN */}
-      <View style={tw`px-4 py-4 bg-white rounded-xl shadow-sm mb-4`}>
+      <View style={[themed.card, tw`px-4 py-4 mb-4 mt-1`]}>
         <View style={tw`flex-row justify-between items-center`}>
-          {/* Wallet Section */}
           <View style={tw`flex-row items-center gap-3`}>
             <View style={tw`w-10 h-10 rounded-full bg-blue-100 items-center justify-center`}>
               <Icon name="wallet" size={22} color="#3B82F6" />
             </View>
             <View>
-              <Text style={tw`text-gray-500 text-xs font-medium`}>Wallet Balance</Text>
-              <Text style={tw` ${walletData?.balanceMain > 0 ? "text-green-800" : "text-red-500"} text-xl font-bold`}>₹ {walletData?.balanceMain}</Text>
+              <Text style={themed.mutedText}>
+                Wallet Balance
+              </Text>
+              <Text style={tw`${walletData?.balanceMain > 0 ? 'text-green-800' : 'text-red-500'} text-xl font-bold`}>
+                ₹ {walletData?.balanceMain}
+              </Text>
             </View>
           </View>
 
-          {/* Action Button */}
           <TouchableOpacity
             onPress={() => navigation.navigate('DashboardPayment')}
             style={tw`bg-blue-500 px-4 py-2 rounded-lg flex-row items-center gap-2`}
@@ -310,16 +290,13 @@ const LabDashboard = () => {
           </TouchableOpacity>
         </View>
       </View>
-      <View style={tw`px-4 py-4`}>
 
-        {/* Dashboard */}
+      <View style={tw`px-4 py-4`}>
         <DashboardCollection
           ref={dashboardRef}
           fromDate={fromDate}
           toDate={toDate}
           branchId={selectedBranchIds}
-
-
         />
       </View>
 
@@ -328,7 +305,7 @@ const LabDashboard = () => {
         <TouchableWithoutFeedback onPress={() => setFilterModal(false)}>
           <View style={tw`flex-1 justify-center items-center bg-black/60`}>
             <TouchableWithoutFeedback>
-              <View style={tw`bg-white rounded-2xl w-[95%] overflow-hidden`}>
+              <View style={[themed.modalContainer, tw`w-[95%]`]}>
                 <FilterDate
                   onClose={() => setFilterModal(false)}
                   onSave={handleSearchFilter}
@@ -339,7 +316,7 @@ const LabDashboard = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* BRANCH MODAL - PROFESSIONAL UI */}
+      {/* BRANCH MODAL */}
       <Modal
         visible={branchModal}
         transparent
@@ -349,42 +326,38 @@ const LabDashboard = () => {
         <TouchableWithoutFeedback onPress={() => setBranchModal(false)}>
           <View style={tw`flex-1 justify-center items-center bg-black/60`}>
             <TouchableWithoutFeedback>
-              <View style={tw`bg-white rounded-2xl w-[90%] max-h-[85%] overflow-hidden shadow-xl`}>
-
-                {/* Header */}
-                <View style={tw`flex-row justify-between items-center px-5 pt-2 pb-2 border-b border-gray-100 bg-white`}>
+              <View style={[themed.modalCard, tw`w-[90%] max-h-[85%] shadow-xl`]}>
+                <View style={themed.modalHeader}>
                   <View>
-                    <Text style={tw`text-lg font-bold text-gray-800`}>Select Branches</Text>
-                    <Text style={tw`text-xxs text-gray-500 mt-1`}>
+                    <Text style={themed.modalTitle}>
+                      Select Branches
+                    </Text>
+                    <Text style={themed.modalSubTitle}>
                       Choose branches to view data
                     </Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => setBranchModal(false)}
-                    style={tw`p-2 rounded-full bg-gray-100`}
+                    style={themed.modalCloseButton}
                   >
-                    <Icon name="close" size={20} color="#6b7280" />
+                    <Icon name="close" size={20} color={themed.closeIconColor} />
                   </TouchableOpacity>
                 </View>
 
-                {/* Search Bar */}
-                <View style={tw`px-4 py-2 border-b border-gray-200 bg-gray-50`}>
-                  <View
-                    style={tw`flex-row items-center bg-white rounded-xl px-3 h-12 border border-gray-300`}
-                  >
+                <View style={themed.searchWrapper}>
+                  <View style={themed.searchBox}>
                     <Feather name="search" size={18} color="#9ca3af" />
                     <TextInput
-                      style={tw`flex-1 ml-2 text-base text-gray-800`}
+                      style={themed.searchInput}
                       placeholder="Search branches..."
                       placeholderTextColor="#9ca3af"
                       value={searchQuery}
                       onChangeText={setSearchQuery}
                       returnKeyType="search"
-                      clearButtonMode="never" // iOS handled manually
-                      underlineColorAndroid="transparent" // Android fix
+                      clearButtonMode="never"
+                      underlineColorAndroid="transparent"
                     />
 
-                    {/* Clear Button */}
                     {searchQuery?.length > 0 && (
                       <TouchableOpacity
                         onPress={() => setSearchQuery('')}
@@ -397,32 +370,30 @@ const LabDashboard = () => {
                   </View>
                 </View>
 
-                {/* Select All Option */}
                 {filteredBranches.length > 0 && (
                   <TouchableOpacity
                     onPress={handleSelectAll}
-                    style={tw`flex-row justify-between items-center p-4 border-b border-gray-100 bg-gray-50`}
+                    style={themed.selectAllRow}
                   >
                     <View style={tw`flex-row items-center`}>
-                      <View style={tw`p-2 rounded-lg bg-white mr-3`}>
+                      <View style={themed.selectAllIconWrap}>
                         <Icon name="select-all" size={18} color="#3b82f6" />
                       </View>
                       <View>
-                        <Text style={tw`font-semibold text-gray-700`}>
+                        <Text style={themed.selectAllTitle}>
                           {selectAll ? 'Deselect All' : 'Select All'}
                         </Text>
-                        <Text style={tw`text-xs text-gray-500`}>
+                        <Text style={themed.selectAllSubTitle}>
                           {filteredBranches.length} branches available
                         </Text>
                       </View>
                     </View>
-                    <View style={tw`w-5 h-5 rounded border-2 ${selectAll ? 'bg-blue-500 border-blue-500' : 'border-gray-300'} items-center justify-center`}>
+                    <View style={tw`w-5 h-5 rounded border-2 items-center justify-center ${selectAll ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                       {selectAll && <AntDesign name="check" size={12} color="white" />}
                     </View>
                   </TouchableOpacity>
                 )}
 
-                {/* Branch List */}
                 <FlatList
                   data={filteredBranches}
                   keyExtractor={(item, index) => `${item.branchId}-${index}`}
@@ -431,58 +402,59 @@ const LabDashboard = () => {
                   ListEmptyComponent={
                     <View style={tw`items-center justify-center py-12`}>
                       <Icon name="store-off" size={48} color="#d1d5db" />
-                      <Text style={tw`text-gray-400 text-base mt-3 font-medium`}>
+                      <Text style={themed.emptyTitle}>
                         No branches found
                       </Text>
-                      <Text style={tw`text-gray-400 text-sm mt-1`}>
+                      <Text style={themed.emptySubTitle}>
                         Try searching with different keywords
                       </Text>
                     </View>
                   }
-                  renderItem={({ item, index }) => {
+                  renderItem={({ item }) => {
                     const isSelected = selectedBranches.some(
                       (b) => b.branchId === item.branchId
                     );
+
                     return (
                       <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={() => toggleBranch(item)}
-                        style={tw`flex-row items-center justify-between px-4 py-3 mx-2 my-1 rounded-xl ${isSelected ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-100'}`}
+                        style={themed.listItem(isSelected)}
                       >
                         <View style={tw`flex-row items-center flex-1`}>
-                          <View style={tw`p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-100'} mr-3`}>
+                          <View style={themed.listItemIconWrap(isSelected)}>
                             <Icon
-                              name={isSelected ? "store-check" : "store"}
+                              name={isSelected ? 'store-check' : 'store'}
                               size={20}
-                              color={isSelected ? "#3b82f6" : "#6b7280"}
+                              color={isSelected ? '#3b82f6' : theme === 'dark' ? '#D1D5DB' : '#6b7280'}
                             />
                           </View>
                           <View style={tw`flex-1`}>
-                            <Text style={tw`font-medium text-gray-800 text-base`}>
+                            <Text style={themed.listItemText}>
                               {item.branchName}
                             </Text>
-
                           </View>
                         </View>
+
                         <View style={tw`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
                           {isSelected && <AntDesign name="check" size={12} color="white" />}
                         </View>
                       </TouchableOpacity>
-                    )
+                    );
                   }}
                 />
 
-                {/* Footer Actions */}
-                <View style={tw`p-4 border-t border-gray-100 bg-white`}>
+                <View style={themed.footer}>
                   <View style={tw`flex-row gap-3`}>
                     <TouchableOpacity
                       onPress={() => setBranchModal(false)}
-                      style={tw`flex-1 py-3 rounded-xl border border-gray-300 bg-white`}
+                      style={themed.cancelButton}
                     >
-                      <Text style={tw`text-center text-gray-700 font-medium`}>
+                      <Text style={themed.cancelButtonText}>
                         Cancel
                       </Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity
                       onPress={() => setBranchModal(false)}
                       style={tw`flex-1 py-3 rounded-xl bg-blue-500 shadow-sm`}
@@ -493,13 +465,11 @@ const LabDashboard = () => {
                     </TouchableOpacity>
                   </View>
                 </View>
-
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
     </ScrollView>
   );
 };

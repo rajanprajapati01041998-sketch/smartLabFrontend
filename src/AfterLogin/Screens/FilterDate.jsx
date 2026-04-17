@@ -6,13 +6,18 @@ import Entypo from 'react-native-vector-icons/Entypo'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import ButtonStyles from '../../utils/ButtonStyle'
+import { getThemeStyles } from '../../utils/themeStyles'
+import { useTheme } from '../../../Authorization/ThemeContext'
 
 const FilterDate = ({ onClose, onSave }) => {
 
+    const { theme } = useTheme()
+    const themed = getThemeStyles(theme)
+
     const [fromDate, setFromDate] = useState(new Date())
     const [toDate, setToDate] = useState(new Date())
-    const [showPicker, setShowPicker] = useState(null) // 'from' | 'to'
-    const [tempDate, setTempDate] = useState(new Date()) // For iOS modal
+    const [showPicker, setShowPicker] = useState(null)
+    const [tempDate, setTempDate] = useState(new Date())
 
     const formatDate = (date) => {
         const day = String(date.getDate()).padStart(2, '0')
@@ -23,36 +28,26 @@ const FilterDate = ({ onClose, onSave }) => {
 
     const onChange = (event, selectedDate) => {
         if (Platform.OS === 'android') {
-            // For Android, close the picker immediately
             setShowPicker(null)
-            
+
             if (selectedDate) {
-                if (showPicker === 'from') {
-                    setFromDate(selectedDate)
-                } else if (showPicker === 'to') {
-                    setToDate(selectedDate)
-                }
+                if (showPicker === 'from') setFromDate(selectedDate)
+                else if (showPicker === 'to') setToDate(selectedDate)
             }
         } else {
-            // For iOS, update temp date while user is scrolling
-            if (selectedDate) {
-                setTempDate(selectedDate)
-            }
+            if (selectedDate) setTempDate(selectedDate)
         }
     }
 
     const onIOSConfirm = () => {
-        if (showPicker === 'from') {
-            setFromDate(tempDate)
-        } else if (showPicker === 'to') {
-            setToDate(tempDate)
-        }
+        if (showPicker === 'from') setFromDate(tempDate)
+        else if (showPicker === 'to') setToDate(tempDate)
+
         setShowPicker(null)
     }
 
     const renderDatePicker = () => {
         if (Platform.OS === 'android') {
-            // For Android, show picker directly without modal
             if (showPicker) {
                 return (
                     <DateTimePicker
@@ -66,30 +61,18 @@ const FilterDate = ({ onClose, onSave }) => {
             }
             return null
         } else {
-            // For iOS, show picker in modal
             if (showPicker) {
                 return (
-                    <Modal
-                        visible={showPicker !== null}
-                        transparent
-                        animationType="slide"
-                    >
-                        <View style={{
-                            flex: 1,
-                            justifyContent: 'flex-end',
-                            backgroundColor: 'rgba(0,0,0,0.4)'
-                        }}>
-                            <View style={{
-                                backgroundColor: '#fff',
-                                borderTopLeftRadius: 20,
-                                borderTopRightRadius: 20,
-                                padding: 15
-                            }}>
+                    <Modal visible animationType="slide" transparent>
+                        <View style={tw`flex-1 justify-end bg-black/40`}>
+                            <View style={[themed.modalCard, tw`p-4 rounded-t-2xl`]}>
+                                
                                 {/* Header */}
                                 <View style={tw`flex-row justify-between items-center mb-4`}>
-                                    <Text style={tw`font-bold text-base`}>
+                                    <Text style={themed.modalTitle}>
                                         Select {showPicker === 'from' ? 'From' : 'To'} Date
                                     </Text>
+
                                     <TouchableOpacity onPress={() => setShowPicker(null)}>
                                         <Text style={{ color: 'red', fontSize: 16 }}>Cancel</Text>
                                     </TouchableOpacity>
@@ -101,15 +84,15 @@ const FilterDate = ({ onClose, onSave }) => {
                                     display="spinner"
                                     onChange={onChange}
                                     maximumDate={new Date()}
-                                    style={{ backgroundColor: 'white' }}
                                 />
 
-                                {/* Confirm Button */}
                                 <TouchableOpacity
-                                    style={[tw`mt-4 py-3 rounded-lg`, { backgroundColor: '#007AFF' }]}
+                                    style={tw`mt-4 py-3 rounded-lg bg-blue-500`}
                                     onPress={onIOSConfirm}
                                 >
-                                    <Text style={tw`text-white text-center font-semibold`}>Confirm</Text>
+                                    <Text style={tw`text-white text-center font-semibold`}>
+                                        Confirm
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -121,49 +104,49 @@ const FilterDate = ({ onClose, onSave }) => {
     }
 
     return (
-        <View style={tw`p-4`}>
+        <View style={[themed.modalCard, tw`p-4`]}>
 
             {/* Header */}
             <View style={tw`flex-row justify-between items-center`}>
-                <Text style={tw`text-lg font-bold`}>Filter</Text>
+                <Text style={themed.modalHeaderTitle}>Filter</Text>
 
                 <TouchableOpacity onPress={onClose}>
-                    <Entypo name="cross" size={22} />
+                    <Entypo name="cross" size={22} color={themed.chevronColor} />
                 </TouchableOpacity>
             </View>
 
             <View style={tw`mt-8`}>
 
                 {/* From */}
-                <Text style={tw`mb-1 text-gray-700`}>From</Text>
+                <Text style={[themed.mutedText, tw`mb-1`]}>From</Text>
                 <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center p-3 border border-gray-300 rounded-lg`, CustomStyles.input]}
+                    style={[themed.searchBox]}
                     onPress={() => {
                         setTempDate(fromDate)
                         setShowPicker('from')
                     }}
                 >
-                    <Text style={tw`text-gray-800`}>{formatDate(fromDate)}</Text>
-                    <MaterialIcons name="calendar-month" size={20} color="#666" />
+                    <Text style={themed.listItemText}>{formatDate(fromDate)}</Text>
+                    <MaterialIcons name="calendar-month" size={20} color={themed.chevronColor} />
                 </TouchableOpacity>
 
                 {/* To */}
-                <Text style={tw`mt-4 mb-1 text-gray-700`}>To</Text>
+                <Text style={[themed.headerSubText, tw`mt-4 mb-2`]}>To</Text>
                 <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center p-3 border border-gray-300 rounded-lg`, CustomStyles.input]}
+                    style={[themed.searchBox]}
                     onPress={() => {
                         setTempDate(toDate)
                         setShowPicker('to')
                     }}
                 >
-                    <Text style={tw`text-gray-800`}>{formatDate(toDate)}</Text>
-                    <MaterialIcons name="calendar-month" size={20} color="#666" />
+                    <Text style={themed.listItemText}>{formatDate(toDate)}</Text>
+                    <MaterialIcons name="calendar-month" size={20} color={themed.chevronColor} />
                 </TouchableOpacity>
 
                 {/* Buttons */}
                 <View style={tw`flex-row gap-2 justify-end items-center mt-6`}>
                     <TouchableOpacity
-                        style={[ButtonStyles.button, tw`px-6 py-2 rounded-lg`]}
+                        style={[themed.saveButton]}
                         onPress={() =>
                             onSave({
                                 fromDate: formatDate(fromDate),
@@ -171,7 +154,7 @@ const FilterDate = ({ onClose, onSave }) => {
                             })
                         }
                      >
-                        <Text style={tw``}>Save</Text>
+                        <Text style={themed.saveButtonText}>Save</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -180,17 +163,15 @@ const FilterDate = ({ onClose, onSave }) => {
                             setToDate(new Date())
                             onClose()
                         }}
-                        style={[ButtonStyles.cancleButton, tw`px-6 py-2 rounded-lg`]}
+                        style={[themed.closeButton]}
                     >
-                        <Text style={tw`text-white`}>Clear</Text>
+                        <Text style={themed.closeButtonText}>Close</Text>
                     </TouchableOpacity>
                 </View>
 
             </View>
 
-            {/* Render Date Picker based on platform */}
             {renderDatePicker()}
-
         </View>
     )
 }

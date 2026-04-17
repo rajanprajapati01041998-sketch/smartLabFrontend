@@ -17,6 +17,8 @@ import SearchSelectServiceItem from './SearchSelectServiceItem';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { useToast } from '../../../../Authorization/ToastContext';
 import styles from '../../../utils/InputStyle';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const SearchSelectService = ({ onClose }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -24,10 +26,9 @@ const SearchSelectService = ({ onClose }) => {
     const [loading, setLoading] = useState(false);
     const { serviceItem } = useAuth()
     const { showToast } = useToast()
-
-  // When user changes selection (urgent toggle / select another / delete),
-  // we treat it as "dirty" until they press Add Tests again.
-  const [isDirty, setIsDirty] = useState(false);
+    const { theme } = useTheme()
+    const themed = getThemeStyles(theme)
+    const [isDirty, setIsDirty] = useState(false);
 
     // ✅ MULTI SELECT STATE
     const [selectedServices, setSelectedServices] = useState([]);
@@ -70,18 +71,18 @@ const SearchSelectService = ({ onClose }) => {
     // 🔹 MULTI SELECT ADD
     const handleSelectItem = (item) => {
         Keyboard.dismiss();
-    setSelectedServices((prev) => {
-      const exists = prev.find(i => i.itemId === item.itemId);
-      if (exists) {
-        showToast('This service is already selected.','warning')
-        // Alert.alert('Already Selected', 'This service is already selected.');
-        return prev;
-      }
+        setSelectedServices((prev) => {
+            const exists = prev.find(i => i.itemId === item.itemId);
+            if (exists) {
+                showToast('This service is already selected.', 'warning')
+                // Alert.alert('Already Selected', 'This service is already selected.');
+                return prev;
+            }
 
-      // Any NEW selection means footer needs Add Tests again.
-      setIsDirty(true);
-      return [...prev, item];
-    });
+            // Any NEW selection means footer needs Add Tests again.
+            setIsDirty(true);
+            return [...prev, item];
+        });
         setModalVisible(true);
     };
 
@@ -91,29 +92,30 @@ const SearchSelectService = ({ onClose }) => {
             prev.filter(i => i.itemId !== item.serviceItemId)
         );
 
-    // If user deletes/changes, require Add Tests again.
-    setIsDirty(true);
+        // If user deletes/changes, require Add Tests again.
+        setIsDirty(true);
     };
 
-  const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
+    const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
 
     return (
-        <View style={tw`flex-1 bg-white relative`}>
+        <View style={[themed.childScreen,tw`flex-1  relative`]}>
             {/* Drag Handle */}
             <View style={tw`px-4 pt-3`}>
                 <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
             </View>
 
             {/* 🔍 Search */}
-            <View style={tw`px-4`}>
-                <View style={tw`flex-row items-center border border-gray-300 rounded-xl px-3 bg-white`}>
-                    <Icon name="search" size={18} color="#6B7280" />
+            <View style={themed.searchContainer}>
+                <View style={themed.searchBox}>
+                    <Icon name="search" size={18} color={themed.iconColor} />
+
                     <TextInput
                         placeholder="Search Investigation..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
-                        style={tw`flex-1 ml-2 py-3 text-base`}
-                        placeholderTextColor="#9CA3AF"
+                        style={themed.searchInput}
+                        placeholderTextColor={themed.placeholderColor}
                     />
                 </View>
             </View>
@@ -133,9 +135,9 @@ const SearchSelectService = ({ onClose }) => {
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => handleSelectItem(item)}
-                        style={tw`p-3 mb-2 bg-gray-50 border border-gray-200 rounded`}
+                        style={[themed.childScreen, themed.border,tw`p-3 mb-2   rounded`]}
                     >
-                        <Text>{item?.name}</Text>
+                        <Text style={themed.inputText}>{item?.name}</Text>
                     </TouchableOpacity>
                 )}
             />
@@ -143,7 +145,7 @@ const SearchSelectService = ({ onClose }) => {
             <View style={tw`px-4`}>
                 <TouchableOpacity
                     onPress={onClose}
-                    style={[styles.closeButton , tw` `]}
+                    style={[styles.closeButton, tw` `]}
                 >
                     <Text style={tw`text-white text-center font-semibold`}>
                         Close
@@ -155,7 +157,7 @@ const SearchSelectService = ({ onClose }) => {
             {modalVisible && (
                 <View style={tw`absolute inset-0 justify-end`}>
                     <Pressable style={tw`absolute inset-0 bg-black/40`} onPress={() => setModalVisible(false)} />
-                    <View style={tw`bg-white w-full h-full rounded-t-3xl pt-3 px-4`}>
+                    <View style={[themed.childScreen,tw`w-full h-full rounded-t-3xl pt-3 px-4`]}>
                         <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
 
                         <View style={tw`flex-1`}>
@@ -168,10 +170,10 @@ const SearchSelectService = ({ onClose }) => {
                             />
                         </View>
 
-                        <View style={tw`pb-4 pt-2 bg-white`}>
+                        <View style={tw`pb-4 pt-2`}>
                             <View style={tw`flex-row gap-3`}>
                                 <TouchableOpacity
-                                    style={tw`flex-1 bg-blue-50 border border-blue-200 py-3 rounded-full`}
+                                    style={tw`flex-1 bg-blue-300 border border-blue-200 py-3 rounded-full`}
                                     onPress={() => setModalVisible(false)}
                                 >
                                     <Text style={tw`text-blue-500 text-center font-medium`}>

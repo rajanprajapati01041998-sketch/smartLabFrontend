@@ -10,6 +10,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import styles from '../../../utils/InputStyle'
 import ButtonStyles from '../../../utils/ButtonStyle'
 import FilterDate from '../FilterDate'
+import { useTheme } from '../../../../Authorization/ThemeContext'
+import { getThemeStyles } from '../../../utils/themeStyles'
 
 const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
     const { loginBranchId } = useAuth()
@@ -26,6 +28,8 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
     const lastApiCallRef = useRef('')
     const scrollY = useRef(new Animated.Value(0)).current
     const [isFilterSticky, setIsFilterSticky] = useState(false)
+    const { theme } = useTheme();
+    const themed = getThemeStyles(theme);
 
     useFocusEffect(
         useCallback(() => {
@@ -119,7 +123,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
                 onPress={() => setFilter(value)}
                 style={tw` px-4 py-2.5  rounded-xl flex-row items-center ${isActive ? 'bg-blue-600 shadow-sm' : 'bg-gray-50 border border-gray-200'}`}
                 activeOpacity={0.7}
-             >
+            >
                 <Icon
                     name={icon}
                     size={18}
@@ -182,20 +186,21 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
         const hasDescription = item.description && item.description.trim().length > 0
 
         return (
-            <View style={tw``}>
+            <View>
                 <TouchableOpacity
                     style={[
-                        styles.cardShadow,
-                        tw`bg-white mx-2 rounded-2xl overflow-hidden border border-gray-100`,
-                        isExpanded && tw`border-blue-200 shadow-lg`
+                        themed.globaCard,
+                        isExpanded && themed.globaCardActive
                     ]}
                     activeOpacity={0.7}
-                // onPress={() => console.log('Transaction details:', item)}
                 >
-                    {/* Main Transaction Row */}
                     <View style={tw`py-1`}>
+
+                        {/* Row */}
                         <View style={tw`flex-row justify-between items-start`}>
                             <View style={tw`flex-row flex-1 items-start`}>
+
+                                {/* Icon */}
                                 <View style={[tw`w-7 h-7 rounded-full items-center justify-center mr-3`, { backgroundColor: bgColor }]}>
                                     <Icon
                                         name={getStatusIcon(item.type)}
@@ -205,10 +210,13 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
                                 </View>
 
                                 <View style={tw`flex-1`}>
+
+                                    {/* Amount + Type */}
                                     <View style={tw`flex-row items-baseline justify-between`}>
                                         <Text style={[tw`text-md font-bold`, { color: statusColor }]}>
                                             {isCredit ? '+ ' : '- '}{formatAmount(item.amount)}
                                         </Text>
+
                                         <View style={[tw`px-2.5 py-1 rounded-full`, { backgroundColor: bgColor }]}>
                                             <Text style={[tw`text-xs font-semibold`, { color: statusColor }]}>
                                                 {item.type?.toUpperCase()}
@@ -216,37 +224,39 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
                                         </View>
                                     </View>
 
-                                    <Text style={tw`text-xs text-gray-400 `}>
+                                    {/* Date */}
+                                    <Text style={themed.globalCardText}>
                                         {item.createdOn}
                                     </Text>
                                 </View>
                             </View>
                         </View>
 
-                        {/* Description with Accordion */}
+                        {/* Description */}
                         {hasDescription && (
-                            <View style={tw`mt-1 pt-1 border-t border-gray-100`}>
+                            <View style={[tw`mt-1 pt-1`, themed.globalDivider]}>
                                 <TouchableOpacity
                                     onPress={() => toggleDescription(item.id || index)}
                                     style={tw`flex-row justify-between items-center`}
                                     activeOpacity={0.7}
                                 >
                                     <View style={tw`flex-row items-center`}>
-                                        <Icon name="description" size={14} color="#6B7280" />
-                                        <Text style={tw`text-xs font-medium text-gray-600 ml-1.5`}>
+                                        <Icon name="description" size={14} color={themed.iconMuted} />
+                                        <Text style={themed.globalDescLabel}>
                                             Description
                                         </Text>
                                     </View>
+
                                     <Icon
                                         name={isExpanded ? "expand-less" : "expand-more"}
                                         size={20}
-                                        color="#6B7280"
+                                        color={themed.iconMuted}
                                     />
                                 </TouchableOpacity>
 
                                 {isExpanded && (
                                     <Animated.View style={tw`mt-2`}>
-                                        <Text style={tw`text-sm text-gray-700 leading-5`}>
+                                        <Text style={themed.globalDescText}>
                                             {item.description}
                                         </Text>
                                     </Animated.View>
@@ -256,13 +266,17 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
 
                         {/* Balance */}
                         {item.balance && (
-                            <View style={tw`mt-3 pt-3 border-t border-gray-100 flex-row justify-between items-center`}>
-                                <Text style={tw`text-xs text-gray-500`}>Available Balance</Text>
-                                <Text style={tw`text-base font-bold text-gray-800`}>
+                            <View style={[tw`mt-3 pt-3 flex-row justify-between items-center`, themed.globalDivider]}>
+                                <Text style={themed.globalCardLabel}>
+                                    Available Balance
+                                </Text>
+
+                                <Text style={themed.GlobalCradValue}>
                                     {formatAmount(item.balance)}
                                 </Text>
                             </View>
                         )}
+
                     </View>
                 </TouchableOpacity>
             </View>
@@ -272,7 +286,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
     // Filter Header Component with Sticky Effect
     const FilterHeader = () => (
         <Animated.View style={[
-            tw`bg-white`,
+            tw``,
             isFilterSticky && tw``,
             { paddingTop: isFilterSticky ? 8 : 0, paddingBottom: isFilterSticky ? 8 : 0 }
         ]}>
@@ -295,11 +309,11 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
             )}
 
             {/* Filter Buttons */}
-            <View style={tw`mb-3 `}>
+            <View style={tw`mb-3 mx-1`}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={tw`gap-0.5`}
+                    contentContainerStyle={tw`flex-row items-center gap-2`}
                 >
                     {renderFilterButton('All', 'all', 'apps')}
                     {renderFilterButton('Credits', 'credit', 'arrow-downward')}
@@ -307,19 +321,21 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
 
                     <TouchableOpacity
                         onPress={() => setFilterModal(true)}
-                        style={[
-                            tw`flex-row items-center gap-2  py-2 rounded-md border border-gray-200 bg-gray-50`,
-                            ButtonStyles.button,
-                        ]}
+                        style={themed.filterButton}
+                        activeOpacity={0.7}
                     >
-                        <Icon name="calendar-month" size={18} color="#374151" />
-                        <Text style={tw`ml-2 text-sm font-medium text-gray-700`}>
-                            filter
+                        <Icon
+                            name="calendar-month"
+                            size={18}
+                            color={themed.filterButtonIcon}
+                        />
+                        <Text style={themed.filterButtonText}>
+                            Filter
                         </Text>
                     </TouchableOpacity>
                 </ScrollView>
             </View>
-            <Text>
+            <Text style={[themed.headerSubText, tw`mx-2 mb-2`]}>
                 {fromDate && toDate
                     ? `${formatDateShort(fromDate)} - ${formatDateShort(toDate)}`
                     : ''}
@@ -356,7 +372,7 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
     }
 
     return (
-        <View style={tw`flex-1 bg-gray-50`}>
+        <View style={[themed.screen, tw`flex-1 `]}>
             <Animated.FlatList
                 data={recentTransactions}
                 keyExtractor={(item, index) => item.id?.toString() || index.toString()}

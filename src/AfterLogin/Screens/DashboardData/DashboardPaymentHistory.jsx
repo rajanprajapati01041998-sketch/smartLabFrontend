@@ -5,12 +5,15 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useAuth } from '../../../../Authorization/AuthContext'
 import api from '../../../../Authorization/api'
 import Icon from 'react-native-vector-icons/MaterialIcons'
+
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import styles from '../../../utils/InputStyle'
 import ButtonStyles from '../../../utils/ButtonStyle'
 import FilterDate from '../FilterDate'
 import { useDash } from '../../../../Authorization/DashContext'
+import { getThemeStyles } from '../../../utils/themeStyles'
+import { useTheme } from '../../../../Authorization/ThemeContext'
 
 const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const { loginBranchId, updateFlag } = useAuth()
@@ -25,6 +28,8 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const [filetrModal, setFilterModal] = useState(false);
     const [fromDate, setFromDate] = useState(null);
     const [toDate, setToDate] = useState(null);
+    const { theme } = useTheme();
+    const themed = getThemeStyles(theme);
 
 
     useEffect(() => {
@@ -103,11 +108,11 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
 
         return (
             <TouchableOpacity
-                style={[styles.cardShadow]}
+                style={themed.globaCard}
                 activeOpacity={0.7}
                 onPress={() => console.log('Transaction details:', item)}
             >
-                <View style={tw`flex-row justify-between items-center border-b border-gray-100`}>
+                <View style={tw`flex-row justify-between items-center border-b border-gray-400 pb-1`}>
                     <View style={tw`flex-row items-center flex-1`}>
                         <View style={[tw`w-8 h-8 rounded-full items-center justify-center mr-3`, { backgroundColor: bgColor }]}>
                             <FontAwesome
@@ -122,7 +127,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
                                 {isCredit ? '+ ' : '- '}₹{Math.abs(parseFloat(item.amount || 0)).toLocaleString('en-IN')}
                             </Text>
 
-                            <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                            <Text style={themed.globalCardText}>
                                 {item.createdOn || 'N/A'}
                             </Text>
                         </View>
@@ -137,8 +142,8 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
 
                 {item.description && (
                     <View style={tw`p-3`}>
-                        <Text style={tw`text-xs text-gray-500 mb-1`}>Description</Text>
-                        <Text style={tw`text-sm text-gray-700`}>
+                        <Text style={themed.globalDescText}>Description</Text>
+                        <Text style={themed.globalCardText}>
                             {item.description}
                         </Text>
                     </View>
@@ -171,13 +176,30 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
         )
     }
 
+    const renderFilterActionButton = (title, icon, onPress) => (
+        <TouchableOpacity
+            onPress={onPress}
+            style={themed.filterButton}
+            activeOpacity={0.7}
+        >
+            <Icon
+                name={icon}
+                size={18}
+                color={themed.filterButtonIcon}
+            />
+            <Text style={themed.filterButtonText}>
+                {title}
+            </Text>
+        </TouchableOpacity>
+    );
+
     return (
         <View style={tw`flex-1`}>
             <View style={tw`rounded-lg mt-2`}>
 
                 {/* Header */}
                 <View style={tw`flex-row justify-between items-center mb-2`}>
-                    <Text style={tw`text-md font-bold text-gray-800`}>
+                    <Text style={themed.headerTitle}>
                         Payment History
                     </Text>
 
@@ -191,26 +213,20 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
                     )}
                 </View>
 
+
+
                 {/* Filters */}
                 <View style={tw`flex-row mb-3 justify-between`}>
                     {renderFilterButton('All', 'all', 'apps')}
                     {renderFilterButton('Credits', 'credit', 'arrow-downward')}
                     {renderFilterButton('Debits', 'debit', 'arrow-upward')}
-                    <View style={tw`flex-row gap-2`}>
-                        <TouchableOpacity
-                            onPress={() => setFilterModal(true)}
-                            style={[
-                                tw`flex-row items-center px-3 py-2 rounded-lg`,
-                                ButtonStyles.button,
-                            ]}
-                        >
-                            <Icon name="calendar-month" size={18} color="#374151" />
-                            <Text style={tw`ml-2 text-sm text-gray-700`}>Filter</Text>
-                        </TouchableOpacity>
 
-
-                    </View>
+                    {renderFilterActionButton('Filter', 'calendar-month', () =>
+                        setFilterModal(true)
+                    )}
                 </View>
+
+
 
 
                 {/* List */}
@@ -234,7 +250,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
                 <TouchableWithoutFeedback onPress={() => setFilterModal(false)}>
                     <View style={tw`flex-1 justify-center items-center bg-black/60`}>
                         <TouchableWithoutFeedback>
-                            <View style={tw`bg-white rounded-2xl w-[95%] overflow-hidden`}>
+                            <View style={[themed.modalContainer, tw` rounded-2xl w-[95%] overflow-hidden`]}>
                                 <FilterDate
                                     onClose={() => setFilterModal(false)}
                                     onSave={handleSearchFilter}

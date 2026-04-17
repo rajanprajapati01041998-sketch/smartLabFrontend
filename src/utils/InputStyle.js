@@ -2,9 +2,10 @@ import tw from 'twrnc';
 
 
 const styles = {
-    patientInfoText:tw`mb-2 text-md text-gray-700 underline font-semibold text-purple-400 `,
+    patientInfoText:tw`mb-2 text-md text-gray-700 dark:text-gray-200 underline font-semibold text-purple-400 dark:text-purple-300 `,
     insideDropDownText: tw`
     text-gray-700
+    dark:text-gray-200
     text-base
   `,
   
@@ -12,11 +13,14 @@ const styles = {
     inputBox: tw`
     border 
     border-gray-200 
+    dark:border-gray-700
     px-4 
     py-3 
     rounded-xl 
     text-base 
     bg-white 
+    dark:bg-gray-800
+    dark:text-gray-100
     shadow-sm
     focus:border-blue-400
     focus:ring-2
@@ -26,6 +30,7 @@ const styles = {
   `,
     labelText: tw`
     text-gray-700 
+    dark:text-gray-200
     text-sm 
     font-semibold 
     mb-1.5
@@ -37,17 +42,19 @@ const styles = {
     dropDownButton: tw`
     border 
     border-gray-200 
+    dark:border-gray-700
     px-4 
     py-3.5 
     rounded-xl 
     bg-white 
+    dark:bg-gray-800
     shadow-sm
     active:bg-gray-50
     transition-all
     duration-200
   `,
-    searchInput:tw`border border-gray-300 px-2 py-3 rounded-xl text-md bg-white`,
-    cardShadow:tw`shadow-md px-4 py-2 bg-white rounded-lg my-2 border border-gray-200`,
+    searchInput:tw`border border-gray-300 dark:border-gray-700 px-2 py-3 rounded-xl text-md bg-white dark:bg-gray-800 dark:text-gray-100`,
+    cardShadow:tw`shadow-md px-4 py-2 bg-white dark:bg-gray-800 rounded-lg my-2 border border-gray-200 dark:border-gray-700`,
     errorInput: tw`
     border-red-400
     bg-red-50
@@ -82,15 +89,20 @@ const styles = {
     rounded-xl
     text-base
     bg-white
+    dark:bg-gray-800
+    dark:text-gray-100
   `,
   disabledInput: tw`
     border-gray-200
+    dark:border-gray-700
     bg-gray-50
+    dark:bg-gray-900
     px-4
     py-3
     rounded-xl
     text-base
     text-gray-400
+    dark:text-gray-500
   `,
   searchButton: tw`
     bg-blue-500
@@ -110,27 +122,33 @@ const styles = {
   `,
   card: tw`
     bg-white
+    dark:bg-gray-800
     rounded-2xl
     shadow-md
     border
     border-gray-100
+    dark:border-gray-700
     overflow-hidden
   `,
   cardHeader: tw`
     p-4
     border-b
     border-gray-100
+    dark:border-gray-700
     bg-gray-50
+    dark:bg-gray-900
   `,
   sectionTitle: tw`
     text-lg
     font-bold
     text-gray-800
+    dark:text-gray-100
     mb-2
   `,
   sectionSubtitle: tw`
     text-sm
     text-gray-500
+    dark:text-gray-300
     mb-3
   `,
   // Badge style

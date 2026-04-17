@@ -32,13 +32,15 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import SelectBank from './SelectBank';
 import PaymentInfo from './PaymentInfo';
 import AddReferDoctor from './AddReferDoctor';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 
 const Registration = () => {
   const [loading, setLoading] = useState(false)
   const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode } = useAuth();
   const { showToast } = useToast()
-  const { colors } = useTheme()
+  const { theme, colors } = useTheme();
+  const themed = getThemeStyles(theme);
   const [error, setError] = useState(false)
   const [title, setTitle] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -712,30 +714,30 @@ const Registration = () => {
   };
 
   return (
-    <SafeAreaView style={tw``}>
+    <SafeAreaView style={themed.screen}>
       <ScrollView style={tw`p-2 mb-15`}>
         <CenterInfo />
         {/* patient information */}
-        <View style={styles.cardShadow}>
+        <View style={[themed.card, themed.childScreen, themed.cardPadding]}>
           <Text style={styles.patientInfoText}>Patient Info:</Text>
           <View style={tw`flex flex-row justify-between items-center gap-1 mb-3`}>
             <View style={tw`flex flex-col gap-1 w-[25%]`}>
               <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>Title</Text>
+                <Text style={themed.inputLabel}>Title</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setSelectTitleModal(true)}
-                style={tw`border border-gray-300 rounded-xl px-2 py-3 bg-white`}
+                style={[themed.inputBox,themed.inputText]}
               >
-                <Text style={tw`text-md text-gray-700`}>
+                <Text style={themed.inputText}>
                   {selectedTitle || "Mr"}
                 </Text>
               </TouchableOpacity>
             </View>
             <View style={tw`flex flex-col py-0.5 gap-1 w-[74%]`}>
               <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>Name</Text>
+                <Text style={themed.inputLabel}>Name</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <TextInput
@@ -745,10 +747,10 @@ const Registration = () => {
                   const filtered = text.replace(/[^a-zA-Z ]/g, '').slice(0, 50)
                   setFirstName(filtered)
                 }}
-                style={[styles.inputBox]}
+                style={[themed.inputBox,themed.inputText]}
                 autoCapitalize="words"
                 placeholder='Name'
-                placeholderTextColor={colors.placeholder}
+                placeholderTextColor={themed.inputPlaceholder}
                 keyboardType='default'
               />
               {/* {error&&<Text style={tw`text-red-500`}>Enter Name</Text>} */}
@@ -757,7 +759,7 @@ const Registration = () => {
 
           <View style={tw`flex flex-row justify-between items-center gap-1`}>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
-              <Text style={styles.labelText}>Age Y</Text>
+              <Text style={themed.inputLabel}>Age Y</Text>
               <TextInput
                 value={ageYears}
                 onChangeText={(text) => {
@@ -769,14 +771,14 @@ const Registration = () => {
                     setAgeYears(String(num))
                   }
                 }}
-                style={styles.inputBox}
+                style={[themed.inputBox,themed.inputText]}
                 placeholder='29'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
-              <Text style={styles.labelText}>Age M</Text>
+              <Text style={themed.inputLabel}>Age M</Text>
               <TextInput
                 value={ageMonths}
                 onChangeText={(text) => {
@@ -788,7 +790,7 @@ const Registration = () => {
                     setAgeMonths(String(num))
                   }
                 }}
-                style={styles.inputBox}
+                style={[themed.inputBox,themed.inputText]}
                 placeholder='04'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
@@ -796,7 +798,7 @@ const Registration = () => {
               />
             </View>
             <View style={tw`flex flex-col py-0.5  w-[20%]`}>
-              <Text style={styles.labelText}>Age D</Text>
+              <Text style={themed.inputLabel}>Age D</Text>
               <TextInput
                 value={ageDays}
                 onChangeText={(text) => {
@@ -808,7 +810,7 @@ const Registration = () => {
                     setAgeDays(String(num))
                   }
                 }}
-                style={styles.inputBox}
+                style={[themed.inputBox,themed.inputText]}
                 placeholder='12'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
@@ -817,7 +819,7 @@ const Registration = () => {
             </View>
             <View style={tw`flex flex-col py-0.5  w-[30%]`}>
               <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>DOB</Text>
+                <Text style={themed.inputLabel}>DOB</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <TouchableOpacity onPress={() => setShowPicker(true)}>
@@ -826,8 +828,8 @@ const Registration = () => {
                   editable={false}
                   pointerEvents="none"
                   placeholder="1/4/1998"
-                  placeholderTextColor={colors.placeholder}
-                  style={styles.inputBox}
+                  placeholderTextColor={themed.inputPlaceholder}
+                  style={[themed.inputBox,themed.inputText]}
                 />
               </TouchableOpacity>
 
@@ -848,17 +850,17 @@ const Registration = () => {
               value={gender}
             >
               <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>Gender</Text>
+                <Text style={themed.inputLabel}>Gender</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <View style={tw`flex-row items-center`}>
                 <TouchableOpacity
-                  style={tw`flex-row items-center mr-4`}
+                  style={[tw`flex-row items-center mr-4`]}
                   onPress={() => setGender('MALE')}
                   activeOpacity={0.8}
                 >
                   <RadioButton.Android value="MALE" />
-                  <Text style={tw`ml-1`}>Male</Text>
+                  <Text style={[themed.inputText, tw`ml-1`]}>Male</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={tw`flex-row items-center mr-4`}
@@ -866,7 +868,7 @@ const Registration = () => {
                   activeOpacity={0.8}
                 >
                   <RadioButton.Android value="FEMALE" />
-                  <Text style={tw`ml-1`}>Female</Text>
+                  <Text style={[themed.inputText, tw`ml-1`]}>Female</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={tw`flex-row items-center`}
@@ -874,7 +876,7 @@ const Registration = () => {
                   activeOpacity={0.8}
                 >
                   <RadioButton.Android value="OTHER" />
-                  <Text style={tw`ml-1`}>Other</Text>
+                  <Text style={[themed.inputText, tw`ml-1`]}>Other</Text>
                 </TouchableOpacity>
               </View>
             </RadioButton.Group>
@@ -883,17 +885,17 @@ const Registration = () => {
           <View style={tw`mt-2`}>
             <View style={tw`flex-row items-end `}>
               <View style={tw`flex-1 mr-2`}>
-                <Text style={styles.labelText}>Referred Doctor</Text>
+                <Text style={themed.inputLabel}>Referred Doctor</Text>
 
                 <TouchableOpacity
                   onPress={() => setReferDoctorModal(true)}
                   style={[
-                    styles.dropDownButton,
+                    themed.inputBox,
                     tw`mt-1 mb-3 flex-row justify-between items-center `
                   ]}
                 >
                   <Text
-                    style={[styles.insideDropDownText, tw`flex-1 mr-2`]}
+                    style={[themed.inputText, tw`flex-1 mr-2`]}
                     numberOfLines={1}
                   >
                     {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor -'}
@@ -906,8 +908,8 @@ const Registration = () => {
               <TouchableOpacity
                 onPress={() => setAddReferDoctorModal(true)}
                 style={[
-                  styles.addButton,
-                  tw`mb-3 w-[15%]  items-center justify-center rounded-lg border border-gray-300`
+                  themed.addButton,
+                  tw`mb-3  items-center justify-center `
                 ]}
               >
                 <Text style={styles.buttonTextAdd}>+</Text>
@@ -915,7 +917,7 @@ const Registration = () => {
             </View>
 
             {/* <View style={tw`w-full`}>
-              <Text style={styles.labelText}>Referred Lab</Text>
+              <Text style={themed.inputLabel}>Referred Lab</Text>
 
               <TouchableOpacity
                 onPress={() => setReferLabListModal(true)}
@@ -939,7 +941,7 @@ const Registration = () => {
           <View style={tw`mt-1 flex flex-row justify-center items-center gap-2`}>
             {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
               <View style={tw`flex flex-row items-center`}>
-                <Text style={styles.labelText}>Contact No (Self)</Text>
+                <Text style={themed.inputLabel}>Contact No (Self)</Text>
                 <Text style={tw`text-red-500  -mt-2`}>*</Text>
               </View>
               <TextInput
@@ -956,7 +958,7 @@ const Registration = () => {
               />
             </View> */}
             {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
-              <Text style={styles.labelText}>Email</Text>
+              <Text style={themed.inputLabel}>Email</Text>
               <TextInput
                 placeholder='test@gmail.com'
                 value={email}
@@ -969,7 +971,7 @@ const Registration = () => {
           </View>
 
           {/* <View style={tw`mt-2`}>
-            <Text style={styles.labelText}>Address</Text>
+            <Text style={themed.inputLabel}>Address</Text>
             <TextInput
               placeholder="Enter address"
               value={address}
@@ -984,7 +986,7 @@ const Registration = () => {
           </View> */}
 
           {/* <View style={tw`mt-2`}>
-            <Text style={styles.labelText}>Medical history</Text>
+            <Text style={themed.inputLabel}>Medical history</Text>
             <TextInput
               placeholder="history"
               value={medicalHistory}
@@ -1035,14 +1037,14 @@ const Registration = () => {
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
                 <View style={tw`flex-1  w-full`}>
-                  <Text style={styles.labelText}>Field Boy</Text>
+                  <Text style={themed.inputLabel}>Field Boy</Text>
                   <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={tw`border border-gray-300 p-3 rounded mb-3 mt-1`}>
                     <Text>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={tw`flex-1 w-full`}>
-                  <Text style={styles.labelText}>Collection Date Time</Text>
+                  <Text style={themed.inputLabel}>Collection Date Time</Text>
                   <TouchableOpacity
                     onPress={() => {
                       setTempDate(collectionDateTime || new Date());
@@ -1176,22 +1178,22 @@ const Registration = () => {
           </View>
         </View>
 
-        <View style={styles.cardShadow}>
+        <View style={[themed.card, themed.childScreen, themed.cardPadding, tw`mt-3`]}>
           <Text style={styles.patientInfoText}>Investigation Details:</Text>
 
           {/* Search Service */}
           <View style={tw`flex-1`}>
             <View style={tw`flex flex-row items-center`}>
-              <Text style={styles.labelText}>Search Test</Text>
+              <Text style={themed.inputLabel}>Search Test</Text>
               <Text style={tw`text-red-500 -mt-2`}>* </Text>
             </View>
 
             <TouchableOpacity
               onPress={() => setSearchSelectModal(true)}
-              style={[styles.dropDownButton, tw`p-3  mb-3 flex-row items-center justify-start`]}
+              style={[themed.inputBox, tw`p-3  mb-3 flex-row items-center justify-start`]}
             >
               <MaterialCommunityIcons name="magnify" size={20} color="gray" style={tw`mr-2`} />
-              <Text style={styles.insideDropDownText}>
+              <Text style={themed.inputText}>
                 Search Tests
               </Text>
             </TouchableOpacity>
@@ -1230,15 +1232,18 @@ const Registration = () => {
           <View style={tw`flex-row items-center mt-1`}>
             <Checkbox
               status={addBarcode ? 'checked' : 'unchecked'}
-              disabled={true}   // ✅ makes it read-only
+              disabled={true}
+              color={themed.checkboxColor}
+              uncheckedColor={themed.checkboxUncheckedColor}
+              style={themed.checkbox}
             />
-            <Text style={tw`text-sm text-gray-700`}>
+            <Text style={themed.mutedText}>
               Add Barcode & Test Remark on save
             </Text>
           </View>
         </View>
 
-        <View style={styles.cardShadow}>
+        <View style={[themed.card, themed.childScreen, themed.cardPadding, tw`mt-3`]}>
           {/* Toggle Header for Billing Info */}
           <TouchableOpacity
             onPress={() => setShowBillingInfo(!showBillingInfo)}
@@ -1260,18 +1265,18 @@ const Registration = () => {
               <View style={tw`flex-row items-center gap-2.5`}>
                 {/* Gross Amount */}
                 <View style={tw`w-[30%] mr-1`}>
-                  <Text style={styles.labelText}>Gross Amount</Text>
+                  <Text style={themed.inputLabel}>Gross Amount</Text>
                   <TextInput
                     editable={false}
                     value={grossAmount ? String(grossAmount) : ""}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder=''
                   />
                 </View>
 
                 {/* Discount % */}
                 <View style={tw`w-[30%] mx-1`}>
-                  <Text style={styles.labelText}>Disc (%)</Text>
+                  <Text style={themed.inputLabel}>Disc (%)</Text>
                   <TextInput
                     value={discountPercent ? String(discountPercent) : ""}
                     keyboardType="numeric"
@@ -1281,16 +1286,16 @@ const Registration = () => {
                       const num = cleaned === '' ? 0 : Number(cleaned);
                       setDiscountPercent(num);
                     }}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder='1%'
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={themed.inputPlaceholder}
 
                   />
                 </View>
 
                 {/* Discount Amount */}
                 <View style={tw`w-[30%] ml-1`}>
-                  <Text style={styles.labelText}>Disc Amt</Text>
+                  <Text style={themed.inputLabel}>Disc Amt</Text>
                   <TextInput
                     value={discountAmount ? String(discountAmount) : ""}
                     keyboardType="numeric"
@@ -1300,7 +1305,7 @@ const Registration = () => {
                       const num = cleaned === '' ? 0 : Number(cleaned);
                       setDiscountAmount(num);
                     }}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                   />
                 </View>
               </View>
@@ -1308,40 +1313,40 @@ const Registration = () => {
               <View style={tw`flex-row items-center gap-2.5 mt-2`}>
                 {/* Round off Amount */}
                 <View style={tw`w-[30%] mr-1`}>
-                  <Text style={styles.labelText}>Round off</Text>
+                  <Text style={themed.inputLabel}>Round off</Text>
                   <TextInput
                     readOnly
                     value={grossAmount ? String(grossAmount) : ""}
                     keyboardType="numeric"
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder='1.4'
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={themed.inputPlaceholder}
 
                   />
                 </View>
 
                 {/* Net Amount */}
                 <View style={tw`w-[30%] mx-1`}>
-                  <Text style={styles.labelText}>Net Amount</Text>
+                  <Text style={themed.inputLabel}>Net Amount</Text>
                   <TextInput
                     value={netAmount ? String(netAmount) : ""}
                     editable={false}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder='120'
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={themed.inputBox}
 
                   />
                 </View>
 
                 {/* Balance Amount */}
                 <View style={tw`w-[30%] ml-1`}>
-                  <Text style={styles.labelText}>Balance Amt</Text>
+                  <Text style={themed.inputLabel}>Balance Amt</Text>
                   <TextInput
                     value={balanceAmount ? String(balanceAmount) : 0}
                     editable={false}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder='Avl Bal'
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={themed.inputPlaceholder}
 
                   />
                 </View>
@@ -1351,34 +1356,34 @@ const Registration = () => {
               <View style={tw`flex-row items-center gap-2.5 mt-2`}>
                 {/* Discount approved by */}
                 <View style={tw`w-[30%] mr-1`}>
-                  <Text numberOfLines={1} style={styles.labelText}>Dis Approved by</Text>
-                  <TouchableOpacity style={tw`border border-gray-300 px-2 py-3 bg-white rounded-xl`}>
-                    <Text style={styles.labelText}>Select</Text>
+                  <Text numberOfLines={1} style={themed.inputLabel}>Dis Approved by</Text>
+                  <TouchableOpacity style={[themed.inputBox]}>
+                    <Text style={themed.inputLabel}>Select</Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* Discount reason */}
                 <View style={tw`w-[30%] mx-1`}>
-                  <Text style={styles.labelText}>Disc Reason</Text>
+                  <Text style={themed.inputLabel}>Disc Reason</Text>
                   <TextInput
                     value={discountReason}
                     onChangeText={setDiscountReason}
-                    style={[styles.inputBox]}
+                    style={[themed.inputBox,themed.inputText]}
                     placeholder='test'
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor={themed.inputPlaceholder}
 
                   />
                 </View>
 
                 {/* Remark */}
                 <View style={tw`w-[30%] mx-1`}>
-                  <Text style={styles.labelText}>Remark</Text>
+                  <Text style={themed.inputLabel}>Remark</Text>
                   <TextInput
                     value={remark}
                     onChangeText={setRemark}
-                    style={[styles.inputBox]}
-                    placeholder='Rem'
-                    placeholderTextColor={colors.placeholder}
+                    style={[themed.inputBox,themed.inputText]}
+                    placeholder='Remark'
+                    placeholderTextColor={themed.inputPlaceholder}
 
                   />
                 </View>
@@ -1451,20 +1456,20 @@ const Registration = () => {
           animationType="slide"
           onRequestClose={() => setBarcodeModalVisible(false)}
         >
-          <View style={tw`flex-1 justify-end bg-black/40`}>
+          <View style={[themed.modalOverlay]}>
             <TouchableWithoutFeedback onPress={() => setBarcodeModalVisible(false)}>
               <View style={tw`absolute inset-0`} />
             </TouchableWithoutFeedback>
 
-            <View style={tw`bg-white w-full h-[85%] rounded-t-3xl overflow-hidden`}>
+            <View style={[themed.modalContainer,tw` w-full h-[85%] rounded-t-3xl overflow-hidden`]}>
               {/* Fixed Header */}
-              <View style={tw`px-4 pt-4 pb-3 border-b border-gray-100 bg-white`}>
+              <View style={tw`px-4 pt-4 pb-3 border-b border-gray-100 `}>
                 <View style={tw`flex-row justify-between items-center`}>
                   <View style={tw`flex-1 pr-3`}>
-                    <Text style={tw`text-lg font-bold text-gray-800`}>
+                    <Text style={[themed.modalHeaderTitle, tw``]}>
                       Barcodes & Remarks
                     </Text>
-                    <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                    <Text style={themed.mutedText}>
                       Enter details for selected tests
                     </Text>
                   </View>
@@ -1502,11 +1507,11 @@ const Registration = () => {
                   return (
                     <View
                       style={[
-                        styles.cardShadow,
-                        tw`p-4 mb-4 bg-white rounded-2xl border border-gray-100`
+                        themed.childScreen,themed.border,
+                        tw`p-4 mb-4 rounded-xl `
                       ]}
                     >
-                      <Text style={tw`text-md font-semibold text-gray-800 mb-1`}>
+                      <Text style={[themed.inputText]}>
                         {s?.ServiceName || ''}
                       </Text>
 
@@ -1526,14 +1531,14 @@ const Registration = () => {
                           }}
                           placeholder="Enter barcode"
                           placeholderTextColor="#9CA3AF"
-                          style={tw`border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50`}
+                          style={[themed.inputBox,themed.inputText]}
                         />
                       </View>
 
                       {/* Remark Input */}
                       <View>
                         <View style={tw`flex-row items-center justify-between`}>
-                          <Text style={tw`text-xs font-medium text-gray-600 ml-1`}>
+                          <Text style={[themed.inputLabel, tw`mb-0`]}>
                             Test Remark
                           </Text>
 
@@ -1545,7 +1550,7 @@ const Registration = () => {
                                 [id]: !prev?.[id],
                               }));
                             }}
-                            style={tw`flex-row items-center`}
+                            style={[themed.inputBox,themed.inputText]}
                             activeOpacity={0.7}
                           >
                             {String(draft?.testRemark ?? '').trim() ? (
@@ -1579,7 +1584,7 @@ const Registration = () => {
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
-                            style={tw`border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white min-h-[90px] mt-2`}
+                            style={[themed.inputBox,themed.inputText]}
                           />
                         )}
                       </View>
@@ -1594,13 +1599,13 @@ const Registration = () => {
               />
 
               {/* Fixed Footer */}
-              <View style={tw`px-4 pt-3 pb-5 border-t border-gray-100 bg-white`}>
+              <View style={tw`px-4 pt-3 pb-5  `}>
                 <View style={tw`flex-row gap-3`}>
                   <TouchableOpacity
                     onPress={() => setBarcodeModalVisible(false)}
-                    style={tw`flex-1 bg-gray-100 py-3.5 rounded-xl`}
+                    style={[themed.cancelButton]}
                     activeOpacity={0.7}
-                  >
+                   >
                     <Text style={tw`text-gray-700 text-center font-semibold text-base`}>
                       Cancel
                     </Text>
@@ -1629,9 +1634,9 @@ const Registration = () => {
           onRequestClose={() => setReferDoctorModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setReferDoctorModal(false)}>
-            <View style={tw`flex-1 justify-end bg-black/50`}>
+            <View style={[themed.modalOverlay]}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white rounded-t-2xl w-full h-[70%] p-4`}>
+                <View style={[themed.modalContainer2,tw` rounded-t-2xl w-full h-[70%] p-4`]}>
                   <ReferDoctor
                     onSelectDoctor={(doctor) => {
                       setSelectedReferDoctor(doctor);
@@ -1652,9 +1657,9 @@ const Registration = () => {
           onRequestClose={() => setAddReferDoctorModal(false)}
         >
           <TouchableWithoutFeedback onPress={() => setAddReferDoctorModal(false)}>
-            <View style={tw`flex-1 justify-end bg-black/50`}>
+            <View style={[themed.modalOverlay]}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={tw`bg-white rounded-t-2xl w-full  p-4`}>
+                <View style={[themed.modalContainer, tw` rounded-t-2xl w-full   p-4`]}>
                   <AddReferDoctor
                     onClose={() => { setAddReferDoctorModal(false), referDoctorList() }}
                   />

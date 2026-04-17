@@ -14,6 +14,8 @@ import Razorpay from './RazorPay'
 import { useAuth } from '../../../../Authorization/AuthContext'
 import api from '../../../../Authorization/api'
 import { useDash } from '../../../../Authorization/DashContext'
+import { useTheme } from '../../../../Authorization/ThemeContext'
+import { getThemeStyles } from '../../../utils/themeStyles'
 
 const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   const [amount, setAmount] = useState('')
@@ -31,6 +33,8 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
 
   const [fromDate, setFromDate] = useState(null)
   const [toDate, setToDate] = useState(null)
+  const {theme} = useTheme()
+  const themed = getThemeStyles(theme)
 
   const razorpayRef = useRef(null)
 
@@ -152,7 +156,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   console.log('payment payload =>', paymentPayload)
 
   return (
-    <View style={tw`flex flex-col gap-2`}>
+    <View style={[themed.childScreen,tw` flex flex-col gap-2`]}>
       <Razorpay
         ref={razorpayRef}
         apiBaseUrl={api}
@@ -193,25 +197,27 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
       />
 
       <View>
-        <Text style={styles.labelText}>Enter Amount</Text>
+        <Text style={[themed.labelText,tw`my-2`]}>Enter Amount</Text>
         <TextInput
           value={amount}
           onChangeText={handleAmountChange}
-          style={styles.inputBox}
+          style={[themed.inputBox,themed.inputText]}
           keyboardType="numeric"
           maxLength={10}
           placeholder="Enter amount"
+          placeholderTextColor={themed.inputPlaceholder}
         />
       </View>
 
       <View>
-        <Text style={styles.labelText}>Enter Remarks</Text>
+        <Text style={[themed.labelText,tw`my-2`]}>Enter Remarks</Text>
         <TextInput
           value={remarks}
           onChangeText={setRemarks}
-          style={styles.inputBox}
+          style={[themed.inputBox,themed.inputText]}
           maxLength={50}
           placeholder="Enter remarks"
+          placeholderTextColor={themed.inputPlaceholder}
         />
       </View>
 
@@ -219,7 +225,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
         <View
           style={tw`bg-red-200 p-2 rounded-lg flex flex-row justify-between items-center`}
         >
-          <Text style={styles.errorText}>Enter valid amount</Text>
+          <Text style={themed.errorText}>Enter valid amount</Text>
           <TouchableOpacity
             onPress={() => setError(false)}
             style={tw`bg-red-100 p-1.5 rounded-full border border-red-300`}

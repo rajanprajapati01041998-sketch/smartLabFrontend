@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
 import DashboardStack from './DashboardStack';
@@ -17,6 +18,7 @@ const TAB_BAR_CONTENT_HEIGHT = 52;
 
 export default function BottomTabNavigation() {
   const insets = useSafeAreaInsets();
+  const { theme, colors } = useTheme();
 
   // One bottom inset value: avoids “floating” gap when gestural Android reports 0 but we still need clearance above the gesture bar.
   const tabBarBottomInset = Math.max(
@@ -36,7 +38,7 @@ export default function BottomTabNavigation() {
     paddingBottom: tabBarBottomInset,
     // Navigator also adds paddingHorizontal from safe area; we already inset the whole bar with left/right.
     paddingHorizontal: 0,
-    backgroundColor: '#d5d2d2',
+    backgroundColor: theme === 'dark' ? colors.surface : '#d5d2d2',
     borderTopLeftRadius: 14,
     borderTopRightRadius: 14,
     shadowColor: '#000',
@@ -67,8 +69,8 @@ export default function BottomTabNavigation() {
           );
         },
 
-        tabBarActiveTintColor: '#007bff',
-        tabBarInactiveTintColor: '#777',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: theme === 'dark' ? '#9CA3AF' : '#777',
 
         tabBarStyle: baseTabBarStyle,
 

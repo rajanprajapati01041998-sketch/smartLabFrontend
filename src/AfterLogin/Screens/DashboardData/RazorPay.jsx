@@ -57,7 +57,7 @@ const RazorPay = forwardRef(
           image: '',
           currency: createOrderData?.currency || createPayload.currency || 'INR',
           key: createOrderData?.key,
-          amount: createOrderData?.amount,
+          amount: String(createOrderData?.amount || ''),
           name: 'Gravity Web Technology',
           order_id: createOrderData?.orderId,
           prefill: {
@@ -66,6 +66,11 @@ const RazorPay = forwardRef(
             name: customer?.name || '',
           },
           theme: { color: '#0f62fe' },
+          retry: {
+            enabled: true,
+            max_count: 4,
+          },
+          send_sms_hash: true,
         }
 
         const razorpaySuccess = await RazorpayCheckout.open(options)

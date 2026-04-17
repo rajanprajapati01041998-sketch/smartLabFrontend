@@ -16,6 +16,7 @@ import api from '../../../../Authorization/api';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import BottomModal from '../../../utils/BottomModal';
 import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const CenterInfo = () => {
     const [allBranchInfo, setAllBranchInfo] = useState([]);
@@ -28,7 +29,8 @@ const CenterInfo = () => {
     const [showCenterInfo, setShowCenterInfo] = useState(false);
     const [branchDetails, setBranchDetails] = useState(null);
 
-    const { colors } = useTheme();
+    const { colors,theme } = useTheme();
+    const themed = getThemeStyles(theme);
 
     const {
         setCorporateId,
@@ -147,10 +149,10 @@ const CenterInfo = () => {
     }, [errorMessage]);
 
     return (
-        <View style={styles.cardShadow}>
+        <View style={[themed.card, themed.cardPadding, themed.childScreen, tw`mb-4`]}>
             <TouchableOpacity
                 onPress={() => setShowCenterInfo(!showCenterInfo)}
-                style={tw`flex-row justify-between items-center mb-3`}
+                style={[tw`flex-row justify-between items-center mb-3`]}
             >
                 <Text style={styles.patientInfoText}>Center Information</Text>
 
@@ -166,24 +168,24 @@ const CenterInfo = () => {
                 <>
                     <View style={tw`flex-row justify-between`}>
                         <View style={tw`w-[48%]`}>
-                            <Text style={styles.labelText}>Center</Text>
+                            <Text style={themed.inputLabel}>Center</Text>
 
                             <TouchableOpacity
                                 onPress={() => setIsModalVisible(true)}
-                                style={[styles.dropDownButton, tw`flex-row justify-between items-center mt-1`]}
+                                style={[themed.inputBox, tw`flex-row justify-between items-center mt-1`]}
                             >
-                                <Text numberOfLines={1}>
+                                <Text style={themed.inputText} numberOfLines={1}>
                                     {selectedItem?.branchName || 'Select Center'}
                                 </Text>
-                                <Icon name="chevron-down" size={18} color="gray" />
+                                <Icon name="chevron-down" size={18} color={themed.iconMuted} />
                             </TouchableOpacity>
                         </View>
 
                         <View style={tw`w-[48%]`}>
-                            <Text style={styles.labelText}>Panel</Text>
+                            <Text style={themed.inputLabel}>Panel</Text>
 
-                            <View style={[styles.dropDownButton, tw`mt-1`]}>
-                                <Text numberOfLines={1}>
+                            <View style={[themed.inputBox, tw`mt-1`]}>
+                                <Text style={themed.inputText} numberOfLines={1}>
                                     {ratePannel?.[0]?.CorporateName || 'Select Panel'}
                                 </Text>
                             </View>
@@ -192,13 +194,13 @@ const CenterInfo = () => {
 
                     <View style={tw`flex-row items-end gap-3 mt-3`}>
                         <View style={tw`flex-1`}>
-                            <Text style={styles.labelText}>Enter UHID</Text>
+                            <Text style={themed.inputLabel}>Enter UHID</Text>
                             <TextInput
                                 value={uhid}
                                 onChangeText={setUhid}
                                 placeholder="Search UHID"
-                                placeholderTextColor={colors.placeholder}
-                                style={[styles.searchInput, tw`h-12`]}
+                                placeholderTextColor={themed.inputPlaceholder}
+                                style={[themed.inputBox,themed.inputText, tw`h-12`]}
                             />
                         </View>
 
@@ -207,9 +209,9 @@ const CenterInfo = () => {
                             disabled={loading || uhid.length === 0}
                             style={tw`
                                 h-12 px-5 rounded-xl justify-center items-center
-                                ${loading || uhid.length === 0 ? 'bg-gray-300' : 'bg-blue-500'}
+                                ${loading || uhid.length === 0 ? 'bg-blue-400' : 'bg-blue-500'}
                             `}
-                        >
+                         >
                             {loading ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (

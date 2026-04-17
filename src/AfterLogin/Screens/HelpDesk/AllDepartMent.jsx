@@ -2,6 +2,8 @@ import { View, Text, FlatList, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import tw from 'twrnc'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const departments = [
     "--All--",
@@ -31,6 +33,8 @@ const departments = [
 const AllDepartMent = ({ onClose, onSelect }) => {
 
     const [selected, setSelected] = useState("--All--");
+    const {theme} = useTheme()
+    const themed = getThemeStyles(theme)
 
     const handleSelect = (item) => {
         setSelected(item);
@@ -50,9 +54,9 @@ const AllDepartMent = ({ onClose, onSelect }) => {
         return (
             <TouchableOpacity
                 onPress={() => handleSelect(item)}   // ✅ use handler
-                style={tw`flex-row items-center justify-between py-3 px-2`}
+                style={[themed.card, tw`flex-row items-center justify-between py-3 mt-1 px-2`]}
             >
-                <Text style={tw`text-base ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                <Text style={[themed.inputText, tw`text-base} px-2`]}>
                     {item}
                 </Text>
 
@@ -64,7 +68,7 @@ const AllDepartMent = ({ onClose, onSelect }) => {
     };
 
     return (
-        <View style={tw`flex-1 bg-gray-50 p-2`}>
+        <View style={tw`flex-1`}>
             <FlatList
                 data={departments}
                 keyExtractor={(item, index) => index.toString()}

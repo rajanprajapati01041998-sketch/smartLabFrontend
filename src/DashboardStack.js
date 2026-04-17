@@ -2,6 +2,8 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
 import LabDashboard from './AfterLogin/Screens/DashboardData/Dashborad';
@@ -15,18 +17,23 @@ import DashboardPaymentHistoryDetails from './AfterLogin/Screens/DashboardData/D
 const Stack = createNativeStackNavigator();
 
 export default function DashboardStack() {
+    const { theme, colors } = useTheme();
+
     return (
         <Stack.Navigator
-            screenOptions={{
-                headerStyle: { backgroundColor: '#e6e9ec' },
-                headerTintColor: '#111',
+            screenOptions={() => ({
+                headerStyle: { backgroundColor: colors.surface },
+                headerTintColor: colors.text,
+                headerTitleStyle: { color: colors.text },
+                headerShadowVisible: false,
                 headerShown: true,
                 headerBackVisible: true,
                 headerBackTitleVisible: false,
                 headerBackButtonDisplayMode: 'minimal',
                 headerBackTitle: '',
                 headerTitleAlign: 'center',
-            }}
+                contentStyle: { backgroundColor: colors.background },
+            })}
         >
 
             {/* Dashboard */}
@@ -43,10 +50,11 @@ export default function DashboardStack() {
                             <MaterialCommunityIcons
                                 name="account-circle"
                                 size={28}
-                                color="#000"
+                                color={colors.text}
                             />
                         </TouchableOpacity>
                     ),
+                   
                 })}
             />
 
@@ -79,6 +87,10 @@ export default function DashboardStack() {
                 options={{
                     title: 'My Profile',
                     headerShown: true,
+                    headerStyle: { backgroundColor: colors.surface },
+                    headerTintColor: colors.text,
+                    headerTitleStyle: { color: colors.text },
+                    headerShadowVisible: false,
                 }}
             />
             <Stack.Screen

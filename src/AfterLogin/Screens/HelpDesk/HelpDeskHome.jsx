@@ -24,6 +24,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../../../Authorization/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -39,22 +41,20 @@ const HelpDeskHome = () => {
   const [allBranchInfos, setAllBranchInfos] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
   const [hasInitializedBranches, setHasInitializedBranches] = useState(false);
-
   const filterHeightAnim = useRef(new Animated.Value(0)).current;
   const filterRotateAnim = useRef(new Animated.Value(0)).current;
-
   const navigation = useNavigation();
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
-
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showToDatePicker, setShowToDatePicker] = useState(false);
-
   const currentDate = new Date();
   const defaultFromDate = new Date();
   defaultFromDate.setDate(defaultFromDate.getDate());
+
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
 
   const [form, setForm] = useState({
     uhid: '',
@@ -93,7 +93,6 @@ const HelpDeskHome = () => {
 
       setAllBranchInfos(finalBranchList);
 
-      // ✅ auto-select all branches only first time
       if (!hasInitializedBranches) {
         setSelectedClient(finalBranchList);
         setHasInitializedBranches(true);
@@ -117,7 +116,6 @@ const HelpDeskHome = () => {
     }, [loginBranchId, userId, allBranchInfo, hasInitializedBranches])
   );
 
-  // ✅ extra safety: if API comes late or auth branch list changes, initialize once
   useEffect(() => {
     if (hasInitializedBranches) return;
 
@@ -238,7 +236,6 @@ const HelpDeskHome = () => {
       fromDate: form.fromDate,
       toDate: form.toDate,
       barCode: form.barCode,
-    
       investigationName: form.investigationName,
       patientName: form.patientName,
       branchIdList,
@@ -318,16 +315,16 @@ const HelpDeskHome = () => {
       return (
         <TouchableOpacity
           onPress={() => toggleSelect(item)}
-          style={tw`flex-row justify-between items-center py-3 px-2 border-b border-gray-200`}
+          style={[tw`flex-row justify-between items-center py-3 px-2 border-b`, themed.transactionDivider]}
         >
-          <Text style={tw`text-base ${isSelected ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+          <Text style={[themed.listItemText, isSelected && tw`text-blue-500 font-medium`]}>
             {item.BranchCode} - {item.BranchName}
           </Text>
 
           <MaterialIcons
             name={isSelected ? 'check-box' : 'check-box-outline-blank'}
             size={22}
-            color={isSelected ? '#3b82f6' : '#999'}
+            color={isSelected ? '#3b82f6' : themed.iconMuted}
           />
         </TouchableOpacity>
       );
@@ -337,9 +334,9 @@ const HelpDeskHome = () => {
       <View style={tw`flex-1`}>
         <TouchableOpacity
           onPress={handleSelectAll}
-          style={tw`flex-row justify-between items-center py-3 px-2 border-b border-gray-300 mb-2`}
+          style={[tw`flex-row justify-between items-center py-3 px-2 mb-2 border-b`, themed.transactionDivider]}
         >
-          <Text style={tw`text-base font-bold text-gray-800`}>
+          <Text style={themed.listItemText}>
             {selectedList.length === BranchData.length ? 'Deselect All' : 'Select All'}
           </Text>
 
@@ -381,7 +378,7 @@ const HelpDeskHome = () => {
   );
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-100`}>
+    <SafeAreaView style={[themed.screen, tw`flex-1`]}>
       <Animated.View style={[tw`flex-1`, { opacity: fadeAnim }]}>
         <ScrollView
           style={tw`flex-1`}
@@ -390,20 +387,18 @@ const HelpDeskHome = () => {
         >
           <TouchableOpacity
             onPress={toggleFilter}
-            style={[
-              styles.cardShadow,
-              tw`flex flex-row justify-between items-center bg-white p-3 rounded-lg mb-3`,
-            ]}
+            style={[styles.cardShadow,themed.card,themed.cardPadding,themed.childScreen,tw`flex-row justify-between items-center mb-3`]}
             activeOpacity={0.7}
           >
-            <Text style={[styles.labelText, tw`font-medium`]}>Filter</Text>
+            <Text style={[themed.inputLabel, tw`font-medium`]}>Filter</Text>
             <Animated.View
               style={[
-                tw`bg-gray-100 rounded-full p-1.5`,
+                tw`rounded-full p-1.5`,
+                themed.modalCloseButton,
                 { transform: [{ rotate: chevronRotation }] },
               ]}
             >
-              <Entypo name="chevron-down" size={18} color="#4b5563" />
+              <Entypo name="chevron-down" size={18} color={themed.chevronColor} />
             </Animated.View>
           </TouchableOpacity>
 
@@ -427,49 +422,49 @@ const HelpDeskHome = () => {
             ]}
           >
             {showFilter && (
-              <View style={[styles.cardShadow, tw`bg-white rounded-lg p-4 mb-3`]}>
+               <View style={[styles.cardShadow, themed.card, themed.cardPadding]}>
                 <View style={tw`flex-row gap-3 mb-3`}>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>UHID</Text>
+                  <View style={themed.inputContainer}>
+                    <Text style={themed.inputLabel}>UHID</Text>
                     <TextInput
                       value={form.uhid}
                       onChangeText={(t) => handleChange('uhid', t)}
                       placeholder="Enter UHID"
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                      placeholderTextColor="#9ca3af"
+                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                      placeholderTextColor={themed.inputPlaceholder}
                     />
                   </View>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>Barcode</Text>
+                  <View style={themed.inputContainer}>
+                    <Text style={themed.inputLabel}>Barcode</Text>
                     <TextInput
                       value={form.barCode}
                       onChangeText={(t) => handleChange('barCode', t)}
                       placeholder="Enter barcode"
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                      placeholderTextColor="#9ca3af"
+                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                      placeholderTextColor={themed.inputPlaceholder}
                     />
                   </View>
                 </View>
 
                 <View style={tw`flex-row gap-3 mb-3`}>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>Patient Name</Text>
+                  <View style={themed.inputContainer}>
+                    <Text style={themed.inputLabel}>Patient Name</Text>
                     <TextInput
                       value={form.patientName}
                       onChangeText={(t) => handleChange('patientName', t)}
                       placeholder="Enter patient name"
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                      placeholderTextColor="#9ca3af"
+                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                      placeholderTextColor={themed.inputPlaceholder}
                     />
                   </View>
-                  <View style={tw`flex-1`}>
-                    <Text style={styles.labelText}>Lab No.</Text>
+                  <View style={themed.inputContainer}>
+                    <Text style={themed.inputLabel}>Lab No.</Text>
                     <TextInput
                       value={form.labNo}
                       onChangeText={(t) => handleChange('labNo', t)}
                       placeholder="Enter Lab No"
-                      style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                      placeholderTextColor="#9ca3af"
+                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                      placeholderTextColor={themed.inputPlaceholder}
                     />
                   </View>
                 </View>
@@ -478,72 +473,67 @@ const HelpDeskHome = () => {
           </Animated.View>
 
           <Animated.View style={{ transform: [{ translateY: slideAnim }] }}>
-            <View style={[styles.cardShadow, tw`bg-white rounded-lg p-4`]}>
+            <View style={[styles.cardShadow, themed.card, themed.cardPadding]}>
               <View style={tw`flex-row gap-3 mb-3`}>
-                <View style={tw`flex-1`}>
-                  <Text style={styles.labelText}>From Date</Text>
+                <View style={themed.inputContainer}>
+                  <Text style={themed.inputLabel}>From Date</Text>
                   <TouchableOpacity
                     onPress={() => setShowFromDatePicker(true)}
-                    style={[
-                      styles.inputBox,
-                      tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`,
-                    ]}
+                    style={[styles.inputBox, themed.inputBox, tw`flex-row justify-between items-center`]}
                   >
-                    <Text style={tw`text-gray-700`}>{form.fromDate}</Text>
-                    <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
+                    <Text style={themed.inputText}>{form.fromDate}</Text>
+                    <MaterialIcons name="calendar-today" size={20} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
 
-                <View style={tw`flex-1`}>
-                  <Text style={styles.labelText}>To Date</Text>
+                <View style={themed.inputContainer}>
+                  <Text style={themed.inputLabel}>To Date</Text>
                   <TouchableOpacity
                     onPress={() => setShowToDatePicker(true)}
-                    style={[
-                      styles.inputBox,
-                      tw`bg-white border border-gray-200 rounded-lg flex-row justify-between items-center p-3`,
-                    ]}
+                    style={[styles.inputBox, themed.inputBox, tw`flex-row justify-between items-center`]}
                   >
-                    <Text style={tw`text-gray-700`}>{form.toDate}</Text>
-                    <MaterialIcons name="calendar-today" size={20} color="#6b7280" />
+                    <Text style={themed.inputText}>{form.toDate}</Text>
+                    <MaterialIcons name="calendar-today" size={20} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
               </View>
 
               <View style={tw`mb-3`}>
-                <Text style={styles.labelText}>Investigation Name</Text>
+                <Text style={themed.inputLabel}>Investigation Name</Text>
                 <TextInput
                   value={form.investigationName}
                   onChangeText={(t) => handleChange('investigationName', t)}
                   placeholder="Enter investigation name"
-                  style={[styles.inputBox, tw`bg-white border border-gray-200 rounded-lg p-3`]}
-                  placeholderTextColor="#9ca3af"
+                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                  placeholderTextColor={themed.inputPlaceholder}
                 />
               </View>
 
               <View style={tw`flex-col gap-3 mb-3`}>
-                <View style={tw`flex-1`}>
-                  <Text style={styles.labelText}>Select Department</Text>
+                <View style={themed.inputContainer}>
+                  <Text style={[themed.inputLabel,tw`py-1`]}>Select Department</Text>
                   <TouchableOpacity
                     onPress={() => openModal('department')}
                     style={[
                       styles.dropDownButton,
-                      tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`,
+                      themed.inputBox,
+                      tw`flex-row justify-between items-center`,
                     ]}
                   >
-                    <Text style={tw`text-gray-700 flex-1`}>
+                    <Text style={[themed.inputText, tw`flex-1`]}>
                       {selectedDepartment !== '--Department--'
                         ? selectedDepartment
                         : 'Select Department'}
                     </Text>
-                    <Icon name="chevron-down" size={18} color="gray" />
+                    <Icon name="chevron-down" size={18} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
 
-                <View style={tw`flex-1`}>
+                <View style={themed.inputContainer}>
                   <View style={tw`flex-row items-center`}>
-                    <Text style={styles.labelText}>Client/Panel</Text>
+                    <Text style={themed.inputLabel}>Client/Panel</Text>
                     <Text style={tw`text-red-500 text-base ml-1`}>*</Text>
-                    <Text style={tw`text-gray-500 text-xs ml-1`}>
+                    <Text style={[themed.transactionLabel, tw`ml-1`]}>
                       ({selectedClient?.length || 0} selected)
                     </Text>
                   </View>
@@ -552,17 +542,16 @@ const HelpDeskHome = () => {
                     onPress={() => openModal('client')}
                     style={[
                       styles.dropDownButton,
-                      tw`bg-white flex-row justify-between items-center p-3 rounded-lg border border-gray-200`,
+                      themed.inputBox,
+                      tw`flex-row justify-between items-center`,
                     ]}
                   >
-                    <Text numberOfLines={1} style={tw`text-gray-700 flex-1`}>
+                    <Text numberOfLines={1} style={[themed.inputText, tw`flex-1`]}>
                       {selectedClient?.length > 0
-                        ? `${selectedClient[0].BranchName}${
-                            selectedClient.length > 1 ? ` +${selectedClient.length - 1}` : ''
-                          }`
+                        ? `${selectedClient[0].BranchName}${selectedClient.length > 1 ? ` +${selectedClient.length - 1}` : ''}`
                         : 'Select Client'}
                     </Text>
-                    <Icon name="chevron-down" size={18} color="gray" />
+                    <Icon name="chevron-down" size={18} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -612,7 +601,7 @@ const HelpDeskHome = () => {
           animationType="none"
           onRequestClose={() => closeModal('department')}
         >
-          <View style={tw`flex-1 bg-black/50`}>
+          <View style={[themed.modalOverlay,tw``]}>
             <TouchableOpacity
               style={tw`flex-1`}
               activeOpacity={1}
@@ -620,7 +609,8 @@ const HelpDeskHome = () => {
             />
             <Animated.View
               style={[
-                tw`bg-gray-50 rounded-t-2xl p-3 h-[70%]`,
+                themed.modalCard,
+                tw`rounded-t-2xl p-3 h-[70%]`,
                 {
                   transform: [
                     {
@@ -633,9 +623,7 @@ const HelpDeskHome = () => {
                 },
               ]}
             >
-              <View style={tw`items-center mb-2`}>
-                <View style={tw`w-10 h-1 bg-gray-300 rounded-full`} />
-              </View>
+             
               <AllDepartMent
                 onClose={() => closeModal('department')}
                 onSelect={(item) => setSelectedDepartment(item)}
@@ -658,7 +646,8 @@ const HelpDeskHome = () => {
             />
             <Animated.View
               style={[
-                tw`bg-gray-50 rounded-t-2xl p-3 h-[70%]`,
+                themed.modalCard,
+                tw`rounded-t-2xl p-3 h-[70%]`,
                 {
                   transform: [
                     {

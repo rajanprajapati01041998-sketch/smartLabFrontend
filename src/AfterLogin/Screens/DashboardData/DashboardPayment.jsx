@@ -16,10 +16,12 @@ import tw from 'twrnc'
 import DashboardPaymentColloection from './DashboardPaymentColloection'
 import DashboardPaymentHistory from './DashboardPaymentHistory'
 import { useDash } from '../../../../Authorization/DashContext'
+import { useTheme } from '../../../../Authorization/ThemeContext'
 
 const DashboardPayment = () => {
   const { loginBranchId, userId } = useAuth()
   const { walletData } = useDash()
+  const { theme } = useTheme()
 
   const route = useRoute()
   const data = route?.params?.data ?? null
@@ -103,10 +105,10 @@ const DashboardPayment = () => {
 
   const StatCard = ({ title, value, icon, bgColor, textColor, iconColor }) => (
     <View
-      style={tw`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex-1 mx-1`}
+      style={tw`bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex-1 mx-1`}
     >
       <View style={tw`flex-row justify-between items-start mb-2`}>
-        <Text style={tw`text-xs text-gray-500 font-medium`}>{title}</Text>
+        <Text style={tw`text-xs text-gray-500 dark:text-gray-300 font-medium`}>{title}</Text>
         <View
           style={[
             tw`w-8 h-8 rounded-full items-center justify-center`,
@@ -123,11 +125,11 @@ const DashboardPayment = () => {
   )
 
   return (
-    <ScrollView style={tw`flex-1 bg-gray-50`}>
+    <ScrollView style={tw`flex-1 bg-gray-50 dark:bg-gray-900`}>
       <View style={tw`px-4 py-3`}>
         <TouchableOpacity
           onPress={() => setModalVisible(true)}
-          style={tw`bg-white border border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm mb-4`}
+          style={tw`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex-row justify-between items-center shadow-sm mb-4`}
           activeOpacity={0.7}
         >
           <View style={tw`flex-row items-center flex-1`}>
@@ -138,28 +140,28 @@ const DashboardPayment = () => {
             </View>
             <View style={tw`flex-1`}>
               <View style={tw`flex-row items-center gap-2 mb-0.5`}>
-                <Text style={tw`text-gray-500 text-xs font-medium`}>
+                <Text style={tw`text-gray-500 dark:text-gray-300 text-xs font-medium`}>
                   Dashboard View
                 </Text>
-                <View style={tw`bg-gray-100 px-2 py-0.5 rounded-full`}>
-                  <Text style={tw`text-gray-600 text-xs font-medium`}>
+                <View style={tw`bg-gray-100 dark:bg-gray-900 px-2 py-0.5 rounded-full`}>
+                  <Text style={tw`text-gray-600 dark:text-gray-300 text-xs font-medium`}>
                     Total: {branchList.length}
                   </Text>
                 </View>
               </View>
               <Text
-                style={tw`text-gray-800 text-base font-semibold`}
+                style={tw`text-gray-800 dark:text-gray-100 text-base font-semibold`}
                 numberOfLines={1}
               >
                 {getSelectedText()}
               </Text>
             </View>
           </View>
-          <Icon name="chevron-down" size={24} color="#6B7280" />
+          <Icon name="chevron-down" size={24} color={theme === 'dark' ? '#9CA3AF' : '#6B7280'} />
         </TouchableOpacity>
 
         <View style={tw`mb-3`}>
-          <Text style={tw`text-lg font-bold text-gray-800`}>
+          <Text style={tw`text-lg font-bold text-gray-800 dark:text-gray-100`}>
             Dashboard Overview
           </Text>
           <View style={tw`flex-row items-center mt-1`}>
@@ -168,7 +170,7 @@ const DashboardPayment = () => {
                 {selectedBranches.length} Branches
               </Text>
             </View>
-            <Text style={tw`text-xs text-gray-500`}>
+            <Text style={tw`text-xs text-gray-500 dark:text-gray-300`}>
               {selectedBranches.length === branchList.length
                 ? '(All selected)'
                 : `${selectedBranches.length} of ${branchList.length} selected`}

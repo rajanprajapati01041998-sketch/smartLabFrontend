@@ -1,5 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTheme } from '../Authorization/ThemeContext';
 
 import Registration from './AfterLogin/Screens/PatientRegistration/Registration';
 import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatient';
@@ -7,18 +8,23 @@ import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatien
 const Stack = createNativeStackNavigator();
 
 export default function RegistrationStack() {
+  const { theme, colors } = useTheme();
+
   return (
     <Stack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#e6e9ec' },
-        headerTintColor: '#111',
+      screenOptions={() => ({
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        headerShadowVisible: false,
         headerShown: true,
         headerBackVisible: true,
         headerBackTitleVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         headerBackTitle: '',
         headerTitleAlign: 'center',
-      }}
+        contentStyle: { backgroundColor: colors.background },
+      })}
     >
       <Stack.Screen
         name="RegistrationHome"
@@ -33,4 +39,3 @@ export default function RegistrationStack() {
     </Stack.Navigator>
   );
 }
-

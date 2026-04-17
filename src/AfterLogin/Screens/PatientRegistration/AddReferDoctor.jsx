@@ -8,6 +8,8 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useToast } from '../../../../Authorization/ToastContext';
 import api from '../../../../Authorization/api';
 import { useAuth } from '../../../../Authorization/AuthContext';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 
 const AddReferDoctor = ({ onClose }) => {
@@ -17,6 +19,8 @@ const AddReferDoctor = ({ onClose }) => {
     const [selectTitleModal, setSelectTitleModal] = useState(false);
     const { hosId, userId,ipAddress } = useAuth()
     const { showToast} = useToast()
+    const {theme} = useTheme()
+    const themed = getThemeStyles(theme)
 
     const handleSelectTitle = (title) => {
         setSelectedTitle(title);
@@ -69,22 +73,22 @@ const AddReferDoctor = ({ onClose }) => {
     };
 
     return (
-        <View style={tw` rounded-t-2xl `}>
+        <View style={[,tw`rounded-t-2xl `]}>
             <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={tw`text-lg font-bold text-start border-b border-b-gray-200 pb-2  mb-4`}>
+                <Text style={[themed.headerTitle, tw` text-start border-b border-b-gray-200 pb-2  mb-4`]}>
                     New Refer Doctor
                 </Text>
 
                 {/* Title + Name */}
                 <View style={tw`flex-row items-end mb-3`}>
                     <View style={tw`w-24 mr-2`}>
-                        <Text style={styles.labelText}>Title</Text>
+                        <Text style={themed.labelText}>Title</Text>
                         <TouchableOpacity
                             onPress={() => setSelectTitleModal(true)}
-                            style={tw`border border-gray-300 rounded-xl px-3 py-3 bg-white mt-1`}
+                            style={[themed.inputBox, tw`mt-1`]}
                         >
-                            <View style={tw`flex-row justify-between items-center`}>
-                                <Text style={tw`text-sm text-gray-700`}>
+                            <View style={[tw`flex-row justify-between items-center`]}>
+                                <Text style={[themed.inputText,tw``]}>
                                     {selectedTitle || 'Mr'}
                                 </Text>
                                 <Feather name="chevron-down" size={20} color="gray" />
@@ -94,11 +98,11 @@ const AddReferDoctor = ({ onClose }) => {
                     </View>
 
                     <View style={tw`flex-1`}>
-                        <Text style={styles.labelText}>Name</Text>
+                        <Text style={themed.labelText}>Name</Text>
                         <TextInput
                             value={doctorName}
                             onChangeText={setDoctorName}
-                            style={[styles.inputBox, tw`mt-1 capitalize`]}
+                            style={[themed.inputBox,themed.inputText, tw`mt-1 capitalize`]}
                             placeholder="Enter doctor name"
                             placeholderTextColor="gray"
                            

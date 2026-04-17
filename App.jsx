@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { useAuth } from './Authorization/AuthContext';
 import BottomTabNavigation from './src/BottomNavigation';
 import LoginScreen from './src/Login';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
 import { ResponsiveProvider } from './src/context/ResponsiveContext';
+import { useTheme } from './Authorization/ThemeContext';
 
 export default function App() {
   const { token } = useAuth();
+  const { theme, colors } = useTheme();
 
   useEffect(() => {
     requestStoragePermission();
-    console.log("token",token)
   }, []);
 
   const requestStoragePermission = async () => {
@@ -37,10 +38,22 @@ export default function App() {
     <SafeAreaProvider>
       <ResponsiveProvider>
         <StatusBar
-          barStyle="dark-content"
-          backgroundColor="#ffffff"
+          barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+          backgroundColor={theme === 'dark' ? colors.surface : '#ffffff'}
         />
-        <NavigationContainer>
+        <NavigationContainer
+          theme={{
+            ...(theme === 'dark' ? DarkTheme : DefaultTheme),
+            colors: {
+              ...((theme === 'dark' ? DarkTheme : DefaultTheme).colors),
+              background: colors.background,
+              card: colors.surface,
+              border: colors.border,
+              text: colors.text,
+              primary: colors.primary,
+            },
+          }}
+        >
           {token ? <BottomTabNavigation /> : <LoginScreen />}
         </NavigationContainer>
       </ResponsiveProvider>

@@ -4,12 +4,16 @@ import tw from 'twrnc'
 import { useAuth } from '../../../../Authorization/AuthContext'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import api from '../../../../Authorization/api'
+import { useTheme } from '../../../../Authorization/ThemeContext'
+import { getThemeStyles } from '../../../utils/themeStyles'
 
 const UserLoginHistory = () => {
     const { userData } = useAuth()
     const [loading, setLoading] = useState(false)
     const [loginHistory, setLoginHistory] = useState([])
     const navigation = useNavigation()
+    const { theme } = useTheme()
+    const themed = getThemeStyles(theme)
 
     // Animation values for main container
     const fadeAnim = useRef(new Animated.Value(0)).current
@@ -125,12 +129,12 @@ const UserLoginHistory = () => {
 
         return (
             <Animated.View
-                style={[
-                    tw`mx-4 my-2 p-4 bg-white rounded-lg shadow-md`,
-                    {
-                        opacity: animations.fade,
-                        transform: [{ translateX: animations.slide }]
-                    }
+                style={[themed.childScreen, tw`mx-4 my-2 p-4 rounded-lg`,
+                tw`mx-4 my-2 p-4  rounded-lg shadow-md`,
+                {
+                    opacity: animations.fade,
+                    transform: [{ translateX: animations.slide }]
+                }
                 ]}
             >
                 <RenderItemContent item={item} index={index} />
@@ -143,11 +147,11 @@ const UserLoginHistory = () => {
         <View style={tw`flex-row items-start justify-between`}>
             <View style={tw`flex-1`}>
                 <View style={tw`flex-row items-center mb-2`}>
-                    <Text style={tw`text-2xl mr-2`}>
+                    <Text style={[themed.inputText, tw`text-2xl mr-2`]}>
                         {getDeviceIcon(item.browser, item.device)}
                     </Text>
                     <View>
-                        <Text style={tw`font-bold text-gray-800`}>
+                        <Text style={[themed.inputText, tw`font-bold text-gray-800`]}>
                             {item.device}
                         </Text>
                         <Text style={tw`text-xs text-gray-500`}>
@@ -156,26 +160,45 @@ const UserLoginHistory = () => {
                     </View>
                 </View>
 
-                <View style={tw`mt-2`}>
+                <View style={tw``}>
                     <Text style={tw`text-sm text-gray-600`}>
-                        <Text style={tw`font-semibold`}>OS:</Text> {item.os}
+                        <Text style={[themed.inputText, tw`font-semibold`]}>OS: {item.os}</Text>
                     </Text>
                     <Text style={tw`text-sm text-gray-600 mt-1`}>
-                        <Text style={tw`font-semibold`}>IP:</Text> {item.ipAddress}
+                        <Text style={[themed.inputText, tw`font-semibold`]}>IP: {item.ipAddress}</Text>
                     </Text>
                     <Text style={tw`text-sm text-gray-600 mt-1`}>
-                        <Text style={tw`font-semibold`}>Session ID:</Text> {item.sessionId}
+                        <Text style={[themed.inputText, tw`font-semibold`]}>Session ID:{item.sessionId}</Text>
                     </Text>
-                    <Text style={tw`text-xs text-gray-400 mt-2`}>
-                        {formatDate(item.loginAt)}
-                    </Text>
+
                 </View>
             </View>
 
             {index === 0 && (
-                <View style={tw`bg-green-500 px-2 py-1 rounded-full`}>
-                    <Text style={tw`text-white text-xs font-bold`}>Current</Text>
-                </View>
+                <>
+                    <View style={tw`flex flex-row items-center gap-2`}>
+
+                        <Text
+                            style={tw`text-xs text-blue-900 dark:text-blue-100 
+                            bg-blue-200/40 dark:bg-blue-900/30 
+                            px-3 py-1 rounded-full 
+                            border border-blue-300/40 dark:border-blue-700/40`}
+                        >
+                            {formatDate(item.loginAt)}
+                        </Text>
+
+                        <View
+                            style={tw`px-3 py-1 rounded-full 
+                                bg-green-300/40 dark:bg-green-900/30 
+                                border border-green-400/40 dark:border-green-700/40`}
+                        >
+                            <Text style={tw`text-xs font-bold text-green-900 dark:text-green-100`}>
+                                Current
+                            </Text>
+                        </View>
+
+                    </View>
+                </>
             )}
         </View>
     )
@@ -190,8 +213,8 @@ const UserLoginHistory = () => {
     }
 
     return (
-        <View style={tw`flex-1 bg-gray-50`}>
-            <Text style={tw`text-gray-700 text-md mt-2 px-4`}>
+        <View style={[themed.screen, tw`flex-1 `]}>
+            <Text style={[themed.mutedText,tw` text-md mt-2 px-4`]}>
                 {loginHistory.length} {loginHistory.length === 1 ? 'session' : 'sessions'} recorded
             </Text>
 

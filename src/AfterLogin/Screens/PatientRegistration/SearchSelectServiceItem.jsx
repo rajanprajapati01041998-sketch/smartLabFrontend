@@ -17,6 +17,8 @@ import { useAuth } from '../../../../Authorization/AuthContext';
 import { SearchGetInvestigationListDetails } from './services/doctorService';
 import { getColorCode } from '../../../utils/colorUtils';
 import ViewTestRangeDetails from './ViewTestRangeDetails';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const SearchSelectServiceItem = ({
   data,
@@ -32,6 +34,8 @@ const SearchSelectServiceItem = ({
   const [selectedServiceItemName, setSelectedServiceItemName] = useState(null);
 
   const { setServiceItem, selectedDoctor, corporateId, loginBranchId } = useAuth();
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
 
   useEffect(() => {
     let cancelled = false;
@@ -175,7 +179,7 @@ const SearchSelectServiceItem = ({
     const colorCode = getColorCode(item?.containerColor);
 
     return (
-      <View style={tw`bg-white border border-gray-200 rounded-xl p-3 mb-3 `}>
+      <View style={[themed.childScreen ,themed.border,tw` rounded-xl p-3 mb-3 `]}>
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`flex-row items-center flex-1`}>
             <View
@@ -184,7 +188,7 @@ const SearchSelectServiceItem = ({
                 { backgroundColor: colorCode || '#ccc' },
               ]}
             />
-            <Text style={tw`text-sm font-semibold flex-1`}>
+            <Text style={[themed.inputText, tw` flex-1`]}>
               {item.serviceName}
             </Text>
           </View>
@@ -194,12 +198,12 @@ const SearchSelectServiceItem = ({
           </TouchableOpacity>
         </View>
 
-        <View style={tw`h-[1px] bg-gray-200 my-2`} />
+        <View style={[themed.border,tw`h-[0.5px]  my-2`]} />
 
         <View style={tw`flex-row justify-between items-center`}>
           <View>
             <Text style={tw`text-[10px] text-gray-400`}>MRP</Text>
-            <Text style={tw`text-xs`}>₹ {item.mrp}</Text>
+            <Text style={[themed.inputText, tw`text-xs`]}>₹ {item.mrp}</Text>
           </View>
 
           <View>
@@ -231,7 +235,7 @@ const SearchSelectServiceItem = ({
           {item.sampleVolume ? (
             <View>
               <Text style={tw`text-[10px] text-gray-400`}>Volume</Text>
-              <Text style={tw`text-xs`}>{item.sampleVolume}</Text>
+              <Text style={[themed.inputText, tw`text-xs`]}>{item.sampleVolume}</Text>
             </View>
           ) : null}
 
@@ -244,7 +248,7 @@ const SearchSelectServiceItem = ({
           >
             <View pointerEvents="none" style={tw`flex-row items-center`}>
               <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
-              <Text style={tw`text-[10px] text-gray-700`}>Urgent</Text>
+              <Text style={[themed.inputText, tw`text-[10px] `]}>Urgent</Text>
             </View>
           </Pressable>
 
@@ -300,7 +304,7 @@ const SearchSelectServiceItem = ({
           </View>
 
           {isDirty && detailsList.length > 0 && (
-            <View style={tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3 bg-white border-t border-gray-200`}>
+            <View style={[themed.borderTop,tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3  border-t `]}>
               <TouchableOpacity
                 onPress={createPayload}
                 style={tw`bg-blue-500 p-3 rounded-lg`}

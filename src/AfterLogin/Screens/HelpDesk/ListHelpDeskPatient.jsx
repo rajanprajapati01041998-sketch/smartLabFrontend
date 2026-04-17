@@ -1,4 +1,21 @@
-import { PermissionsAndroid, Easing, LayoutAnimation, UIManager, Platform, View, Text, FlatList, TouchableOpacity, Dimensions, Modal, TextInput, ScrollView, Animated, ActivityIndicator, Alert } from 'react-native';
+import {
+  PermissionsAndroid,
+  Easing,
+  LayoutAnimation,
+  UIManager,
+  Platform,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Dimensions,
+  Modal,
+  TextInput,
+  ScrollView,
+  Animated,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
 import api from '../../../../Authorization/api';
@@ -18,15 +35,15 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 import { useDash } from '../../../../Authorization/DashContext';
-
-
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 
 const { width } = Dimensions.get('window');
 
 const ListHelpDeskPatient = () => {
   const route = useRoute();
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const [showFilter, setShowFilter] = useState(false);
   const payload = route?.params?.payload || null;
   const [data, setData] = useState([]);
@@ -34,18 +51,20 @@ const ListHelpDeskPatient = () => {
   const [loading, setLoading] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
   const [showStatusLegend, setShowStatusLegend] = useState(false);
-  const { showToast } = useToast()
-  const [downloadingId, setDownloadingId] = useState(null)
-  const { loginBranchId,userId } = useAuth()
-  // Filter states
+  const { showToast } = useToast();
+  const [downloadingId, setDownloadingId] = useState(null);
+  const { loginBranchId, userId } = useAuth();
+
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [openItemIndex, setOpenItemIndex] = useState(null); // Track which item is open
+  const [openItemIndex, setOpenItemIndex] = useState(null);
   const animationRefs = useRef({});
-  const { walletData } = useDash()
+  const { walletData } = useDash();
 
-  // Status legend items
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
+
   const statusLegend = [
     { key: 'sample_pending', label: 'Sample Collection Pending', color: '#ef4444', bg: '#fee2e2', condition: (item) => !item.IsSampleCollected && !item.IsResultDone },
     { key: 'sample_collected', label: 'Sample Collected', color: '#3b82f6', bg: '#dbeafe', condition: (item) => item.IsSampleCollected === 1 && !item.IsResultDone },
@@ -63,7 +82,7 @@ const ListHelpDeskPatient = () => {
   }
 
   const gethelpDesk = async () => {
-    console.log("help payload", payload);
+    console.log('help payload', payload);
     try {
       setLoading(true);
       const response = await api.post(`HelpDesk/help_desk`, payload);
@@ -71,31 +90,21 @@ const ListHelpDeskPatient = () => {
       setData(responseData);
       setFilteredData(responseData);
     } catch (error) {
-      console.log("ERROR RESPONSE >>>", error?.response?.data);
+      console.log('ERROR RESPONSE >>>', error?.response?.data);
     } finally {
       setLoading(false);
     }
   };
 
-
-
   const toggleItem = (index) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
     if (openItemIndex === index) {
-      // Close the current item
       setOpenItemIndex(null);
     } else {
-      // Open new item and close previous
       setOpenItemIndex(index);
     }
   };
 
-
-
-
-
-  // Create animation values for each item when needed
   const getAnimationValue = (index) => {
     if (!animationRefs.current[index]) {
       animationRefs.current[index] = {
@@ -105,9 +114,7 @@ const ListHelpDeskPatient = () => {
     return animationRefs.current[index];
   };
 
-  // Update animation when openItemIndex changes
   useEffect(() => {
-    // Animate all items based on their open state
     Object.keys(animationRefs.current).forEach((key) => {
       const index = parseInt(key);
       const animValue = animationRefs.current[index];
@@ -139,7 +146,6 @@ const ListHelpDeskPatient = () => {
     }
   }, [payload]);
 
-  // Apply filters
   useEffect(() => {
     applyFilters();
   }, [searchText, selectedStatus, selectedType, data]);
@@ -147,7 +153,6 @@ const ListHelpDeskPatient = () => {
   const applyFilters = () => {
     let filtered = [...data];
 
-    // Search filter
     if (searchText) {
       filtered = filtered.filter(item =>
         item.PatientName?.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -157,33 +162,21 @@ const ListHelpDeskPatient = () => {
       );
     }
 
-    // Status filter
     if (selectedStatus !== 'all') {
       filtered = filtered.filter(item => {
-        if (selectedStatus === 'sample_pending') {
-          return !item.IsSampleCollected && !item.IsResultDone;
-        } else if (selectedStatus === 'sample_collected') {
-          return item.IsSampleCollected === 1 && !item.IsResultDone;
-        } else if (selectedStatus === 'department_received') {
-          return item.IsSampleReceivedByDepartment === 1;
-        } else if (selectedStatus === 'abnormal') {
-          return item.IsAbnormalResult === 1;
-        } else if (selectedStatus === 'hold') {
-          return item.IsReportHold === 1;
-        } else if (selectedStatus === 'report_pending') {
-          return item.IsResultDone === 1 && item.IsReportApproved !== 1;
-        } else if (selectedStatus === 'approved') {
-          return item.IsReportApproved === 1 && item.IsDispatched !== 1;
-        } else if (selectedStatus === 'dispatched') {
-          return item.IsDispatched === 1;
-        } else if (selectedStatus === 'urgent') {
-          return item.isUrgent === 1;
-        }
+        if (selectedStatus === 'sample_pending') return !item.IsSampleCollected && !item.IsResultDone;
+        if (selectedStatus === 'sample_collected') return item.IsSampleCollected === 1 && !item.IsResultDone;
+        if (selectedStatus === 'department_received') return item.IsSampleReceivedByDepartment === 1;
+        if (selectedStatus === 'abnormal') return item.IsAbnormalResult === 1;
+        if (selectedStatus === 'hold') return item.IsReportHold === 1;
+        if (selectedStatus === 'report_pending') return item.IsResultDone === 1 && item.IsReportApproved !== 1;
+        if (selectedStatus === 'approved') return item.IsReportApproved === 1 && item.IsDispatched !== 1;
+        if (selectedStatus === 'dispatched') return item.IsDispatched === 1;
+        if (selectedStatus === 'urgent') return item.isUrgent === 1;
         return true;
       });
     }
 
-    // Type filter
     if (selectedType !== 'all') {
       filtered = filtered.filter(item => item.Type === selectedType);
     }
@@ -198,8 +191,7 @@ const ListHelpDeskPatient = () => {
     setFilterModal(false);
   };
 
-  // Get card background color based on status
-  const getCardColor = (item) => {
+  const getglobalCardColor = (item) => {
     if (item.isUrgent === 1) return { bg: '#fee2e2', border: '#dc2626' };
     if (item.IsDispatched === 1) return { bg: '#cffafe', border: '#06b6d4' };
     if (item.IsReportApproved === 1) return { bg: '#d1fae5', border: '#10b981' };
@@ -211,7 +203,6 @@ const ListHelpDeskPatient = () => {
     return { bg: '#fee2e2', border: '#ef4444' };
   };
 
-  // Get detailed status text
   const getDetailedStatus = (item) => {
     if (item.isUrgent === 1) return 'URGENT';
     if (item.IsDispatched === 1) return 'Dispatched';
@@ -224,7 +215,6 @@ const ListHelpDeskPatient = () => {
     return 'Sample Collection Pending';
   };
 
-  // Format date to "22 Oct 2025, 2:52 PM"
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -233,20 +223,20 @@ const ListHelpDeskPatient = () => {
       if (dateString.includes('-') && !dateString.includes(' ')) {
         const [day, month, year] = dateString.split('-');
         const monthMap = {
-          'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+          Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+          Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
         };
         date = new Date(parseInt(year), monthMap[month], parseInt(day));
-      }
-      else if (dateString.includes(' ')) {
+      } else if (dateString.includes(' ')) {
         const parts = dateString.split(' ');
         if (parts.length >= 4) {
           const month = parts[0];
           const day = parseInt(parts[1]);
           const year = parseInt(parts[2]);
-          let timeStr = parts[3];
+          const timeStr = parts[3];
 
-          let hours = 0, minutes = 0;
+          let hours = 0;
+          let minutes = 0;
           const timeMatch = timeStr.match(/(\d+):?(\d*)([AP]M)/i);
           if (timeMatch) {
             hours = parseInt(timeMatch[1]);
@@ -257,18 +247,19 @@ const ListHelpDeskPatient = () => {
           }
 
           const monthMap = {
-            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+            Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+            Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
           };
           date = new Date(year, monthMap[month], day, hours, minutes);
         } else {
           date = new Date(dateString);
         }
-      }
-      else {
+      } else {
         date = new Date(dateString);
       }
+
       if (isNaN(date.getTime())) return dateString;
+
       const day = date.getDate();
       const month = date.toLocaleString('default', { month: 'short' });
       const year = date.getFullYear();
@@ -277,13 +268,13 @@ const ListHelpDeskPatient = () => {
       const ampm = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12;
       hours = hours ? hours : 12;
+
       return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
     } catch {
       return dateString;
     }
   };
 
-  // Format date only (without time) to "22 Oct 2025"
   const formatDateOnly = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -306,64 +297,61 @@ const ListHelpDeskPatient = () => {
   };
 
   const handleDownloadReport = async (id, name, reporTypeId) => {
-    // console.log("download report:", id, name)
-    // console.log("download branch:", loginBranchId)
-    // console.log("report type id:", reporTypeId)
     if (reporTypeId === 1) {
       try {
-        setDownloadingId(id)
+        setDownloadingId(id);
         const { config, fs } = RNFetchBlob;
         const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
-        const branchId = payload?.branchId ? String(payload.branchId) : '1'
-        const res = await config({
+
+        await config({
           addAndroidDownloads: {
             useDownloadManager: true,
             notification: true,
-            path: path,
+            path,
             description: 'Downloading report...',
           },
-        }).fetch('GET',
+        }).fetch(
+          'GET',
           `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
         );
+
         showToast('File downloaded', 'success');
       } catch (error) {
-        console.error("Download failed", error);
+        console.error('Download failed', error);
       } finally {
-        setDownloadingId(null); // STOP loading (always runs)
+        setDownloadingId(null);
       }
     } else {
-      handleDownloadTebularReport(id, name, reporTypeId)
+      handleDownloadTebularReport(id, name, reporTypeId);
     }
-
-
   };
 
   const handleDownloadTebularReport = async (id, name, reporTypeId) => {
     try {
-      setDownloadingId(id)
+      setDownloadingId(id);
       const { config, fs } = RNFetchBlob;
       const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
-      const branchId = payload?.branchId ? String(payload.branchId) : '1'
-      const res = await config({
+
+      await config({
         addAndroidDownloads: {
           useDownloadManager: true,
           notification: true,
-          path: path,
+          path,
           description: 'Downloading report...',
         },
-      }).fetch('GET',
-        // `http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=0&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=false`
+      }).fetch(
+        'GET',
         `http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=0&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=false`
       );
+
       showToast('File downloaded', 'success');
     } catch (error) {
-      console.error("Download failed", error);
+      console.error('Download failed', error);
     } finally {
-      setDownloadingId(null); // STOP loading (always runs)
+      setDownloadingId(null);
     }
   };
 
-  // Get status color and icon (for badge)
   const getStatusInfo = (item) => {
     const status = getDetailedStatus(item);
     if (status === 'Dispatched') return { text: status, color: '#06b6d4', bg: '#cffafe', icon: 'truck-fast' };
@@ -377,54 +365,55 @@ const ListHelpDeskPatient = () => {
     return { text: 'Sample Collection Pending', color: '#ef4444', bg: '#fee2e2', icon: 'clock-time-four' };
   };
 
-  // Get gender icon
   const getGenderIcon = (gender) => {
-    if (gender === 'MALE') {
-      return { name: 'gender-male', color: '#3b82f6' };
-    }
-    if (gender === 'FEMALE') {
-      return { name: 'gender-female', color: '#ec489a' };
-    }
+    if (gender === 'MALE') return { name: 'gender-male', color: '#3b82f6' };
+    if (gender === 'FEMALE') return { name: 'gender-female', color: '#ec489a' };
     return { name: 'gender-male-female', color: '#9ca3af' };
   };
 
   const renderItem = ({ item, index }) => {
     const statusInfo = getStatusInfo(item);
     const genderIcon = getGenderIcon(item.Gender);
-    const cardColor = getCardColor(item);
-    const isUrgent = item.isUrgent === 1;
-    const isVIP = item.VIPPatient === 1;
+    const globalCardColor = getglobalCardColor(item);
     const isOpen = openItemIndex === index;
 
-    // Initialize animation for this item if needed
     getAnimationValue(index);
     const chevronRotation = getChevronRotation(index);
 
     return (
       <View
         style={[
+          themed.globalCard,
           tw`rounded-lg mb-4 shadow-sm overflow-hidden`,
-          { backgroundColor: cardColor.bg, borderLeftWidth: 4, borderLeftColor: cardColor.border }
+          { backgroundColor: globalCardColor.bg, borderLeftWidth: 4, borderLeftColor: globalCardColor.border }
         ]}
       >
-        {/* Header Section */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => toggleItem(index)}
-          style={tw`flex flex-col py-2 px-4`}
+          style={tw`flex-col py-2 px-4`}
         >
           <View style={tw`flex-row justify-between items-start`}>
             <View style={tw`flex-row items-center flex-1`}>
-              <View style={tw`mr-3 border border-gray-300 rounded-full p-1 bg-white`}>
+              <View
+                style={[
+                  tw`mr-3 rounded-full p-1`,
+                  themed.globalCard,
+                  { backgroundColor: theme === 'dark' ? '#111827' : '#FFFFFF' }
+                ]}
+              >
                 <MaterialCommunityIcons name="account" size={24} color={genderIcon.color} />
               </View>
+
               <View style={tw`flex-1 justify-start items-start`}>
-                <Text style={tw`text-md font-bold text-gray-800`}>
+                <Text style={[tw`text-md font-bold`]}>
                   {item.PatientName || 'No Name'}
                 </Text>
-                <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+
+                <Text style={[themed.transactionLabel, tw`mt-0.5 text-xs`]}>
                   {`${item.UHID || 'N/A'} • ${formatDateOnly(item.BillDate)}`}
                 </Text>
+
                 {item.Barcode && (
                   <View style={tw`mt-1`}>
                     <Barcode
@@ -433,7 +422,7 @@ const ListHelpDeskPatient = () => {
                       width={1.2}
                       maxWidth={Math.min(240, width - 160)}
                       height={24}
-                      lineColor="#111827"
+                      lineColor={theme === 'dark' ? '#3f464e' : '#848994'}
                       background="transparent"
                       text={String(item.Barcode).trim()}
                       textStyle={tw`text-[10px] text-gray-700`}
@@ -443,44 +432,47 @@ const ListHelpDeskPatient = () => {
                   </View>
                 )}
               </View>
+
               <View
                 style={[
-                  styles.cardShadow,
-                  tw`flex flex-row justify-between items-center bg-white p-3 rounded-full`
+                  themed.globalCard,
+                  tw`flex-row justify-between items-center p-3 rounded-full`
                 ]}
               >
-                <Animated.View style={[tw`bg-gray-100 rounded-full p-1.5`, { transform: [{ rotate: chevronRotation }] }]}>
-                  <Entypo name='chevron-down' size={18} color="#4b5563" />
+                <Animated.View
+                  style={[
+                    themed.modalCloseButton,
+                    tw`rounded-full p-1.5`,
+                    { transform: [{ rotate: chevronRotation }] }
+                  ]}
+                >
+                  <Entypo name="chevron-down" size={18} color={themed.chevronColor} />
                 </Animated.View>
               </View>
             </View>
           </View>
         </TouchableOpacity>
 
-        {/* Timeline Section */}
         {isOpen && (
-          <View style={tw`p-4 border-t border-gray-100 bg-white/30`}>
-            <View style={tw`gap-2 `}>
-              <View style={tw`flex flex-row justify-between items-center`}>
-                <Text>{item?.Name || ""}</Text>
-                {/* <TouchableOpacity
-                  onPress={() => console.log('Print clicked')}
-                  style={tw`border border-gray-300 p-2 rounded-full bg-white`}
-                  activeOpacity={0.7}
-                >
-                  <AntDesign name='printer' size={16} color="#4b5563" />
-                </TouchableOpacity> */}
+          <View style={[themed.transactionDivider, themed.globalCard, tw`p-4 border-t`]}>
+            <View style={tw`gap-2`}>
+              <View style={tw`flex-row justify-between items-center`}>
+                <Text style={tw`text-md font-bold`}>
+                  {item?.Name || ''}
+                </Text>
               </View>
+
               <View style={tw`flex-row flex-wrap gap-3 mb-2`}>
                 <View style={tw`flex-row items-center`}>
-                  <MaterialCommunityIcons name="calendar" size={14} color="#9ca3af" />
-                  <Text style={tw`text-xs text-gray-600 ml-1`}>
+                  <MaterialCommunityIcons name="calendar" size={14} color={themed.iconMuted} />
+                  <Text style={[themed.transactionLabel, tw`ml-1 text-xs`]}>
                     Age: {item.CurrentAge || 'N/A'}
                   </Text>
                 </View>
+
                 <View style={tw`flex-row items-center`}>
-                  <MaterialCommunityIcons name="phone" size={14} color="#9ca3af" />
-                  <Text style={tw`text-xs text-gray-600 ml-1`}>
+                  <MaterialCommunityIcons name="phone" size={14} color={themed.iconMuted} />
+                  <Text style={[themed.transactionLabel, tw`ml-1 text-xs`]}>
                     {item.ContactNumber || 'No Contact'}
                   </Text>
                 </View>
@@ -489,134 +481,140 @@ const ListHelpDeskPatient = () => {
               {item.BillDate && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="calendar-clock" size={14} color="#9ca3af" />
-                    <Text style={tw`text-xs text-gray-600 ml-2`}>Bill Date</Text>
+                    <MaterialCommunityIcons name="calendar-clock" size={14} color={themed.iconMuted} />
+                    <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Bill Date</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{item.CreatedOn}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{item.CreatedOn}</Text>
                 </View>
               )}
+
               {item.SampleCollectedOn && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="test-tube" size={14} color="#9ca3af" />
-                    <Text style={tw`text-xs text-gray-600 ml-2`}>Sample Collected</Text>
+                    <MaterialCommunityIcons name="test-tube" size={14} color={themed.iconMuted} />
+                    <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Sample Collected</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{formatDate(item.SampleCollectedOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatDate(item.SampleCollectedOn)}</Text>
                 </View>
               )}
+
               {item.ResultDoneOn && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="file-check" size={14} color="#9ca3af" />
-                    <Text style={tw`text-xs text-gray-600 ml-2`}>Result Done</Text>
+                    <MaterialCommunityIcons name="file-check" size={14} color={themed.iconMuted} />
+                    <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Result Done</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{(item.ResultDoneOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{item.ResultDoneOn}</Text>
                 </View>
               )}
+
               {item.ReportApprovedOn && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="check-circle" size={14} color="#9ca3af" />
-                    <Text style={tw`text-xs text-gray-600 ml-2`}>Report Approved</Text>
+                    <MaterialCommunityIcons name="check-circle" size={14} color={themed.iconMuted} />
+                    <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Report Approved</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{formatDate(item.ReportApprovedOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatDate(item.ReportApprovedOn)}</Text>
                 </View>
               )}
+
               {item.DispatchedOn && (
                 <View style={tw`flex-row items-center justify-between`}>
                   <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="truck-fast" size={14} color="#9ca3af" />
-                    <Text style={tw`text-xs text-gray-600 ml-2`}>Dispatched</Text>
+                    <MaterialCommunityIcons name="truck-fast" size={14} color={themed.iconMuted} />
+                    <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Dispatched</Text>
                   </View>
-                  <Text style={tw`text-xs text-gray-500`}>{formatDate(item.DispatchedOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatDate(item.DispatchedOn)}</Text>
                 </View>
               )}
             </View>
-            {/* {console.log("request",item?.IsResultDone)} */}
-            {
-              walletData.balanceMain > 0 &&
-              item?.IsReportApproved === 1 && (
-                <View style={tw`flex-row gap-2 mt-4`}>
 
-                  {/* DOWNLOAD */}
-                  <TouchableOpacity
-                    onPress={() =>
-                      handleDownloadReport(item?.PatientInvestigationId, item?.PatientName, item?.ReportTypeId)
+            {walletData.balanceMain > 0 && item?.IsReportApproved === 1 && (
+              <View style={tw`flex-row gap-2 mt-4`}>
+                <TouchableOpacity
+                  onPress={() =>
+                    handleDownloadReport(
+                      item?.PatientInvestigationId,
+                      item?.PatientName,
+                      item?.ReportTypeId
+                    )
+                  }
+                  style={[themed.card, tw`flex-1 flex-row items-center justify-center py-3 rounded-lg`]}
+                  activeOpacity={0.7}
+                  disabled={downloadingId === item?.PatientInvestigationId}
+                >
+                  {downloadingId === item?.PatientInvestigationId ? (
+                    <ActivityIndicator size="small" color={themed.chevronColor} />
+                  ) : (
+                    <>
+                      <Feather name="download" size={14} color={themed.chevronColor} />
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        style={[themed.listItemText, tw`ml-2 text-xs font-medium`]}
+                      >
+                        Download
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    if (item?.reportTypeId === 1) {
+                      navigation.navigate('ViewTebularReport', { item });
+                    } else {
+                      navigation.navigate('ViewLabReport', {
+                        patientInvestigationId: item?.PatientInvestigationId,
+                        patientName: item?.PatientName,
+                        branchId: payload?.branchId,
+                        item,
+                      });
                     }
-                    style={tw`flex-1 flex-row items-center justify-center border border-gray-300 py-2 rounded-lg bg-white`}
-                    activeOpacity={0.7}
-                    disabled={downloadingId === item?.PatientInvestigationId}
+                  }}
+                  style={[
+                    tw`flex-1 flex-row items-center justify-center py-3 rounded-lg border`,
+                    theme === 'dark'
+                      ? tw`bg-blue-900 border-blue-700`
+                      : tw`bg-blue-50 border-blue-500`
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Feather
+                    name="eye"
+                    size={14}
+                    color={theme === 'dark' ? '#93C5FD' : '#3b82f6'}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={[
+                      tw`ml-2 text-xs font-medium`,
+                      theme === 'dark' ? tw`text-blue-200` : tw`text-blue-600`
+                    ]}
                   >
-                    {downloadingId === item?.PatientInvestigationId ? (
-                      <ActivityIndicator size="small" color="#4b5563" />
-                    ) : (
-                      <>
-                        <Feather name="download" size={14} color="#4b5563" />
-                        <Text
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          style={tw`ml-1 text-xs text-gray-700 font-medium`}
-                        >
-                          Download
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+                    View
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-                  {/* VIEW */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (item?.reportTypeId === 1) {
-                        navigation.navigate('ViewTebularReport', {
-                          item: item
-                        });
-                      } else {
-                        navigation.navigate('ViewLabReport', {
-                          patientInvestigationId: item?.PatientInvestigationId,
-                          patientName: item?.PatientName,
-                          branchId: payload?.branchId,
-                          item: item
-                        });
-                      }
-                    }}
-                    style={tw`flex-1 flex-row items-center justify-center border border-blue-500 py-2 rounded-lg bg-blue-50`}
-                    activeOpacity={0.7}
-                  >
-                    <Feather name="eye" size={14} color="#3b82f6" />
-                    <Text
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      style={tw`ml-1 text-xs text-blue-600 font-medium`}
-                    >
-                      View
+            {walletData?.balanceMain < 0 && (
+              <View style={tw`bg-amber-50 border-l-4 border-amber-500 rounded-lg px-2 py-1 mt-2 mb-4`}>
+                <View style={tw`flex-row items-center`}>
+                  <MaterialCommunityIcons name="alert-circle" size={24} color="#D97706" />
+                  <View style={tw`ml-3 flex-1`}>
+                    <Text style={tw`text-amber-800 font-semibold text-sm`}>
+                      Low Balance Alert
                     </Text>
-                  </TouchableOpacity>
-
-                </View>
-              )
-            }
-            {
-              console.log("on help desk", walletData)
-            }
-            {
-              walletData?.balanceMain < 0 && (
-                <View style={tw`bg-amber-50 border-l-4 border-amber-500 rounded-lg px-2 py-1 mt-2 mb-4`}>
-                  <View style={tw`flex-row items-center`}>
-                    <MaterialCommunityIcons name="alert-circle" size={24} color="#D97706" />
-                    <View style={tw`ml-3 flex-1`}>
-                      <Text style={tw`text-amber-800 font-semibold text-sm`}>
-                        Low Balance Alert
-                      </Text>
-                      <Text style={tw`text-amber-700 text-xs mt-0.5`}>
-                        Please add funds to download report. Current balance:
-                        <Text style={tw`font-bold text-red-500`}> ₹{walletData?.balanceMain}</Text>
-                      </Text>
-                    </View>
+                    <Text style={tw`text-amber-700 text-xs mt-0.5`}>
+                      Please add funds to download report. Current balance:
+                      <Text style={tw`font-bold text-red-500`}> ₹{walletData?.balanceMain}</Text>
+                    </Text>
                   </View>
                 </View>
-              )
-            }
-
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -625,13 +623,13 @@ const ListHelpDeskPatient = () => {
 
   if (!payload) {
     return (
-      <View style={tw`flex-1`}>
-        <View style={tw`flex-1 bg-white items-center justify-center px-6`}>
-          <MaterialCommunityIcons name="magnify" size={44} color="#6b7280" />
-          <Text style={tw`mt-3 text-base font-semibold text-gray-800 text-center`}>
+      <View style={[themed.screen, tw`flex-1`]}>
+        <View style={[themed.globalCard, tw`flex-1 items-center justify-center px-6`]}>
+          <MaterialCommunityIcons name="magnify" size={44} color={themed.chevronColor} />
+          <Text style={[themed.listItemText, tw`mt-3 text-base font-semibold text-center`]}>
             Search required
           </Text>
-          <Text style={tw`mt-1 text-sm text-gray-500 text-center`}>
+          <Text style={[themed.transactionLabel, tw`mt-1 text-sm text-center`]}>
             Please search from Help Desk to view the patient list.
           </Text>
           <TouchableOpacity
@@ -643,17 +641,16 @@ const ListHelpDeskPatient = () => {
           </TouchableOpacity>
         </View>
       </View>
-    )
+    );
   }
 
   return (
-    <View style={tw`flex-1`}>
-      {/* Header with Filter Button */}
-      <View style={tw`bg-white px-4 py-3 border-b border-gray-200`}>
+    <View style={[themed.screen, tw`flex-1`]}>
+      <View style={[themed.globalCard, tw`px-4 py-3 border-b rounded-none`]}>
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <View>
-            <Text style={tw`text-xl font-bold text-gray-800`}>Patient List</Text>
-            <Text style={tw`text-sm text-gray-500 mt-1`}>
+            <Text style={[themed.listItemText, tw`text-xl font-bold`]}>Patient List</Text>
+            <Text style={[themed.transactionLabel, tw`text-sm mt-1`]}>
               {filteredData.length} {filteredData.length === 1 ? 'record' : 'records'} found
             </Text>
           </View>
@@ -661,10 +658,10 @@ const ListHelpDeskPatient = () => {
           <View style={tw`flex-row gap-2`}>
             <TouchableOpacity
               onPress={() => setShowStatusLegend(!showStatusLegend)}
-              style={tw`flex-row items-center border bg-gray-100 px-3 py-2 rounded-lg`}
+              style={[themed.filterButton, tw`border`]}
             >
-              <MaterialCommunityIcons name="information-outline" size={18} color="#6b7280" />
-              <Text style={tw`text-gray-600 text-sm font-medium ml-1`}>Status Info</Text>
+              <MaterialCommunityIcons name="information-outline" size={18} color={themed.filterButtonIcon} />
+              <Text style={themed.filterButtonText}>Status Info</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -684,38 +681,33 @@ const ListHelpDeskPatient = () => {
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View style={tw`flex flex-row items-center gap-2`}>
-          {/* Search Input */}
-          <View style={tw`flex-1 flex-row items-center border border-gray-300 bg-white rounded-xl px-3`}>
-            <Feather name="search" size={18} color="#9ca3af" />
+        <View style={tw`flex-row items-center gap-3`}>
+          <View style={[themed.inputBox, tw`flex-1 flex-row items-center px-3 min-h-[50px] rounded-xl`]}>
+            <Feather name="search" size={18} color={themed.iconMuted} />
             <TextInput
-              style={tw`flex-1 ml-2 text-base text-gray-700 py-2`}
+              style={[tw`flex-1 ml-2 py-0 text-base`, themed.inputText]}
               placeholder="Search by name, UHID, test or barcode..."
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={themed.inputPlaceholder}
               value={searchText}
               onChangeText={setSearchText}
+              numberOfLines={1}
             />
             {searchText.length > 0 && (
               <TouchableOpacity onPress={() => setSearchText('')}>
-                <MaterialCommunityIcons name="close-circle" size={16} color="#9ca3af" />
+                <MaterialCommunityIcons name="close-circle" size={18} color={themed.iconMuted} />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Barcode Scan Button with Text */}
           <TouchableOpacity
-            // onPress={() => setScanCameraModal(true)}
-            style={tw`bg-blue-500 px-4 py-2.5 rounded-xl flex-row items-center justify-center gap-1`}
+            style={tw`bg-blue-500 px-4 min-h-[50px] rounded-xl flex-row items-center justify-center`}
             activeOpacity={0.7}
           >
             <MaterialIcons name="qr-code-scanner" size={18} color="white" />
-            <Text style={tw`text-white text-sm font-medium`}>Scan</Text>
+            <Text style={tw`text-white text-sm font-medium ml-2`}>Scan</Text>
           </TouchableOpacity>
         </View>
 
-
-        {/* Status Legend */}
         {showStatusLegend && (
           <ScrollView
             horizontal
@@ -730,7 +722,11 @@ const ListHelpDeskPatient = () => {
                   onPress={() => setSelectedStatus(selectedStatus === status.key ? 'all' : status.key)}
                   style={[
                     tw`flex-row items-center rounded-full px-3 py-1.5`,
-                    { backgroundColor: status.bg, borderWidth: selectedStatus === status.key ? 2 : 1, borderColor: status.color }
+                    {
+                      backgroundColor: status.bg,
+                      borderWidth: selectedStatus === status.key ? 2 : 1,
+                      borderColor: status.color
+                    }
                   ]}
                 >
                   <View style={[tw`w-2 h-2 rounded-full mr-2`, { backgroundColor: status.color }]} />
@@ -743,7 +739,6 @@ const ListHelpDeskPatient = () => {
           </ScrollView>
         )}
 
-        {/* Active Filters Display */}
         {(selectedStatus !== 'all' || selectedType !== 'all') && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`mt-2`}>
             <View style={tw`flex-row gap-2`}>
@@ -783,10 +778,10 @@ const ListHelpDeskPatient = () => {
         ListEmptyComponent={
           <View style={tw`items-center justify-center py-12`}>
             <MaterialCommunityIcons name="file-search-outline" size={64} color="#d1d5db" />
-            <Text style={tw`text-gray-400 text-base mt-4 font-medium`}>
+            <Text style={[themed.transactionLabel, tw`text-base mt-4 font-medium`]}>
               No Data Found
             </Text>
-            <Text style={tw`text-gray-400 text-sm mt-1`}>
+            <Text style={[themed.transactionLabel, tw`text-sm mt-1`]}>
               {searchText || selectedStatus !== 'all' || selectedType !== 'all'
                 ? 'No matching records found'
                 : 'No patient records available'}
@@ -795,7 +790,6 @@ const ListHelpDeskPatient = () => {
         }
       />
 
-      {/* Filter Modal */}
       <Modal
         visible={filterModal}
         transparent
@@ -805,33 +799,46 @@ const ListHelpDeskPatient = () => {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setFilterModal(false)}
-          style={tw`flex-1 bg-black/50 justify-end`}
+          style={themed.modalOverlay}
         >
-          <View style={tw`bg-white rounded-t-2xl max-h-[80%]`}>
-            <View style={tw`p-4 border-b border-gray-200 flex-row justify-between items-center`}>
-              <Text style={tw`text-xl font-bold text-gray-800`}>Filter Patients</Text>
+          <View style={[themed.modalContainer, tw`rounded-t-2xl max-h-[80%]`]}>
+            <View style={[themed.globalDivider, tw`p-4 border-b flex-row justify-between items-center`]}>
+              <Text style={[themed.listItemText, tw`text-xl font-bold`]}>
+                Filter Patients
+              </Text>
+
               <TouchableOpacity onPress={() => setFilterModal(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#6b7280" />
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={themed.chevronColor}
+                />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={tw`p-4`} showsVerticalScrollIndicator={false}>
-              {/* Status Filter */}
-              <Text style={tw`text-base font-semibold text-gray-700 mb-3`}>Status</Text>
+              <Text style={[themed.listItemText, tw`text-base font-semibold mb-3`]}>
+                Status
+              </Text>
+
               <View style={tw`flex-row flex-wrap gap-2 mb-6`}>
                 {statusLegend.map((status) => (
                   <TouchableOpacity
                     key={status.key}
                     onPress={() => setSelectedStatus(status.key)}
                     style={[
-                      tw`px-4 py-2 rounded-full`,
-                      selectedStatus === status.key ? { backgroundColor: status.color } : tw`bg-gray-100`
+                      themed.chip,
+                      selectedStatus === status.key && { backgroundColor: status.color }
                     ]}
                   >
-                    <Text style={[
-                      tw`text-sm font-medium`,
-                      selectedStatus === status.key ? tw`text-white` : tw`text-gray-700`
-                    ]}>
+                    <Text
+                      style={[
+                        tw`text-sm font-medium`,
+                        selectedStatus === status.key
+                          ? themed.chipSelectedText
+                          : themed.listItemText
+                      ]}
+                    >
                       {status.label}
                     </Text>
                   </TouchableOpacity>
@@ -839,24 +846,28 @@ const ListHelpDeskPatient = () => {
               </View>
             </ScrollView>
 
-            <View style={tw`p-4 border-t border-gray-200 flex-row gap-3`}>
+            <View style={[themed.transactionDivider, tw`p-4 border-t flex-row gap-3`]}>
               <TouchableOpacity
                 onPress={clearFilters}
-                style={tw`flex-1 py-3 rounded-xl border border-gray-300 bg-white`}
+                style={[themed.card, tw`flex-1 py-3 rounded-xl`]}
               >
-                <Text style={tw`text-center text-gray-700 font-medium`}>Clear All</Text>
+                <Text style={[themed.listItemText, tw`text-center font-medium`]}>
+                  Clear All
+                </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 onPress={() => setFilterModal(false)}
-                style={tw`flex-1 py-3 rounded-xl bg-blue-500`}
+                style={[themed.primaryButton, tw`flex-1`]}
               >
-                <Text style={tw`text-white text-center font-semibold`}>Apply Filters</Text>
+                <Text style={themed.primaryButtonText}>
+                  Apply Filters
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </TouchableOpacity>
       </Modal>
-
     </View>
   );
 };
