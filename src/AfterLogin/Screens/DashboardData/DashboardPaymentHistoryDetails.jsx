@@ -189,15 +189,15 @@ const DashboardPaymentHistoryDetails = ({ selectedBranches }) => {
             <View>
                 <TouchableOpacity
                     style={[
-                        themed.globaCard,
+                        themed.globalCard,
                         isExpanded && themed.globaCardActive
                     ]}
                     activeOpacity={0.7}
-                >
-                    <View style={tw`py-1`}>
+                 >
+                    <View style={[themed.border,themed.cardPadding ,tw`py-2 mx-2 rounded-lg mb-2`]}>
 
                         {/* Row */}
-                        <View style={tw`flex-row justify-between items-start`}>
+                        <View style={[tw`flex-row justify-between items-start `]}>
                             <View style={tw`flex-row flex-1 items-start`}>
 
                                 {/* Icon */}

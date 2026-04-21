@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  TouchableWithoutFeedback,
   FlatList,
   Pressable,
 } from 'react-native';
 import tw from 'twrnc';
 import { Checkbox } from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { SearchGetInvestigationListDetails } from './services/doctorService';
 import { getColorCode } from '../../../utils/colorUtils';
@@ -322,20 +322,31 @@ const SearchSelectServiceItem = ({
         visible={rangeModalVisible}
         transparent
         animationType="slide"
+        statusBarTranslucent
+        presentationStyle="overFullScreen"
         onRequestClose={() => setRangeModalVisible(false)}
       >
-        <View style={tw`flex-1 justify-end bg-black/50`}>
-          <TouchableWithoutFeedback onPress={() => setRangeModalVisible(false)}>
-            <View style={tw`absolute inset-0`} />
-          </TouchableWithoutFeedback>
+        <View style={themed.modalOverlay}>
+          <Pressable
+            style={tw`absolute inset-0`}
+            onPress={() => setRangeModalVisible(false)}
+          />
 
-          <View style={tw`bg-white rounded-t-2xl w-full h-[80%] overflow-hidden`}>
-            <ViewTestRangeDetails
-              serviceItemName={selectedServiceItemName}
-              serviceItemId={selectedServiceItemId}
-              onClose={() => setRangeModalVisible(false)}
-            />
-          </View>
+          <SafeAreaView edges={['bottom']} style={tw`w-full`}>
+            <View
+              style={[
+                themed.modalContainer,
+                tw`w-full rounded-t-2xl rounded-b-none overflow-hidden`,
+                { height: '85%' },
+              ]}
+            >
+              <ViewTestRangeDetails
+                serviceItemName={selectedServiceItemName}
+                serviceItemId={selectedServiceItemId}
+                onClose={() => setRangeModalVisible(false)}
+              />
+            </View>
+          </SafeAreaView>
         </View>
       </Modal>
     </View>

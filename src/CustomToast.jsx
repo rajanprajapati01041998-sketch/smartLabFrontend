@@ -72,7 +72,7 @@ const CustomToast = ({ message, visible, type = 'success', onHide }) => {
                 { transform: [{ translateY }] },
             ]}
         >
-            <View style={tw`${current.bg} rounded-full shadow-md p-3`}>
+            <View style={tw`${current.bg} rounded-xl shadow-md p-3`}>
 
                 {/* Top Row */}
                 <View style={tw`flex-row items-center justify-between`}>
@@ -100,7 +100,7 @@ const CustomToast = ({ message, visible, type = 'success', onHide }) => {
                 {/* Progress Bar */}
                 <Animated.View
                     style={[
-                        tw`h-0.5 mt-2 rounded bg-white`, // ✅ correct
+                        tw`h-1 mt-2 rounded bg-white`, // ✅ correct
                         {
                             width: progress.interpolate({
                                 inputRange: [0, 1],

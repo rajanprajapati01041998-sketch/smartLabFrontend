@@ -219,6 +219,7 @@ export default function LoginScreen({ navigation }) {
             device: deviceData.device,
             os: deviceData.os
         };
+        console.log("Final login form data", formData);
 
         try {
             const response = await api.post(`Login/login`, formData);
@@ -238,11 +239,11 @@ export default function LoginScreen({ navigation }) {
                 Alert.alert("Error", "Invalid response from server");
             }
         } catch (error) {
-            console.log("Final Login error", error);
-            showToast('Login failed. Please try again.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
+            console.log("Final Login error", error.response?.data?.message);
+            showToast(error.response?.data?.message , 'error');
+            setIsLoading(false)
+        } 
+    
     };
 
     const handleMenuOption = (option) => {

@@ -4,19 +4,88 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { Platform } from 'react-native'
 import RazorpayCheckout from 'react-native-razorpay'
 
 const RazorPay = forwardRef(
   ({ apiBaseUrl, payload, customer, onSuccess, onFailure }, ref) => {
     const [isLoading, setIsLoading] = useState(false)
     const loadingRef = useRef(false)
+    const orderIdRef = useRef('')
 
     const getApiClient = () => {
       if (apiBaseUrl && typeof apiBaseUrl.post === 'function') {
         return apiBaseUrl
       }
-      throw new Error('Invalid apiBaseUrl client passed to RazorPay component')
+      throw new Error('Invalid apiBaseUrl client passed')
+    }
+
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+    const basePayload = () => ({
+      hospId: Number(payload?.hospId) || 0,
+      branchId: Number(payload?.branchId) || 0,
+      clientId: Number(payload?.clientId) || 0,
+      paymentModeId: Number(payload?.paymentModeId) || 0,
+      createdBy: Number(payload?.createdBy) || 0,
+      amount: Number(payload?.amount) || 0,
+      paymentMode: payload?.paymentMode || 'Online',
+      remarks: payload?.remarks || null,
+    })
+
+    const parseRazorpayDescription = error => {
+      try {
+        if (!error?.description) return ''
+        const parsed =
+          typeof error.description === 'string'
+            ? JSON.parse(error.description)
+            : error.description
+
+        return (
+          parsed?.error?.description ||
+          parsed?.error?.reason ||
+          error?.description ||
+          ''
+        )
+      } catch {
+        return error?.description || ''
+      }
+    }
+
+    const checkOrderStatus = async () => {
+      const api = getApiClient()
+
+      const response = await api.post('payment/check-order-status', {
+        ...basePayload(),
+        orderId: orderIdRef.current,
+      })
+
+      const responseData = response?.data || response
+      console.log('Check Order Status Response:', responseData)
+
+      return responseData
+    }
+
+    const verifyPayment = async result => {
+      const api = getApiClient()
+
+      const verifyPayload = {
+        ...basePayload(),
+        razorpay_order_id: result?.razorpay_order_id || '',
+        razorpay_payment_id: result?.razorpay_payment_id || '',
+        razorpay_signature: result?.razorpay_signature || '',
+      }
+
+      console.log('Verify Payload:', verifyPayload)
+
+      const verifyResponse = await api.post(
+        'payment/verify-payment',
+        verifyPayload
+      )
+
+      const verifyData = verifyResponse?.data || verifyResponse
+      console.log('Verify Response:', verifyData)
+
+      return verifyData
     }
 
     const payNow = async () => {
@@ -29,37 +98,31 @@ const RazorPay = forwardRef(
         const api = getApiClient()
 
         const createPayload = {
-          hospId: Number(payload?.hospId) || 0,
-          branchId: Number(payload?.branchId) || 0,
-          clientId: Number(payload?.clientId) || 0,
-          paymentModeId: Number(payload?.paymentModeId) || 0,
-          createdBy: Number(payload?.createdBy) || 0,
-          amount: Number(payload?.amount) || 0,
+          ...basePayload(),
           currency: payload?.currency || 'INR',
-          paymentMode: payload?.paymentMode || 'Online',
           receipt: payload?.receipt || null,
-          remarks: payload?.remarks || null,
         }
 
         console.log('Create Order Payload:', createPayload)
 
-        const createOrderResponse = await api.post(
+        const orderResponse = await api.post(
           'payment/create-order',
           createPayload
         )
 
-        const createOrderData = createOrderResponse?.data || createOrderResponse
+        const orderData = orderResponse?.data || orderResponse
+        console.log('Create Order Response:', orderData)
 
-        console.log('Create Order Response:', createOrderData)
+        orderIdRef.current = orderData?.orderId || ''
 
         const options = {
           description: 'Lab Advance Payment',
           image: '',
-          currency: createOrderData?.currency || createPayload.currency || 'INR',
-          key: createOrderData?.key,
-          amount: String(createOrderData?.amount || ''),
+          currency: orderData?.currency || createPayload.currency || 'INR',
+          key: orderData?.key,
+          amount: String(orderData?.amount || ''),
           name: 'Gravity Web Technology',
-          order_id: createOrderData?.orderId,
+          order_id: orderData?.orderId,
           prefill: {
             email: customer?.email || '',
             contact: customer?.contact || '',
@@ -73,34 +136,10 @@ const RazorPay = forwardRef(
           send_sms_hash: true,
         }
 
-        const razorpaySuccess = await RazorpayCheckout.open(options)
+        const result = await RazorpayCheckout.open(options)
+        console.log('Razorpay Success:', result)
 
-        console.log('Razorpay Success:', razorpaySuccess)
-
-        const verifyPayload = {
-          hospId: Number(payload?.hospId) || 0,
-          branchId: Number(payload?.branchId) || 0,
-          clientId: Number(payload?.clientId) || 0,
-          paymentModeId: Number(payload?.paymentModeId) || 0,
-          createdBy: Number(payload?.createdBy) || 0,
-          amount: Number(payload?.amount) || 0,
-          paymentMode: payload?.paymentMode || 'Online',
-          remarks: payload?.remarks || null,
-          razorpay_order_id: razorpaySuccess?.razorpay_order_id || '',
-          razorpay_payment_id: razorpaySuccess?.razorpay_payment_id || '',
-          razorpay_signature: razorpaySuccess?.razorpay_signature || '',
-        }
-
-        console.log('Verify Payload:', verifyPayload)
-
-        const verifyResponse = await api.post(
-          'payment/verify-payment',
-          verifyPayload
-        )
-
-        const verifyData = verifyResponse?.data || verifyResponse
-
-        console.log('Verify Response:', verifyData)
+        const verifyData = await verifyPayment(result)
 
         if (!verifyData?.status) {
           onFailure?.(verifyData || { message: 'Payment failed' })
@@ -111,26 +150,61 @@ const RazorPay = forwardRef(
       } catch (error) {
         console.log('RazorPay Error:', error)
 
-        // ✅ Detect cancel
-        if (error?.code === 'PAYMENT_CANCELLED') {
-          onFailure?.({
-            message: 'Payment cancelled',
-            isCancelled: true,
-          })
+        const razorpayMessage = parseRazorpayDescription(error).toLowerCase()
+
+        const isCancelLike =
+          error?.code === 'PAYMENT_CANCELLED' ||
+          razorpayMessage.includes('cancel') ||
+          razorpayMessage.includes('payment cancelled') ||
+          razorpayMessage.includes('payment canceled') ||
+          razorpayMessage.includes('payment_error')
+
+        if (isCancelLike && orderIdRef.current) {
+          try {
+            onFailure?.({
+              message: 'Checking payment status...',
+              isChecking: true,
+            })
+
+            await wait(3000)
+
+            const statusData = await checkOrderStatus()
+
+            if (statusData?.status && statusData?.data?.paymentFound === true) {
+              onSuccess?.({
+                ...(statusData?.data?.result || {}),
+                message:
+                  statusData?.message || 'Payment confirmed from order status',
+              })
+              return
+            }
+
+            onFailure?.({
+              message: 'Payment cancelled',
+              isCancelled: true,
+              canRetry: true,
+            })
+            return
+          } catch (statusError) {
+            console.log('Status check error:', statusError)
+            onFailure?.({
+              message: 'Unable to confirm payment status',
+              canRetry: true,
+            })
+            return
+          }
+        }
+
+        if (error?.response?.data) {
+          onFailure?.(error.response.data)
           return
         }
 
-        if (error?.description) {
-          onFailure?.({
-            message: error.description || 'Payment failed',
-          })
-        } else if (error?.response?.data) {
-          onFailure?.(error.response.data)
-        } else {
-          onFailure?.({
-            message: error?.message || 'Payment failed',
-          })
-        }
+        onFailure?.({
+          message:
+            parseRazorpayDescription(error) || error?.message || 'Payment failed',
+          canRetry: true,
+        })
       } finally {
         loadingRef.current = false
         setIsLoading(false)

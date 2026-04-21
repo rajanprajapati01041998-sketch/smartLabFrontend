@@ -33,7 +33,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
 
   const [fromDate, setFromDate] = useState(null)
   const [toDate, setToDate] = useState(null)
-  const {theme} = useTheme()
+  const { theme } = useTheme()
   const themed = getThemeStyles(theme)
 
   const razorpayRef = useRef(null)
@@ -156,7 +156,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   console.log('payment payload =>', paymentPayload)
 
   return (
-    <View style={[themed.childScreen,tw` flex flex-col gap-2`]}>
+    <View style={[themed.childScreen, tw`flex flex-col gap-2`]}>
       <Razorpay
         ref={razorpayRef}
         apiBaseUrl={api}
@@ -169,6 +169,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
         onSuccess={async data => {
           try {
             console.log('Payment success:', data)
+
             showToast?.(
               data?.message || 'Payment successful and saved in database.',
               'success'
@@ -193,15 +194,30 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
         }}
         onFailure={failure => {
           console.log('Payment failed:', failure)
+
+          if (failure?.isChecking) {
+            showToast?.('Checking payment status...', 'info')
+            return
+          }
+
+          if (failure?.isCancelled) {
+            showToast?.('Payment cancelled', 'error')
+            return
+          }
+
+          showToast?.(
+            failure?.message || 'Payment failed',
+            'error'
+          )
         }}
       />
 
       <View>
-        <Text style={[themed.labelText,tw`my-2`]}>Enter Amount</Text>
+        <Text style={[themed.labelText, tw`my-2`]}>Enter Amount</Text>
         <TextInput
           value={amount}
           onChangeText={handleAmountChange}
-          style={[themed.inputBox,themed.inputText]}
+          style={[themed.inputBox, themed.inputText]}
           keyboardType="numeric"
           maxLength={10}
           placeholder="Enter amount"
@@ -210,11 +226,11 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
       </View>
 
       <View>
-        <Text style={[themed.labelText,tw`my-2`]}>Enter Remarks</Text>
+        <Text style={[themed.labelText, tw`my-2`]}>Enter Remarks</Text>
         <TextInput
           value={remarks}
           onChangeText={setRemarks}
-          style={[themed.inputBox,themed.inputText]}
+          style={[themed.inputBox, themed.inputText]}
           maxLength={50}
           placeholder="Enter remarks"
           placeholderTextColor={themed.inputPlaceholder}
@@ -222,9 +238,7 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
       </View>
 
       {error && (
-        <View
-          style={tw`bg-red-200 p-2 rounded-lg flex flex-row justify-between items-center`}
-        >
+        <View style={tw`bg-red-200 p-2 rounded-lg flex flex-row justify-between items-center`}>
           <Text style={themed.errorText}>Enter valid amount</Text>
           <TouchableOpacity
             onPress={() => setError(false)}

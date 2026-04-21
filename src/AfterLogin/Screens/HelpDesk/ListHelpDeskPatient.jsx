@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
-import api from '../../../../Authorization/api';
+import api, { API_BASE_URL } from '../../../../Authorization/api';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
@@ -37,6 +37,7 @@ import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 import { useDash } from '../../../../Authorization/DashContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
+import CheckBox from '@react-native-community/checkbox';
 
 
 const { width } = Dimensions.get('window');
@@ -53,7 +54,7 @@ const ListHelpDeskPatient = () => {
   const [showStatusLegend, setShowStatusLegend] = useState(false);
   const { showToast } = useToast();
   const [downloadingId, setDownloadingId] = useState(null);
-  const { loginBranchId, userId } = useAuth();
+  const { loginBranchId, userId, mainBranchId } = useAuth();
 
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -61,6 +62,9 @@ const ListHelpDeskPatient = () => {
   const [openItemIndex, setOpenItemIndex] = useState(null);
   const animationRefs = useRef({});
   const { walletData } = useDash();
+  const [isPrintHeader, setIsPrintHeader] = useState(true)
+  const [loginHeader, setLoginHeader] = useState(true)
+  const [mainHeader, setMainHeader] = useState(false)
 
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -76,6 +80,18 @@ const ListHelpDeskPatient = () => {
     { key: 'dispatched', label: 'Dispatched', color: '#06b6d4', bg: '#cffafe', condition: (item) => item.IsDispatched === 1 },
     { key: 'urgent', label: 'Urgent', color: '#dc2626', bg: '#fee2e2', condition: (item) => item.isUrgent === 1 }
   ];
+
+  const handleLoginHeader = (value) => {
+    const newValue = !loginHeader // toggle manually
+    setLoginHeader(newValue)
+    if (newValue) setMainHeader(false)
+  }
+
+  const handleMainHeader = () => {
+    const newValue = !mainHeader
+    setMainHeader(newValue)
+    if (newValue) setLoginHeader(false)
+  }
 
   if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -297,8 +313,10 @@ const ListHelpDeskPatient = () => {
   };
 
   const handleDownloadReport = async (id, name, reporTypeId) => {
-    if (reporTypeId === 1) {
+    console.log("report Id", reporTypeId)
+    if (reporTypeId === 2) {
       try {
+        console.log('Free text report with ID:', id, 'and name:', name, 'reporTypeId', reporTypeId);
         setDownloadingId(id);
         const { config, fs } = RNFetchBlob;
         const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
@@ -312,7 +330,7 @@ const ListHelpDeskPatient = () => {
           },
         }).fetch(
           'GET',
-          `http://103.217.247.236/LabApp/api/ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
+          `${API_BASE_URL}ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
         );
 
         showToast('File downloaded', 'success');
@@ -329,26 +347,58 @@ const ListHelpDeskPatient = () => {
   const handleDownloadTebularReport = async (id, name, reporTypeId) => {
     try {
       setDownloadingId(id);
-      const { config, fs } = RNFetchBlob;
-      const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
 
-      await config({
+      const { config, fs } = RNFetchBlob;
+
+      const cleanName = name
+        ? String(name).replace(/[\/\\:*?"<>|]/g, '_').trim()
+        : `report-${id}`;
+
+      const uniqueFileName = `${cleanName}-${id}-${Date.now()}.pdf`;
+      const path = `${fs.dirs.DownloadDir}/${uniqueFileName}`;
+
+      const selectedBranchId = loginHeader ? loginBranchId : 0;
+      const clientId = mainHeader ? mainBranchId : 0;
+      const isHeaderPNG = isPrintHeader ? 1 : 0;
+
+      const url =
+        `${API_BASE_URL}DeltaReport/download-delta-report` +
+        `?PatientInvestigationIdList=${id}` +
+        `&isHeaderPNG=${isHeaderPNG}` +
+        `&PrintBy=${userId}` +
+        `&branchId=${selectedBranchId}` +
+        `&clientId=${clientId}` +
+        `&ViewReport=false`;
+
+      console.log('Download URL:', url);
+      console.log('Download path:', path);
+
+      const res = await config({
+        fileCache: true,
+        path,
         addAndroidDownloads: {
           useDownloadManager: true,
           notification: true,
-          path,
+          title: uniqueFileName,
           description: 'Downloading report...',
+          mime: 'application/pdf',
+          path,
+          mediaScannable: true,
         },
-      }).fetch(
-        'GET',
-        `http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=0&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=false`
-      );
+      }).fetch('GET', url);
 
-      showToast('File downloaded', 'success');
+      console.log('Download response:', res?.info?.(), res?.path());
+
+      if (res && res.path()) {
+        showToast('File downloaded', 'success');
+      } else {
+        showToast('Download failed', 'error');
+      }
     } catch (error) {
       console.error('Download failed', error);
+      showToast('Download failed', 'error');
     } finally {
-      setDownloadingId(null);
+      setDownloadingId((prev) => (prev === id ? null : prev));
     }
   };
 
@@ -494,7 +544,7 @@ const ListHelpDeskPatient = () => {
                     <MaterialCommunityIcons name="test-tube" size={14} color={themed.iconMuted} />
                     <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Sample Collected</Text>
                   </View>
-                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatDate(item.SampleCollectedOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{item.SampleCollectedOn}</Text>
                 </View>
               )}
 
@@ -514,7 +564,7 @@ const ListHelpDeskPatient = () => {
                     <MaterialCommunityIcons name="check-circle" size={14} color={themed.iconMuted} />
                     <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Report Approved</Text>
                   </View>
-                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatDate(item.ReportApprovedOn)}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{item.ReportApprovedOn}</Text>
                 </View>
               )}
 
@@ -561,8 +611,8 @@ const ListHelpDeskPatient = () => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    if (item?.reportTypeId === 1) {
-                      navigation.navigate('ViewTebularReport', { item });
+                    if (item?.ReportTypeId === 1) {
+                      navigation.navigate('ViewTebularReport', { item, isPrintHeader, loginHeader, mainHeader });
                     } else {
                       navigation.navigate('ViewLabReport', {
                         patientInvestigationId: item?.PatientInvestigationId,
@@ -707,6 +757,50 @@ const ListHelpDeskPatient = () => {
             <Text style={tw`text-white text-sm font-medium ml-2`}>Scan</Text>
           </TouchableOpacity>
         </View>
+
+        {data && data.length > 0 &&
+          <View style={tw`flex-row items-center gap-4 mt-3`}>
+            <View style={tw`flex-row items-center gap-2 mt-3`}>
+              <CheckBox
+                value={isPrintHeader}
+                onValueChange={setIsPrintHeader}
+              />
+              <Text style={themed.labelText}>Header</Text>
+            </View>
+
+            <View style={tw`flex-row items-center gap-4 mt-3`}>
+              <View style={tw`flex-row items-center gap-2`}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleLoginHeader}
+                  style={tw`flex-row items-center gap-2`}
+                >
+                  <CheckBox
+                    value={loginHeader}
+                    onValueChange={handleLoginHeader}
+                  />
+                  <Text style={themed.labelText}>Login Header</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Main Header (radio) */}
+              <View style={tw`flex-row items-center gap-2`}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleMainHeader}
+                  style={tw`flex-row items-center gap-2`}
+                >
+                  <CheckBox
+                    value={mainHeader}
+                    onValueChange={handleMainHeader}
+                  />
+                  <Text style={themed.labelText}>Main Header</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        }
+
 
         {showStatusLegend && (
           <ScrollView

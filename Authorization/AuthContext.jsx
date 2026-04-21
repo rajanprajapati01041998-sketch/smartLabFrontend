@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [hosId, setHosId] = useState(1)
   const [patientData, setPatientData] = useState(null)
   const [userId, setUserId] = useState(null)
+  const [mainBranchId,setMainBranchId] = useState(1)
   const [allBranchInfo, setAllBranchInfo] = useState([])
   const [deviceData, setDeviceData] = useState(null);
   const [sessionId, setSessionId] = useState(null)
@@ -186,6 +187,7 @@ export const AuthProvider = ({ children }) => {
         corporateId, setCorporateId,
         patientData, setPatientData,
         userId, setUserId,
+        mainBranchId,setMainBranchId,
         loginBranchId, setLoginBranchId,
         allBranchInfo, setAllBranchInfo,
         deviceData, setDeviceData, loadDeviceInfo,
@@ -193,6 +195,7 @@ export const AuthProvider = ({ children }) => {
         centerLoginBranchId, setCenterLoginBranchId,
         hosId, setHosId,
         addBarcode, setAddBarcode
+
       }}
     >
       {!isLoading && children}

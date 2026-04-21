@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -10,6 +10,7 @@ import tw from 'twrnc';
 import styles from '../../../utils/InputStyle';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../../Authorization/api';
@@ -28,8 +29,9 @@ const CenterInfo = () => {
     const [loading, setLoading] = useState(false);
     const [showCenterInfo, setShowCenterInfo] = useState(false);
     const [branchDetails, setBranchDetails] = useState(null);
+    
 
-    const { colors,theme } = useTheme();
+    const { colors, theme } = useTheme();
     const themed = getThemeStyles(theme);
 
     const {
@@ -37,7 +39,7 @@ const CenterInfo = () => {
         setPatientData,
         setCenterLoginBranchId,
         loginBranchId,
-        centerLoginBranchId,setAddBarcode
+        centerLoginBranchId, setAddBarcode
     } = useAuth();
 
     const currentBranchId = selectedItem?.branchId || loginBranchId;
@@ -56,6 +58,8 @@ const CenterInfo = () => {
             setCenterLoginBranchId(branchId);
         }
     }, [selectedItem, loginBranchId]);
+
+    
 
     const getBranchInfo = async () => {
         try {
@@ -156,12 +160,24 @@ const CenterInfo = () => {
             >
                 <Text style={styles.patientInfoText}>Center Information</Text>
 
-                <MaterialIcons
-                    style={tw`bg-gray-200 rounded-full p-2`}
-                    name={showCenterInfo ? 'expand-less' : 'expand-more'}
+                <Entypo
+                    style={[
+                        tw`rounded-full p-1`,
+                        themed.modalCloseButton,
+                    ]} name={showCenterInfo ? 'chevron-down' : 'chevron-up'}
                     size={20}
-                    color="#313235"
+                    color={themed.chevronColor}
                 />
+
+                {/* <Animated.View
+                            style={[
+                                tw`rounded-full p-1.5`,
+                                themed.modalCloseButton,
+                                { transform: [{ rotate: chevronRotation }] },
+                            ]}
+                        >
+                            <Entypo name="chevron-down" size={18} color={themed.chevronColor} />
+                        </Animated.View> */}
             </TouchableOpacity>
 
             {showCenterInfo && (
@@ -177,9 +193,11 @@ const CenterInfo = () => {
                                 <Text style={themed.inputText} numberOfLines={1}>
                                     {selectedItem?.branchName || 'Select Center'}
                                 </Text>
-                                <Icon name="chevron-down" size={18} color={themed.iconMuted} />
+                                <Icon name="chevron-down" size={18} color={themed.chevronColor} />
                             </TouchableOpacity>
                         </View>
+
+
 
                         <View style={tw`w-[48%]`}>
                             <Text style={themed.inputLabel}>Panel</Text>
@@ -200,7 +218,7 @@ const CenterInfo = () => {
                                 onChangeText={setUhid}
                                 placeholder="Search UHID"
                                 placeholderTextColor={themed.inputPlaceholder}
-                                style={[themed.inputBox,themed.inputText, tw`h-12`]}
+                                style={[themed.inputBox, themed.inputText, tw`h-12`]}
                             />
                         </View>
 
@@ -211,7 +229,7 @@ const CenterInfo = () => {
                                 h-12 px-5 rounded-xl justify-center items-center
                                 ${loading || uhid.length === 0 ? 'bg-blue-400' : 'bg-blue-500'}
                             `}
-                         >
+                        >
                             {loading ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
@@ -229,7 +247,7 @@ const CenterInfo = () => {
                         </View>
                     ) : null}
 
-                    
+
                 </>
             )}
 

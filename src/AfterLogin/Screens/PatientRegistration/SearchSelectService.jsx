@@ -157,10 +157,9 @@ const SearchSelectService = ({ onClose }) => {
             {modalVisible && (
                 <View style={tw`absolute inset-0 justify-end`}>
                     <Pressable style={tw`absolute inset-0 bg-black/40`} onPress={() => setModalVisible(false)} />
-                    <View style={[themed.childScreen,tw`w-full h-full rounded-t-3xl pt-3 px-4`]}>
-                        <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+                    <View style={[themed.childScreen,tw`w-full  rounded-t-3xl pt-3 `]}>
 
-                        <View style={tw`flex-1`}>
+                        <View style={[themed.cardPadding,themed.card,tw`flex-1 border`]}>
                             <SearchSelectServiceItem
                                 data={selectedServices}
                                 onDelete={handleDelete}

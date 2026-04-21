@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { Alert, TouchableOpacity } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -49,6 +49,18 @@ export default function DashboardStack() {
                         >
                             <MaterialCommunityIcons
                                 name="account-circle"
+                                size={28}
+                                color={colors.text}
+                            />
+                        </TouchableOpacity>
+                    ),
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            onPress={() => Alert.alert("click menu")}
+                            style={{ marginRight: 15 }}
+                        >
+                            <MaterialCommunityIcons
+                                name="menu"
                                 size={28}
                                 color={colors.text}
                             />

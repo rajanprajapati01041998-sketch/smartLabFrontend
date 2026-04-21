@@ -128,11 +128,11 @@ const Registration = () => {
     setContactNumber(patientData?.ContactNumber)
     setDob(patientData?.DOB ? new Date(patientData.DOB) : null);
   }, [patientData])
+
   useEffect(() => {
     setGender("MALE")
   }, [])
 
-  console.log("check amount", balanceAmount)
 
   useFocusEffect(
     useCallback(() => {
@@ -728,7 +728,7 @@ const Registration = () => {
               </View>
               <TouchableOpacity
                 onPress={() => setSelectTitleModal(true)}
-                style={[themed.inputBox,themed.inputText]}
+                style={[themed.inputBox, themed.inputText]}
               >
                 <Text style={themed.inputText}>
                   {selectedTitle || "Mr"}
@@ -747,7 +747,7 @@ const Registration = () => {
                   const filtered = text.replace(/[^a-zA-Z ]/g, '').slice(0, 50)
                   setFirstName(filtered)
                 }}
-                style={[themed.inputBox,themed.inputText]}
+                style={[themed.inputBox, themed.inputText]}
                 autoCapitalize="words"
                 placeholder='Name'
                 placeholderTextColor={themed.inputPlaceholder}
@@ -771,7 +771,7 @@ const Registration = () => {
                     setAgeYears(String(num))
                   }
                 }}
-                style={[themed.inputBox,themed.inputText]}
+                style={[themed.inputBox, themed.inputText]}
                 placeholder='29'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
@@ -790,7 +790,7 @@ const Registration = () => {
                     setAgeMonths(String(num))
                   }
                 }}
-                style={[themed.inputBox,themed.inputText]}
+                style={[themed.inputBox, themed.inputText]}
                 placeholder='04'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
@@ -810,7 +810,7 @@ const Registration = () => {
                     setAgeDays(String(num))
                   }
                 }}
-                style={[themed.inputBox,themed.inputText]}
+                style={[themed.inputBox, themed.inputText]}
                 placeholder='12'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
@@ -829,7 +829,7 @@ const Registration = () => {
                   pointerEvents="none"
                   placeholder="1/4/1998"
                   placeholderTextColor={themed.inputPlaceholder}
-                  style={[themed.inputBox,themed.inputText]}
+                  style={[themed.inputBox, themed.inputText]}
                 />
               </TouchableOpacity>
 
@@ -1269,7 +1269,7 @@ const Registration = () => {
                   <TextInput
                     editable={false}
                     value={grossAmount ? String(grossAmount) : ""}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder=''
                   />
                 </View>
@@ -1286,7 +1286,7 @@ const Registration = () => {
                       const num = cleaned === '' ? 0 : Number(cleaned);
                       setDiscountPercent(num);
                     }}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='1%'
                     placeholderTextColor={themed.inputPlaceholder}
 
@@ -1305,7 +1305,7 @@ const Registration = () => {
                       const num = cleaned === '' ? 0 : Number(cleaned);
                       setDiscountAmount(num);
                     }}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                   />
                 </View>
               </View>
@@ -1318,7 +1318,7 @@ const Registration = () => {
                     readOnly
                     value={grossAmount ? String(grossAmount) : ""}
                     keyboardType="numeric"
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='1.4'
                     placeholderTextColor={themed.inputPlaceholder}
 
@@ -1331,7 +1331,7 @@ const Registration = () => {
                   <TextInput
                     value={netAmount ? String(netAmount) : ""}
                     editable={false}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='120'
                     placeholderTextColor={themed.inputBox}
 
@@ -1344,7 +1344,7 @@ const Registration = () => {
                   <TextInput
                     value={balanceAmount ? String(balanceAmount) : 0}
                     editable={false}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='Avl Bal'
                     placeholderTextColor={themed.inputPlaceholder}
 
@@ -1368,7 +1368,7 @@ const Registration = () => {
                   <TextInput
                     value={discountReason}
                     onChangeText={setDiscountReason}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='test'
                     placeholderTextColor={themed.inputPlaceholder}
 
@@ -1381,7 +1381,7 @@ const Registration = () => {
                   <TextInput
                     value={remark}
                     onChangeText={setRemark}
-                    style={[themed.inputBox,themed.inputText]}
+                    style={[themed.inputBox, themed.inputText]}
                     placeholder='Remark'
                     placeholderTextColor={themed.inputPlaceholder}
 
@@ -1461,7 +1461,7 @@ const Registration = () => {
               <View style={tw`absolute inset-0`} />
             </TouchableWithoutFeedback>
 
-            <View style={[themed.modalContainer,tw` w-full h-[85%] rounded-t-3xl overflow-hidden`]}>
+            <View style={[themed.modalContainer, tw` w-full h-[85%] rounded-t-3xl overflow-hidden`]}>
               {/* Fixed Header */}
               <View style={tw`px-4 pt-4 pb-3 border-b border-gray-100 `}>
                 <View style={tw`flex-row justify-between items-center`}>
@@ -1507,7 +1507,7 @@ const Registration = () => {
                   return (
                     <View
                       style={[
-                        themed.childScreen,themed.border,
+                        themed.childScreen, themed.border,
                         tw`p-4 mb-4 rounded-xl `
                       ]}
                     >
@@ -1531,7 +1531,7 @@ const Registration = () => {
                           }}
                           placeholder="Enter barcode"
                           placeholderTextColor="#9CA3AF"
-                          style={[themed.inputBox,themed.inputText]}
+                          style={[themed.inputBox, themed.inputText]}
                         />
                       </View>
 
@@ -1550,7 +1550,7 @@ const Registration = () => {
                                 [id]: !prev?.[id],
                               }));
                             }}
-                            style={[themed.inputBox,themed.inputText]}
+                            style={[themed.inputBox, themed.inputText]}
                             activeOpacity={0.7}
                           >
                             {String(draft?.testRemark ?? '').trim() ? (
@@ -1584,7 +1584,7 @@ const Registration = () => {
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
-                            style={[themed.inputBox,themed.inputText]}
+                            style={[themed.inputBox, themed.inputText]}
                           />
                         )}
                       </View>
@@ -1605,7 +1605,7 @@ const Registration = () => {
                     onPress={() => setBarcodeModalVisible(false)}
                     style={[themed.cancelButton]}
                     activeOpacity={0.7}
-                   >
+                  >
                     <Text style={tw`text-gray-700 text-center font-semibold text-base`}>
                       Cancel
                     </Text>
@@ -1636,7 +1636,7 @@ const Registration = () => {
           <TouchableWithoutFeedback onPress={() => setReferDoctorModal(false)}>
             <View style={[themed.modalOverlay]}>
               <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={[themed.modalContainer2,tw` rounded-t-2xl w-full h-[70%] p-4`]}>
+                <View style={[themed.modalContainer2, tw` rounded-t-2xl w-full h-[70%] p-4`]}>
                   <ReferDoctor
                     onSelectDoctor={(doctor) => {
                       setSelectedReferDoctor(doctor);

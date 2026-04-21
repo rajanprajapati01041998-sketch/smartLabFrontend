@@ -11,14 +11,19 @@ import tw from 'twrnc';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import api from '../../../../Authorization/api';
 import { useToast } from '../../../../Authorization/ToastContext';
+import { useTheme } from '../../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../../utils/themeStyles';
 
 const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
     const { showToast } = useToast();
+    const { theme } = useTheme();
+    const themed = getThemeStyles(theme);
+    const isDark = theme === 'dark';
 
     const [rangeDetails, setRangeDetails] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const getRangeDetailaByServiceItemId = async (id) => {
+    const getRangeDetailaByServiceItemId = useCallback(async (id) => {
         if (!id) return;
 
         try {
@@ -43,7 +48,7 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [showToast]);
 
     useFocusEffect(
         useCallback(() => {
@@ -55,47 +60,58 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
         }, [serviceItemId])
     );
 
-    const renderItem = ({ item, index }) => (
-        <View
-            style={tw`px-4 py-2 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-        >
-            <Text style={tw`text-sm font-bold text-gray-800`}>
-                {item?.observationName || '-'}
-            </Text>
+    const renderItem = ({ item, index }) => {
+        const rowStyle =
+            index % 2 === 0
+                ? isDark
+                    ? tw`bg-gray-800`
+                    : tw`bg-white`
+                : isDark
+                    ? tw`bg-gray-900`
+                    : tw`bg-gray-50`;
 
-            <View style={tw`flex-row flex-wrap mt-3`}>
-                <View style={tw`mr-6 min-w-[55px]`}>
-                    <Text style={tw`text-[10px] text-gray-500`}>Min</Text>
-                    <Text style={tw`text-xs text-gray-800`}>
-                        {item?.minValue || '-'}
-                    </Text>
-                </View>
+        return (
+            <View style={[tw`px-4 py-2`, rowStyle]}>
+                <Text style={[themed.normalText, tw`text-sm font-bold`]}>
+                    {item?.observationName || '-'}
+                </Text>
 
-                <View style={tw`mr-6 mb-2 min-w-[55px]`}>
-                    <Text style={tw`text-[10px] text-gray-500`}>Max</Text>
-                    <Text style={tw`text-xs text-gray-800`}>
-                        {item?.maxValue || '-'}
-                    </Text>
-                </View>
+                <View style={tw`flex-row flex-wrap mt-3`}>
+                    <View style={tw`mr-6 min-w-[55px]`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Min</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.minValue || '-'}
+                        </Text>
+                    </View>
 
-                <View style={tw`mr-6 mb-2 min-w-[80px]`}>
-                    <Text style={tw`text-[10px] text-gray-500`}>Range</Text>
-                    <Text style={tw`text-xs text-gray-800`}>
-                        {item?.displayRange || '-'}
-                    </Text>
-                </View>
+                    <View style={tw`mr-6 mb-2 min-w-[55px]`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Max</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.maxValue || '-'}
+                        </Text>
+                    </View>
 
-                <View style={tw`mb-2 min-w-[55px]`}>
-                    <Text style={tw`text-[10px] text-gray-500`}>Unit</Text>
-                    <Text style={tw`text-xs text-gray-800`}>
-                        {item?.unit || '-'}
-                    </Text>
+                    <View style={tw`mr-6 mb-2 min-w-[80px]`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Range</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.displayRange || '-'}
+                        </Text>
+                    </View>
+
+                    <View style={tw`mb-2 min-w-[55px]`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Unit</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.unit || '-'}
+                        </Text>
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
-    const renderSeparator = () => <View style={tw`h-[1px] bg-gray-200`} />;
+    const renderSeparator = () => (
+        <View style={[tw`h-[1px]`, isDark ? tw`bg-gray-700` : tw`bg-gray-200`]} />
+    );
 
     const renderEmpty = () => {
         if (loading) return null;
@@ -110,11 +126,11 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
     };
 
     const renderHeader = () => (
-        <View style={tw`px-4 pt-5 pb-3 bg-white border-b border-gray-200`}>
+        <View style={[themed.modalHeader, tw`px-4 pt-5 pb-3`]}>
             <View style={tw`flex-row justify-between items-start`}>
                 {/* Title with Badge */}
                 <View style={tw`flex-1 relative`}>
-                    <Text style={tw`text-md font-bold text-gray-900 pr-6 `}>
+                    <Text style={[themed.modalHeaderTitle, tw`pr-6`]}>
                         {serviceItemName || 'Test Range Details'}
                     </Text>
                     {/* 🔥 Floating Cart Badge */}
@@ -127,7 +143,10 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
                 {/* Close Button */}
                 <TouchableOpacity
                     onPress={onClose}
-                    style={tw`ml-2 w-8 h-8 rounded-full bg-gray-200 items-center justify-center`}
+                    style={[
+                        tw`ml-2 w-8 h-8 rounded-full items-center justify-center`,
+                        isDark ? tw`bg-gray-700` : tw`bg-gray-200`,
+                    ]}
                 >
                     <MaterialIcons name="close" size={16} color="red" />
                 </TouchableOpacity>
@@ -137,11 +156,11 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
 
     if (loading) {
         return (
-            <View style={tw`flex-1 bg-white rounded-t-3xl `}>
+            <View style={[themed.childScreen, tw`flex-1 min-h-0`]}>
                 {renderHeader()}
                 <View style={tw`flex-1 justify-center items-center`}>
                     <ActivityIndicator size="large" color="#2563EB" />
-                    <Text style={tw`mt-2 text-sm text-gray-600`}>
+                    <Text style={[themed.mutedText, tw`mt-2 text-sm`]}>
                         Loading range details...
                     </Text>
                 </View>
@@ -150,7 +169,7 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
     }
 
     return (
-        <View style={tw`flex-1 bg-white rounded-t-3xl min-h-0`}>
+        <View style={[themed.childScreen, tw`flex-1 min-h-0`]}>
             {renderHeader()}
 
             <FlatList
