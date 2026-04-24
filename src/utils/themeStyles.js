@@ -83,7 +83,7 @@ export const getThemeStyles = (theme) => {
     ),
 
     mutedText: tw.style(
-      isDark ? 'text-gray-400' : 'text-gray-500'
+      isDark ? 'text-gray-400 text-xs' : 'text-gray-500 text-xs'
     ),
 
     normalText: tw.style(
@@ -193,7 +193,7 @@ export const getThemeStyles = (theme) => {
     // List items
     listItemText: tw.style(
       'text-base',
-      isDark ? 'text-white' : 'text-gray-800'
+      isDark ? 'text-gray-300' : 'text-gray-800'
     ),
 
     listItem: (isSelected) =>
@@ -356,7 +356,7 @@ export const getThemeStyles = (theme) => {
     ),
 
     // Common colors
-    iconMuted: isDark ? '#9CA3AF' : '#6B7280',
+    iconMuted: isDark ? '#c9cbce' : '#6B7280',
     chevronColor: isDark ? '#D1D5DB' : '#6B7280',
 
 
@@ -408,6 +408,17 @@ export const getThemeStyles = (theme) => {
     borderRight: tw.style(
       'border-r',
       isDark ? 'border-gray-700' : 'border-gray-200'
+    ),
+
+    // search button 
+    searchButton: tw.style(
+      'flex-row items-center justify-center py-2.5 px-7 rounded-lg',
+      isDark ? 'bg-blue-600' : 'bg-blue-500'
+    ),
+
+    // ✅ Search Button Text
+    searchButtonText: tw.style(
+      'text-white text-sm font-semibold'
     ),
   };
 };

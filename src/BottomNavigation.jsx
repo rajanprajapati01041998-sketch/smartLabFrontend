@@ -1,13 +1,13 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
-import DashboardStack from './DashboardStack';
+import DashboardDrawer from './DashboardDrawer';
 import HelpDeskStack from './HelpDeskStack';
 import RegistrationStack from './RegistrationStack';
 
@@ -15,6 +15,54 @@ const Tab = createBottomTabNavigator();
 
 /** Main content row (icons + labels) above safe-area / system inset — keep in one place to avoid double-counting with navigator padding. */
 const TAB_BAR_CONTENT_HEIGHT = 52;
+
+const HIDE_TABS_BY_TAB = {
+  Dashboard: new Set([
+    'ListHelpDeskPatient',
+    'Profile',
+    'UserLoginHistory',
+    'ViewLabReport',
+    'DashboardPayment',
+    'DashboardPaymentHistoryDetails',
+    'ViewTebularReport',
+    'Registration',
+    'SearchPatient',
+    'PatientInformation',
+    'PatientInformationList',
+    'EditRegistration'
+  ]),
+  Registration: new Set(['PatientInformation']),
+  HelpDesk: new Set([
+    'ListHelpDeskPatient',
+    'ViewLabReport',
+    'DashboardPayment',
+    'DashboardPaymentHistoryDetails',
+    'ViewTebularReport',
+    'PatientInformationList',
+    'EditRegistration'
+  ]),
+};
+
+const getDeepestRouteName = (route) => {
+  if (!route) return null;
+  if (!route.state) {
+    // When navigating into nested navigators with `navigate(parent, { screen })`,
+    // the active child may be present in params before nested state is mounted.
+    if (route.params?.screen) {
+      const syntheticChild = {
+        name: route.params.screen,
+        state: route.params.state,
+        params: route.params.params,
+      };
+      return getDeepestRouteName(syntheticChild) ?? route.params.screen ?? route.name ?? null;
+    }
+
+    return getFocusedRouteNameFromRoute(route) ?? route.name ?? null;
+  }
+  const index = typeof route.state.index === 'number' ? route.state.index : 0;
+  const child = route.state.routes?.[index];
+  return getDeepestRouteName(child) ?? child?.name ?? route.name ?? null;
+};
 
 export default function BottomTabNavigation() {
   const insets = useSafeAreaInsets();
@@ -50,6 +98,15 @@ export default function BottomTabNavigation() {
 
   return (
     <Tab.Navigator
+      tabBar={(props) => {
+        const focusedTabRoute = props.state.routes[props.state.index];
+        const focusedTabName = focusedTabRoute?.name;
+        const nestedRouteName = getDeepestRouteName(focusedTabRoute);
+        const hideSet = HIDE_TABS_BY_TAB[focusedTabName];
+
+        if (hideSet?.has(nestedRouteName)) return null;
+        return <BottomTabBar {...props} />;
+      }}
       screenOptions={({ route }) => ({
         headerShown: false,
 
@@ -71,7 +128,6 @@ export default function BottomTabNavigation() {
 
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: theme === 'dark' ? '#9CA3AF' : '#777',
-
         tabBarStyle: baseTabBarStyle,
 
         tabBarLabelStyle: {
@@ -88,20 +144,7 @@ export default function BottomTabNavigation() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardStack}
-        options={({ route }) => {
-          const routeName =
-            getFocusedRouteNameFromRoute(route) ?? 'DashboardHome';
-
-          const hideOnScreens = ['ListHelpDeskPatient', 'Profile', 'UserLoginHistory','ViewLabReport','DashboardPayment','DashboardPaymentHistoryDetails','ViewTebularReport'];
-
-          return {
-            tabBarStyle: [
-              baseTabBarStyle,
-              { display: hideOnScreens.includes(routeName) ? 'none' : 'flex' },
-            ],
-          };
-        }}
+        component={DashboardDrawer}
       />
       <Tab.Screen
         name="Registration"
@@ -111,17 +154,6 @@ export default function BottomTabNavigation() {
       <Tab.Screen
         name="HelpDesk"
         component={HelpDeskStack}
-        options={({ route }) => {
-          const routeName =
-            getFocusedRouteNameFromRoute(route) ?? 'HelpDeskHome';
-          const hideOnScreens = ['ListHelpDeskPatient', 'ViewLabReport','DashboardPayment','DashboardPaymentHistoryDetails','ViewTebularReport'];
-          return {
-            tabBarStyle: [
-              baseTabBarStyle,
-              { display: hideOnScreens.includes(routeName) ? 'none' : 'flex' },
-            ],
-          };
-        }}
       />
     </Tab.Navigator>
   );

@@ -406,7 +406,7 @@ const Registration = () => {
     // console.log("paymentData 👉", paymentData);
     // console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
-      // console.log(payload)
+      console.log(payload)
       const response = await api.post(`Patient/save`, payload)
       console.log("booking suceess", response)
       showToast("Patinet Saved Sucessfully", 'success');

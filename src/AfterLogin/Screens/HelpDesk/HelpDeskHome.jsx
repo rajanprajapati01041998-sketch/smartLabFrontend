@@ -600,7 +600,7 @@ const HelpDeskHome = () => {
           transparent
           animationType="none"
           onRequestClose={() => closeModal('department')}
-        >
+         >
           <View style={[themed.modalOverlay,tw``]}>
             <TouchableOpacity
               style={tw`flex-1`}
@@ -637,7 +637,7 @@ const HelpDeskHome = () => {
           transparent
           animationType="none"
           onRequestClose={() => closeModal('client')}
-        >
+         >
           <View style={tw`flex-1 bg-black/50`}>
             <TouchableOpacity
               style={tw`flex-1`}

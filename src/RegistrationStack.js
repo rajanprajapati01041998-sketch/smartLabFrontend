@@ -3,7 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '../Authorization/ThemeContext';
 
 import Registration from './AfterLogin/Screens/PatientRegistration/Registration';
-import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatient';
+import PatientInformation from './AfterLogin/Screens/PatientRegistration/PatientInformation';
+import EditRegistration from './AfterLogin/Screens/PatientRegistration/EditRegistration';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,9 +33,14 @@ export default function RegistrationStack() {
         options={{ title: 'Patient Registration', headerShown: false }}
       />
       <Stack.Screen
-        name="SearchPatient"
-        component={SearchPatient}
-        options={{ title: 'Search Patient' }}
+        name="PatientInformation"
+        component={PatientInformation}
+        options={{ title: 'Patient Information' }}
+      />
+      <Stack.Screen
+        name="EditRegistration"
+        component={EditRegistration}
+        options={{ title: 'Patient Details' }}
       />
     </Stack.Navigator>
   );

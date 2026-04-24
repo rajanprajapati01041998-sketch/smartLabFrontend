@@ -120,7 +120,7 @@ const FilterDate = ({ onClose, onSave }) => {
                 {/* From */}
                 <Text style={[themed.mutedText, tw`mb-1`]}>From</Text>
                 <TouchableOpacity
-                    style={[themed.searchBox]}
+                    style={[themed.inputBox,themed.inputText,tw`flex flex-row justify-between`]}
                     onPress={() => {
                         setTempDate(fromDate)
                         setShowPicker('from')
@@ -133,7 +133,7 @@ const FilterDate = ({ onClose, onSave }) => {
                 {/* To */}
                 <Text style={[themed.headerSubText, tw`mt-4 mb-2`]}>To</Text>
                 <TouchableOpacity
-                    style={[themed.searchBox]}
+                    style={[themed.inputBox,themed.inputText,tw`flex flex-row justify-between`]}
                     onPress={() => {
                         setTempDate(toDate)
                         setShowPicker('to')

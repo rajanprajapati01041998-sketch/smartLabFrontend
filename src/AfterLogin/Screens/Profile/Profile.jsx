@@ -47,9 +47,10 @@ const Profile = () => {
 
   useEffect(() => {
     setLabName(userData?.name || '');
-    setUserName(userData?.userName || '');
+    setUserName(userData?.userName || userData?.user?.userName);
   }, [userData]);
 
+  console.log(userData)
   useEffect(() => {
     console.log('Current theme mode:', theme);
   }, [theme]);
@@ -77,12 +78,15 @@ const Profile = () => {
 
   const profileItems = [
     { icon: 'person', name: 'User ID', value: userName, color: '#8b5cf6' },
-    { icon: 'wc', name: 'Gender', value: userData?.gender, color: '#ec489a' },
+    { icon: 'wc', name: 'Gender', value: userData?.gender || userData?.user?.gender, color: '#ec489a' },
     {
       icon: 'cake',
       name: 'Date of Birth',
-      value: userData?.dob ? new Date(userData.dob).toLocaleDateString() : '',
-      color: '#f59e0b',
+      value: userData?.dob
+        ? new Date(userData.dob).toLocaleDateString()
+        : userData?.user?.dob
+          ? new Date(userData.user.dob).toLocaleDateString()
+          : '', color: '#f59e0b',
     },
   ];
 
@@ -112,7 +116,7 @@ const Profile = () => {
                 ]}
                 numberOfLines={1}
               >
-                {labname || 'Loading...'}
+                {labname || userData?.user?.name}
               </Animated.Text>
 
               <Animated.View
@@ -275,11 +279,11 @@ const Profile = () => {
           {/* Theme Toggle */}
           <Animated.View entering={FadeInDown.delay(500).springify()}
             style={tw`px-4 mt-4`}
-           >
-            <TouchableOpacity style={[styles.cardShadow,themed.profileCard, tw`p-4`, {  borderWidth: 1,  elevation: 2,}, ]}
+          >
+            <TouchableOpacity style={[styles.cardShadow, themed.profileCard, tw`p-4`, { borderWidth: 1, elevation: 2, },]}
               activeOpacity={0.7}
               onPress={toggleTheme}
-             >
+            >
               <View style={tw`flex-row items-center`}>
                 <Animated.View entering={ZoomIn.delay(550)} style={themed.profileIconBox}>
                   <MaterialIcons name={theme === 'dark' ? 'dark-mode' : 'light-mode'}

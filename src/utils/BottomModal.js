@@ -7,8 +7,11 @@ import {
   Pressable,
 } from "react-native";
 import tw from "twrnc";
+import { useTheme } from "../../Authorization/ThemeContext";
 
 const BottomModal = ({ visible, onClose, children }) => {
+  const { colors } = useTheme();
+
   return (
     <Modal transparent visible={visible} animationType="slide">
       
@@ -20,7 +23,12 @@ const BottomModal = ({ visible, onClose, children }) => {
         
         {/* PREVENT CLOSE WHEN CLICKING INSIDE */}
         <Pressable onPress={() => {}}>
-          <View style={tw`bg-white rounded-t-3xl p-5 shadow-lg`}>
+          <View
+            style={[
+              tw`rounded-t-3xl p-5 shadow-lg`,
+              { backgroundColor: colors?.surface ?? "#fff" },
+            ]}
+          >
             
             {/* Drag Indicator */}
             <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />

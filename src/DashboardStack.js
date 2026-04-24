@@ -1,8 +1,7 @@
 import React from 'react';
-import { Alert, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
@@ -10,14 +9,16 @@ import LabDashboard from './AfterLogin/Screens/DashboardData/Dashborad';
 import Registration from './AfterLogin/Screens/PatientRegistration/Registration';
 import UserLoginHistory from './AfterLogin/Screens/Profile/UserLoginHistory';
 import Profile from './AfterLogin/Screens/Profile/Profile';
-import SearchPatient from './AfterLogin/Screens/PatientRegistration/SearchPatient';
+import PatientInformation from './AfterLogin/Screens/PatientRegistration/PatientInformation';
 import DashboardPayment from './AfterLogin/Screens/DashboardData/DashboardPayment';
 import DashboardPaymentHistoryDetails from './AfterLogin/Screens/DashboardData/DashboardPaymentHistoryDetails';
+import PatientInformationList from './AfterLogin/Screens/PatientRegistration/PatientInformationList';
+import EditRegistration from './AfterLogin/Screens/PatientRegistration/EditRegistration';
 
 const Stack = createNativeStackNavigator();
 
 export default function DashboardStack() {
-    const { theme, colors } = useTheme();
+    const { colors } = useTheme();
 
     return (
         <Stack.Navigator
@@ -56,7 +57,11 @@ export default function DashboardStack() {
                     ),
                     headerLeft: () => (
                         <TouchableOpacity
-                            onPress={() => Alert.alert("click menu")}
+                            onPress={() => {
+                                const parent = navigation.getParent?.();
+                                if (parent?.openDrawer) parent.openDrawer();
+                                else if (navigation.openDrawer) navigation.openDrawer();
+                            }}
                             style={{ marginRight: 15 }}
                         >
                             <MaterialCommunityIcons
@@ -80,9 +85,19 @@ export default function DashboardStack() {
             />
 
             <Stack.Screen
-                name="SearchPatient"
-                component={SearchPatient}
-                options={{ title: 'Search Patient' }}
+                name="PatientInformation"
+                component={PatientInformation}
+                options={{ title: 'Patient Information' }}
+            />
+            <Stack.Screen
+                name="PatientInformationList"
+                component={PatientInformationList}
+                options={{ title: 'All Patient' }}
+            />
+            <Stack.Screen
+                name="EditRegistration"
+                component={EditRegistration}
+                options={{ title: 'Patient Details' }}
             />
 
             {/* Login History */}

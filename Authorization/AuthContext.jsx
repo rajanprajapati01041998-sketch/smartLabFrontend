@@ -45,6 +45,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
 
+  console.log("corpoteid",corporateId)
+
 
 
   const getLocalIP = async () => {

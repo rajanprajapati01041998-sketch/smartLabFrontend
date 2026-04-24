@@ -325,91 +325,100 @@ const LabDashboard = () => {
       >
         <TouchableWithoutFeedback onPress={() => setBranchModal(false)}>
           <View style={tw`flex-1 justify-center items-center bg-black/60`}>
+
             <TouchableWithoutFeedback>
-              <View style={[themed.modalCard, tw`w-[90%] max-h-[85%] shadow-xl`]}>
+              <View style={[themed.modalCard, tw`w-[95%] max-h-[85%] shadow-xl rounded-2xl`]}>
+
+                {/* HEADER */}
                 <View style={themed.modalHeader}>
                   <View>
-                    <Text style={themed.modalTitle}>
-                      Select Branches
-                    </Text>
+                    <Text style={themed.modalTitle}>Select Branches</Text>
                     <Text style={themed.modalSubTitle}>
                       Choose branches to view data
                     </Text>
                   </View>
+
                   <TouchableOpacity
                     onPress={() => setBranchModal(false)}
                     style={themed.modalCloseButton}
                   >
-                    <Icon name="close" size={20} color={themed.closeIconColor} />
+                    <Feather name="x" size={20} color={themed.closeIconColor} />
                   </TouchableOpacity>
                 </View>
 
+                {/* SEARCH */}
                 <View style={themed.searchWrapper}>
                   <View style={themed.searchBox}>
-                    <Feather name="search" size={18} color="#9ca3af" />
+                    <Feather name="search" size={18} color={themed.inputPlaceholder} />
+
                     <TextInput
                       style={themed.searchInput}
                       placeholder="Search branches..."
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={themed.inputPlaceholder}
                       value={searchQuery}
                       onChangeText={setSearchQuery}
-                      returnKeyType="search"
-                      clearButtonMode="never"
-                      underlineColorAndroid="transparent"
                     />
 
                     {searchQuery?.length > 0 && (
-                      <TouchableOpacity
-                        onPress={() => setSearchQuery('')}
-                        activeOpacity={0.7}
-                        style={tw`p-1`}
-                      >
-                        <Feather name="x-circle" size={18} color="#9ca3af" />
+                      <TouchableOpacity onPress={() => setSearchQuery('')}>
+                        <Feather name="x-circle" size={18} color={themed.inputPlaceholder} />
                       </TouchableOpacity>
                     )}
                   </View>
                 </View>
 
+                {/* SELECT ALL */}
                 {filteredBranches.length > 0 && (
                   <TouchableOpacity
                     onPress={handleSelectAll}
-                    style={themed.selectAllRow}
+                    style={tw`flex flex-row p-2 justify-between`}
                   >
                     <View style={tw`flex-row items-center`}>
                       <View style={themed.selectAllIconWrap}>
-                        <Icon name="select-all" size={18} color="#3b82f6" />
+                        <Feather name="check-square" size={18} color="#3b82f6" />
                       </View>
-                      <View>
-                        <Text style={themed.selectAllTitle}>
+
+                      <View style={tw`mx-2`}>
+                        <Text style={themed.inputLabel}>
                           {selectAll ? 'Deselect All' : 'Select All'}
                         </Text>
-                        <Text style={themed.selectAllSubTitle}>
+
+                        <Text style={themed.inputLabel}>
                           {filteredBranches.length} branches available
                         </Text>
                       </View>
                     </View>
-                    <View style={tw`w-5 h-5 rounded border-2 items-center justify-center ${selectAll ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                      {selectAll && <AntDesign name="check" size={12} color="white" />}
+
+                    <View
+                      style={[
+                        tw`w-5 h-5 rounded border-2 items-center justify-center`,
+                        selectAll
+                          ? { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }
+                          : themed.checkboxBorder,
+                      ]}
+                    >
+                      {selectAll && <Feather name="check" size={12} color="#fff" />}
                     </View>
                   </TouchableOpacity>
                 )}
 
+                {/* LIST */}
                 <FlatList
                   data={filteredBranches}
                   keyExtractor={(item, index) => `${item.branchId}-${index}`}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={tw`py-2`}
+
                   ListEmptyComponent={
                     <View style={tw`items-center justify-center py-12`}>
-                      <Icon name="store-off" size={48} color="#d1d5db" />
-                      <Text style={themed.emptyTitle}>
-                        No branches found
-                      </Text>
+                      <Feather name="inbox" size={48} color={themed.emptyIconColor} />
+                      <Text style={themed.emptyTitle}>No branches found</Text>
                       <Text style={themed.emptySubTitle}>
                         Try searching with different keywords
                       </Text>
                     </View>
                   }
+
                   renderItem={({ item }) => {
                     const isSelected = selectedBranches.some(
                       (b) => b.branchId === item.branchId
@@ -419,52 +428,71 @@ const LabDashboard = () => {
                       <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={() => toggleBranch(item)}
-                        style={themed.listItem(isSelected)}
-                      >
+                        style={[themed.border, tw`flex flex-row p-2 mx-2 my-1 rounded-md`]}
+                       >
                         <View style={tw`flex-row items-center flex-1`}>
-                          <View style={themed.listItemIconWrap(isSelected)}>
-                            <Icon
-                              name={isSelected ? 'store-check' : 'store'}
-                              size={20}
-                              color={isSelected ? '#3b82f6' : theme === 'dark' ? '#D1D5DB' : '#6b7280'}
+
+                          {/* ICON */}
+                          <View >
+                            <Feather
+                              name="briefcase"
+                              size={18}
+                              color={
+                                isSelected
+                                  ? '#3b82f6'
+                                  : themed.iconSecondary
+                              }
                             />
                           </View>
-                          <View style={tw`flex-1`}>
-                            <Text style={themed.listItemText}>
-                              {item.branchName}
-                            </Text>
-                          </View>
+
+                          {/* NAME */}
+                          <Text style={[themed.listItemText, tw`flex-1 ml-2`]}>
+                            {item.branchName}
+                          </Text>
                         </View>
 
-                        <View style={tw`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                          {isSelected && <AntDesign name="check" size={12} color="white" />}
+                        {/* CHECKBOX */}
+                        <View
+                          style={[
+                            tw`w-6 h-6 rounded-full border-2 items-center justify-center`,
+                            isSelected
+                              ? { backgroundColor: '#3b82f6', borderColor: '#3b82f6' }
+                              : themed.checkboxBorder,
+                          ]}
+                        >
+                          {isSelected && <Feather name="check" size={12} color="#fff" />}
                         </View>
                       </TouchableOpacity>
                     );
                   }}
                 />
 
+                {/* FOOTER */}
                 <View style={themed.footer}>
                   <View style={tw`flex-row gap-3`}>
+
                     <TouchableOpacity
                       onPress={() => setBranchModal(false)}
                       style={themed.cancelButton}
                     >
-                      <Text style={themed.cancelButtonText}>
-                        Cancel
-                      </Text>
+                      <Text style={themed.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       onPress={() => setBranchModal(false)}
-                      style={tw`flex-1 py-3 rounded-xl bg-blue-500 shadow-sm`}
+                      style={[
+                        tw`flex-1 py-3 rounded-xl`,
+                        { backgroundColor: '#3b82f6' },
+                      ]}
                     >
                       <Text style={tw`text-white text-center font-semibold`}>
                         Apply ({selectedBranches.length})
                       </Text>
                     </TouchableOpacity>
+
                   </View>
                 </View>
+
               </View>
             </TouchableWithoutFeedback>
           </View>
