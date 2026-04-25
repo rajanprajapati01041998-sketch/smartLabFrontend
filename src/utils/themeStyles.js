@@ -1,4 +1,5 @@
 import tw from 'twrnc';
+import LinearGradient from 'react-native-linear-gradient';
 
 export const getThemeStyles = (theme) => {
   const isDark = theme === 'dark';
@@ -390,8 +391,8 @@ export const getThemeStyles = (theme) => {
 
     // for border 
     border: tw.style(
-      'border',
-      isDark ? 'border-gray-700' : 'border-gray-200'
+      'border rounded-xl',
+      isDark ? 'border-gray-700 ' : 'border-gray-200'
     ),
     borderTop: tw.style(
       'border-t',

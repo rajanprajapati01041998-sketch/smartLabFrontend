@@ -87,6 +87,8 @@ const ListHelpDeskPatient = () => {
     if (newValue) setMainHeader(false)
   }
 
+  
+
   const handleMainHeader = () => {
     const newValue = !mainHeader
     setMainHeader(newValue)
@@ -579,7 +581,7 @@ const ListHelpDeskPatient = () => {
               )}
             </View>
 
-            {walletData.balanceMain > 0 && item?.IsReportApproved === 1 && (
+            {walletData.balanceMain >= 0 && item?.IsReportApproved === 1 && (
               <View style={tw`flex-row gap-2 mt-4`}>
                 <TouchableOpacity
                   onPress={() =>

@@ -27,6 +27,7 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import UpdatePatientInfo from './UpdatePatientInfo';
 import { getPatientInvestigation } from '../../../utils/patinetService.js/investigation';
 import SearchServiceUpdate from './SearchServiceUpdate';
+import ViewUpdateAllTestDetails from './ViewUpdateAllTestDetails';
 
 const { width } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ const PatientInformationList = () => {
     const themed = getThemeStyles(theme);
     const { showToast } = useToast();
     const payload = route?.params?.payload;
-
+    const [viewAllUpdateTestModal, setViewAllUpdateTestModal] = useState(false)
     const [list, setList] = useState([]);
     const [expandedIndex, setExpandedIndex] = useState(null);
     const [search, setSearch] = useState('');
@@ -47,6 +48,9 @@ const PatientInformationList = () => {
     const [serviceItemModal, setServoceItemModal] = useState(false)
     const modalSlideAnim = useRef(new Animated.Value(0)).current;
     const animations = useRef({});
+    const [labeNo, setLabNo] = useState(null)
+    const [visitId, setVisitId] = useState(null)
+    const [puhid,setPUhid] = useState(null)
 
     const fetchInvestigation = useCallback(async (payloadData) => {
         try {
@@ -67,6 +71,14 @@ const PatientInformationList = () => {
             setLoading(false);
         }
     }, [showToast]);
+
+    const handleViewAllTestUpdateetails = (item) => {
+        console.log("view", item)
+        setVisitId(item?.VisitId)
+        setLabNo(item?.LabNo)
+        setPUhid(item?.UHID)
+        setViewAllUpdateTestModal(true)
+    }
 
     useFocusEffect(
         useCallback(() => {
@@ -147,13 +159,13 @@ const PatientInformationList = () => {
     const handleShare = async (item) => {
         try {
             const shareMessage = `
-Patient Details:
-Name: ${item?.PatientName}
-UHID: ${item?.UHID}
-Lab No: ${item?.LabNo}
-Bill Amount: ₹${item?.TotalBillAmount}
-Paid Amount: ₹${item?.TotalPaidAmount}
-Balance: ₹${item?.TotalBalanceAmount}
+            Patient Details:
+            Name: ${item?.PatientName}
+            UHID: ${item?.UHID}
+            Lab No: ${item?.LabNo}
+            Bill Amount: ₹${item?.TotalBillAmount}
+            Paid Amount: ₹${item?.TotalPaidAmount}
+            Balance: ₹${item?.TotalBalanceAmount}
       `;
 
             await Share.share({
@@ -323,7 +335,8 @@ Balance: ₹${item?.TotalBalanceAmount}
                 >
                     <View style={tw`flex-1 pr-3`}>
                         {barcodeValue ? (
-                            <View style={tw`mb-2`}>
+                            <View style={tw`mb-2  flex flex-row justify-between`}>
+
                                 <Barcode
                                     value={barcodeValue}
                                     format="CODE128"
@@ -337,10 +350,17 @@ Balance: ₹${item?.TotalBalanceAmount}
                                     onError={(e) => console.warn('Barcode error:', e?.message || e)}
                                     style={{ alignSelf: 'flex-start' }}
                                 />
+                                <TouchableOpacity
+                                    style={tw`mr-10`}
+                                    onPress={() => handleViewAllTestUpdateetails(item)}
+                                >
+                                    <FontAwesome5 name='eye' color='gray' size={16} />
+                                </TouchableOpacity>
                             </View>
                         ) : null}
 
                         <View style={tw`flex-row justify-between items-start`}>
+
                             <View style={tw`flex-1`}>
                                 <View style={tw`flex-row items-center mb-1`}>
                                     <FontAwesome5
@@ -641,8 +661,38 @@ Balance: ₹${item?.TotalBalanceAmount}
                     </Animated.View>
                 </View>
             </Modal>
-           
-            
+            {/* view all test update details */}
+            <Modal
+                visible={viewAllUpdateTestModal}
+                transparent
+                animationType="none"
+                onRequestClose={closeModal}
+            >
+                <View style={tw`flex-1 bg-black/50`}>
+                    <TouchableOpacity
+                        style={tw`flex-1`}
+                        activeOpacity={1}
+                        onPress={()=>setViewAllUpdateTestModal(false)}
+                    />
+                    <Animated.View
+                        style={[
+                            themed.modalCard,
+                            tw`rounded-t-2xl p-3 h-[80%]`,]}
+                    >
+                        
+
+                        <ViewUpdateAllTestDetails
+                            visitId={visitId}
+                            labNo={labeNo}
+                            puhid={puhid}
+                            onClose={()=>setViewAllUpdateTestModal(false)}
+                            
+                        />
+                    </Animated.View>
+                </View>
+            </Modal>
+
+
         </View>
     );
 };
