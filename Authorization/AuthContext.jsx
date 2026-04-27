@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }) => {
           addBarcode, setAddBarcode
         }}
       >
-        {!isLoading && children}
+        {children}
       </AuthContext.Provider>
       {/* Render the AlertComponent here */}
       <AlertComponent />

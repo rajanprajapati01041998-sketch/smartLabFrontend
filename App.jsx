@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { useAuth } from './Authorization/AuthContext';
 import DashboardDrawer from './src/DashboardDrawer';
@@ -7,13 +7,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
 import { ResponsiveProvider } from './src/context/ResponsiveContext';
 import { useTheme } from './Authorization/ThemeContext';
+import StartupSplash from './src/StartupSplash';
 
 export default function App() {
-  const { token } = useAuth();
+  const { token, isLoading } = useAuth();
   const { theme, colors } = useTheme();
+  const [isStartupSplashVisible, setIsStartupSplashVisible] = useState(true);
 
   useEffect(() => {
     requestStoragePermission();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsStartupSplashVisible(false), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   const requestStoragePermission = async () => {
@@ -33,6 +40,20 @@ export default function App() {
       }
     }
   };
+
+  if (isStartupSplashVisible || isLoading) {
+    return (
+      <SafeAreaProvider>
+        <ResponsiveProvider>
+          <StatusBar
+            barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
+            backgroundColor={theme === 'dark' ? colors.surface : '#ffffff'}
+          />
+          <StartupSplash />
+        </ResponsiveProvider>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
