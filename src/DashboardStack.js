@@ -194,8 +194,8 @@ export default function DashboardStack() {
               style={{ marginLeft: 12 }}
             >
               <MaterialCommunityIcons
-                name="menu"
-                size={28}
+                name="menu-open"
+                size={24}
                 color={colors.text}
               />
             </TouchableOpacity>

@@ -87,7 +87,7 @@ const ListHelpDeskPatient = () => {
     if (newValue) setMainHeader(false)
   }
 
-  
+
 
   const handleMainHeader = () => {
     const newValue = !mainHeader
@@ -762,12 +762,18 @@ const ListHelpDeskPatient = () => {
 
         {data && data.length > 0 &&
           <View style={tw`flex-row items-center gap-4 mt-3`}>
-            <View style={tw`flex-row items-center gap-2 mt-3`}>
+            <View style={tw`flex-row items-center gap-1 mt-3`}>
               <CheckBox
                 value={isPrintHeader}
                 onValueChange={setIsPrintHeader}
+                style={{
+                  transform: [
+                    { scaleX: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                    { scaleY: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                  ],
+                }}
               />
-              <Text style={themed.labelText}>Header</Text>
+              <Text style={themed.labelTextXs}>Header</Text>
             </View>
 
             <View style={tw`flex-row items-center gap-4 mt-3`}>
@@ -780,8 +786,14 @@ const ListHelpDeskPatient = () => {
                   <CheckBox
                     value={loginHeader}
                     onValueChange={handleLoginHeader}
+                    style={{
+                      transform: [
+                        { scaleX: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                        { scaleY: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                      ],
+                    }}
                   />
-                  <Text style={themed.labelText}>Login Header</Text>
+                  <Text style={themed.labelTextXs}>Login Header</Text>
                 </TouchableOpacity>
               </View>
 
@@ -795,8 +807,14 @@ const ListHelpDeskPatient = () => {
                   <CheckBox
                     value={mainHeader}
                     onValueChange={handleMainHeader}
+                    style={{
+                      transform: [
+                        { scaleX: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                        { scaleY: Platform.OS === 'ios' ? 0.9 : 0.9 },
+                      ],
+                    }}
                   />
-                  <Text style={themed.labelText}>Main Header</Text>
+                  <Text style={themed.labelTextXs}>Main Header</Text>
                 </TouchableOpacity>
               </View>
             </View>

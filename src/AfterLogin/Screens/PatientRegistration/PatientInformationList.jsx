@@ -354,7 +354,7 @@ const PatientInformationList = () => {
                                     style={tw`mr-10`}
                                     onPress={() => handleViewAllTestUpdateetails(item)}
                                 >
-                                    <FontAwesome5 name='eye' color='gray' size={16} />
+                                    <Feather name='eye' color='gray' size={16} />
                                 </TouchableOpacity>
                             </View>
                         ) : null}
@@ -363,8 +363,8 @@ const PatientInformationList = () => {
 
                             <View style={tw`flex-1`}>
                                 <View style={tw`flex-row items-center mb-1`}>
-                                    <FontAwesome5
-                                        name="user-circle"
+                                    <Feather
+                                        name="user"
                                         size={14}
                                         color={themed.chevronColor}
                                     />

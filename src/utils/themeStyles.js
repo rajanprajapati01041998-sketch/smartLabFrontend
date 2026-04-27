@@ -15,10 +15,16 @@ export const getThemeStyles = (theme) => {
       'flex-1',
       isDark ? 'bg-gray-800' : ''
     ),
+    
     labelText: tw.style(
       'text-md font-bold',
       isDark ? 'text-gray-400' : 'text-gray-500'
     ),
+    labelTextXs: tw.style(
+      'text-[10px] font-bold',
+      isDark ? 'text-gray-400' : 'text-gray-500'
+    ),
+
 
     statusBarBg: isDark ? '#111827' : '#FFFFFF',
 
