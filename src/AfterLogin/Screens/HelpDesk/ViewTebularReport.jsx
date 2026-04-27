@@ -6,100 +6,101 @@ import Pdf from 'react-native-pdf'
 import tw from 'twrnc'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import api from '../../../../Authorization/api'
-import { useAuth } from '../../../../Authorization/AuthContext'
 
-const ViewLabReport = () => {
-  const { loginBranchId, userId ,mainBranchId} = useAuth()
+const TRF_Print = () => {
   const route = useRoute()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [pdfPath, setPdfPath] = useState('')
 
-  const ptInvstId = route?.params?.patientInvestigationId
-  const branchId = route?.params?.loginHeader === true ? loginBranchId : 0
-console.log("teblur",route?.params);
+  const FTId = route?.params?.item?.FTId
 
-  const isPrintValue = route?.params?.isPrintHeader ? 1 : 0
-  const mainClientId =
-    route?.params?.mainHeader === true  ? mainBranchId : 0 
-
-  const patientInvestigationId =
-    route?.params?.item?.PatientInvestigationId || ptInvstId
-
-  const savePdfFile = async (base64Data) => {
+  // ✅ SAVE BASE64 PDF TO FILE
+  const savePdfFile = async (base64Data, fileName = 'TRF.pdf') => {
+  try {
     const cleanBase64 = String(base64Data || '').replace(
       /^data:application\/pdf;base64,/,
       ''
-    )
+    );
 
-    const fileName = `report_${Date.now()}.pdf`
+    if (!cleanBase64) {
+      setError(true);
+      return;
+    }
+
+    if (!RNFetchBlob?.fs?.dirs) {
+      console.log('RNFetchBlob native module not linked');
+      setError(true);
+      return;
+    }
+
+    const safeName = fileName.replace(/[\/\\:*?"<>|]/g, '_');
+
     const dir =
       Platform.OS === 'ios'
         ? RNFetchBlob.fs.dirs.DocumentDir
-        : RNFetchBlob.fs.dirs.CacheDir
+        : RNFetchBlob.fs.dirs.CacheDir;
 
-    const filePath = `${dir}/${fileName}`
+    const filePath = `${dir}/${safeName}`;
 
-    await RNFetchBlob.fs.writeFile(filePath, cleanBase64, 'base64')
-    setPdfPath(filePath)
+    await RNFetchBlob.fs.writeFile(filePath, cleanBase64, 'base64');
+
+    setPdfPath(filePath);
+  } catch (error) {
+    console.log('savePdfFile error:', error);
+    setError(true);
   }
+};
 
+  // ✅ CALL YOUR TRF API
   const getReport = async () => {
     try {
       setLoading(true)
       setError(false)
       setPdfPath('')
 
-      const payload = {
-        PatientInvestigationIdList: patientInvestigationId,
-        isHeaderPNG: isPrintValue,
-        PrintBy: userId,
-        branchId:branchId,
-        clientId: mainClientId,
-        ViewReport: true
-      }
-      console.log("mainclientId", mainClientId)
-      console.log('API PAYLOAD:', payload)
+      const response = await api.get(
+        `Patient/test-requisition-form?filter=${FTId}&mode=view`
+      )
 
-      const response = await api.get('DeltaReport/download-delta-report', {
-        params: payload
-      })
+      console.log('TRF RESPONSE:', response?.data)
 
-      // console.log('API RESPONSE:', response?.data)
-
-      const base64Pdf = response?.data?.pdfBase64
+      const base64Pdf = response?.data?.base64
+      const fileName = response?.data?.fileName || 'TRF.pdf'
 
       if (!base64Pdf || typeof base64Pdf !== 'string') {
-        // console.log('Invalid pdfBase64:', base64Pdf)
         setError(true)
         return
       }
 
-      // console.log('PDF BASE64 LENGTH:', base64Pdf.length)
-
-      await savePdfFile(base64Pdf)
+      await savePdfFile(base64Pdf, fileName)
     } catch (err) {
-      // console.log('getReport error:', err)
+      console.log('TRF error:', err)
       setError(true)
     } finally {
       setLoading(false)
     }
   }
 
+  // ✅ AUTO LOAD ON SCREEN FOCUS
   useFocusEffect(
     useCallback(() => {
-      getReport()
-      return () => { }
-    }, [ptInvstId, branchId])
+      if (FTId) {
+        getReport()
+      }
+      return () => {}
+    }, [FTId])
   )
+
+  // ================= UI =================
 
   if (loading) {
     return (
       <View style={tw`flex-1 items-center justify-center bg-white`}>
         <ActivityIndicator size="large" color="#2563eb" />
         <Text style={tw`mt-3 text-gray-600 font-medium`}>
-          Loading report...
+          Loading TRF...
         </Text>
       </View>
     )
@@ -109,9 +110,11 @@ console.log("teblur",route?.params);
     return (
       <View style={tw`flex-1 items-center justify-center bg-white px-6`}>
         <MaterialCommunityIcons name="file-pdf-box" size={80} color="#ef4444" />
+
         <Text style={tw`mt-4 text-lg font-semibold text-gray-800`}>
-          Unable to load report
+          Unable to load TRF
         </Text>
+
         <Text style={tw`mt-2 text-sm text-gray-500 text-center`}>
           PDF is not showing properly. Please try again.
         </Text>
@@ -145,15 +148,14 @@ console.log("teblur",route?.params);
         enablePaging={true}
         horizontal={false}
         spacing={8}
-        onLoadComplete={(numberOfPages, filePath) => {
-          console.log('PDF loaded. Pages:', numberOfPages)
-          console.log('File path:', filePath)
+        onLoadComplete={(pages) => {
+          console.log('PDF Loaded Pages:', pages)
         }}
-        onPageChanged={(page, numberOfPages) => {
-          console.log('Current page:', page, 'of', numberOfPages)
+        onPageChanged={(page, pages) => {
+          console.log('Page:', page, '/', pages)
         }}
         onError={(err) => {
-          console.log('PDF render error:', err)
+          console.log('PDF error:', err)
           setError(true)
         }}
       />
@@ -161,4 +163,4 @@ console.log("teblur",route?.params);
   )
 }
 
-export default ViewLabReport
+export default TRF_Print

@@ -50,7 +50,7 @@ const PatientInformationList = () => {
     const animations = useRef({});
     const [labeNo, setLabNo] = useState(null)
     const [visitId, setVisitId] = useState(null)
-    const [puhid,setPUhid] = useState(null)
+    const [puhid, setPUhid] = useState(null)
 
     const fetchInvestigation = useCallback(async (payloadData) => {
         try {
@@ -333,7 +333,7 @@ const PatientInformationList = () => {
                     onPress={() => toggleExpand(index)}
                     style={tw`flex-row items-start justify-between`}
                 >
-                    <View style={tw`flex-1 pr-3`}>
+                    <View style={tw`flex-1 `}>
                         {barcodeValue ? (
                             <View style={tw`mb-2  flex flex-row justify-between`}>
 
@@ -342,7 +342,7 @@ const PatientInformationList = () => {
                                     format="CODE128"
                                     width={Platform.OS === 'ios' ? 1.5 : 1.2}
                                     maxWidth={Math.min(200, width - 160)}
-                                    height={Platform.OS === 'ios' ? 28 : 24}
+                                    height={Platform.OS === 'ios' ? 24 : 20}
                                     lineColor={theme === 'dark' ? '#e5ebf1' : '#848994'}
                                     background="transparent"
                                     text={barcodeValue}
@@ -365,11 +365,11 @@ const PatientInformationList = () => {
                                 <View style={tw`flex-row items-center mb-1`}>
                                     <FontAwesome5
                                         name="user-circle"
-                                        size={16}
+                                        size={14}
                                         color={themed.chevronColor}
                                     />
                                     <Text
-                                        style={[themed.listItemText, tw`text-base font-bold ml-2`]}
+                                        style={[themed.listItemText, tw`text-sm font-semibold ml-2`]}
                                         numberOfLines={1}
                                     >
                                         {item?.PatientName || '-'}
@@ -383,7 +383,7 @@ const PatientInformationList = () => {
                                         color={themed.chevronColor}
                                     />
                                     <Text
-                                        style={[themed.listItemText, tw`text-sm font-semibold ml-1`]}
+                                        style={[themed.listItemText, tw`text-xs font-semibold ml-1`]}
                                     >
                                         {item?.UHID || '-'}
                                     </Text>
@@ -537,13 +537,17 @@ const PatientInformationList = () => {
                             </TouchableOpacity>
                         </View>
                         <View style={tw`felx flex-row justify-between gap-2 mt-2`}>
-                            <TouchableOpacity style={[themed.searchButton, tw`flex-1`]}>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('LABReceipts',{item})}
+                                style={[themed.searchButton, tw`flex-1`]}>
                                 <View style={tw`flex flex-row justify-between items-center gap-2`}>
                                     <Text style={[themed.searchButtonText]}>Reciepts</Text>
                                     <Feather name="printer" size={16} color={themed.iconMuted} />
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[themed.searchButton, tw`flex-1`]}>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('TRF_Print', { item })}
+                                style={[themed.searchButton, tw`flex-1`]}>
                                 <View style={tw`flex flex-row justify-between items-center gap-2`}>
                                     <Text style={[themed.searchButtonText]}>TRF Print</Text>
                                     <Feather name="printer" size={16} color={themed.iconMuted} />
@@ -672,21 +676,21 @@ const PatientInformationList = () => {
                     <TouchableOpacity
                         style={tw`flex-1`}
                         activeOpacity={1}
-                        onPress={()=>setViewAllUpdateTestModal(false)}
+                        onPress={() => setViewAllUpdateTestModal(false)}
                     />
                     <Animated.View
                         style={[
                             themed.modalCard,
                             tw`rounded-t-2xl p-3 h-[80%]`,]}
                     >
-                        
+
 
                         <ViewUpdateAllTestDetails
                             visitId={visitId}
                             labNo={labeNo}
                             puhid={puhid}
-                            onClose={()=>setViewAllUpdateTestModal(false)}
-                            
+                            onClose={() => setViewAllUpdateTestModal(false)}
+
                         />
                     </Animated.View>
                 </View>

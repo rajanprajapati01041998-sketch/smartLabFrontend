@@ -278,120 +278,121 @@ const PatientInformation = () => {
         contentContainerStyle={tw`p-4`}
       >
         <CenterInfo condition={'false'} />
-        <Text style={themed.inputLabel}>UHID</Text>
-        <TextInput
-          value={form.uhid}
-          onChangeText={(v) => handleChange('uhid', v)}
-          placeholder="Enter UHID"
-          style={[themed.inputBox, themed.inputText, tw`px-2`]}
-          placeholderTextColor={themed.inputPlaceholder}
-        />
-
-        <View style={tw`mt-2`}>
-          <Text style={themed.inputLabel}>Patient Name</Text>
+        <View style={[themed.border, themed.cardPadding,themed.sectionCard]}>
+          <Text style={themed.inputLabel}>UHID</Text>
           <TextInput
-            maxLength={20}
-            value={form.patientName}
-            onChangeText={(v) => handleChange('patientName', v)}
-            placeholder="Enter Patient Name"
+            value={form.uhid}
+            onChangeText={(v) => handleChange('uhid', v)}
+            placeholder="Enter UHID"
             style={[themed.inputBox, themed.inputText, tw`px-2`]}
             placeholderTextColor={themed.inputPlaceholder}
           />
-        </View>
 
-        <View style={tw`flex-row mt-2`}>
-          <View style={tw`flex-1 mr-2`}>
-            <Text style={themed.inputLabel}>Lab No</Text>
+          <View style={tw`mt-2`}>
+            <Text style={themed.inputLabel}>Patient Name</Text>
             <TextInput
-              value={form.labNo}
-              maxLength={10}
-              onChangeText={(v) => handleChange('labNo', v)}
-              placeholder="Enter Lab No"
+              maxLength={20}
+              value={form.patientName}
+              onChangeText={(v) => handleChange('patientName', v)}
+              placeholder="Enter Patient Name"
               style={[themed.inputBox, themed.inputText, tw`px-2`]}
               placeholderTextColor={themed.inputPlaceholder}
             />
           </View>
 
-          <View style={tw`flex-1 ml-2`}>
-            <Text style={themed.inputLabel}>Barcode</Text>
-            <TextInput
-              maxLength={10}
-              value={form.barCode}
-              onChangeText={(v) => handleChange('barCode', v)}
-              placeholder="Enter Barcode"
-              style={[themed.inputBox, themed.inputText, tw`px-2`]}
-              placeholderTextColor={themed.inputPlaceholder}
-            />
-          </View>
-        </View>
+          <View style={tw`flex-row mt-2`}>
+            <View style={tw`flex-1 mr-2`}>
+              <Text style={themed.inputLabel}>Lab No</Text>
+              <TextInput
+                value={form.labNo}
+                maxLength={10}
+                onChangeText={(v) => handleChange('labNo', v)}
+                placeholder="Enter Lab No"
+                style={[themed.inputBox, themed.inputText, tw`px-2`]}
+                placeholderTextColor={themed.inputPlaceholder}
+              />
+            </View>
 
-        <View style={tw`flex-row gap-3 mb-3 mt-2`}>
+            <View style={tw`flex-1 ml-2`}>
+              <Text style={themed.inputLabel}>Barcode</Text>
+              <TextInput
+                maxLength={10}
+                value={form.barCode}
+                onChangeText={(v) => handleChange('barCode', v)}
+                placeholder="Enter Barcode"
+                style={[themed.inputBox, themed.inputText, tw`px-2`]}
+                placeholderTextColor={themed.inputPlaceholder}
+              />
+            </View>
+          </View>
+
+          <View style={tw`flex-row gap-3 mb-3 mt-2`}>
+            <View style={themed.inputContainer}>
+              <Text style={themed.inputLabel}>From Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowFromDatePicker(true)}
+                style={[
+                  themed.inputBox,
+                  tw`flex-row justify-between items-center px-2`,
+                ]}
+              >
+                <Text style={themed.inputText}>{form.fromDate}</Text>
+                <MaterialIcons
+                  name="calendar-today"
+                  size={20}
+                  color={themed.chevronColor}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={themed.inputContainer}>
+              <Text style={themed.inputLabel}>To Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowToDatePicker(true)}
+                style={[
+                  themed.inputBox,
+                  tw`flex-row justify-between items-center px-2`,
+                ]}
+              >
+                <Text style={themed.inputText}>{form.toDate}</Text>
+                <MaterialIcons
+                  name="calendar-today"
+                  size={20}
+                  color={themed.chevronColor}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={themed.inputContainer}>
-            <Text style={themed.inputLabel}>From Date</Text>
+            <View style={tw`flex-row items-center`}>
+              <Text style={themed.inputLabel}>Client/Panel</Text>
+              <Text style={tw`text-red-500 text-base ml-1`}>*</Text>
+              <Text style={[themed.transactionLabel, tw`ml-1`]}>
+                ({selectedClient?.length || 0} selected)
+              </Text>
+            </View>
+
             <TouchableOpacity
-              onPress={() => setShowFromDatePicker(true)}
+              onPress={openModal}
               style={[
+                styles.dropDownButton,
                 themed.inputBox,
-                tw`flex-row justify-between items-center px-2`,
+                tw`flex-row justify-between items-center`,
               ]}
             >
-              <Text style={themed.inputText}>{form.fromDate}</Text>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color={themed.chevronColor}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={themed.inputContainer}>
-            <Text style={themed.inputLabel}>To Date</Text>
-            <TouchableOpacity
-              onPress={() => setShowToDatePicker(true)}
-              style={[
-                themed.inputBox,
-                tw`flex-row justify-between items-center px-2`,
-              ]}
-            >
-              <Text style={themed.inputText}>{form.toDate}</Text>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color={themed.chevronColor}
-              />
+              <Text numberOfLines={1} style={[themed.inputText, tw`flex-1`]}>
+                {selectedClient?.length > 0
+                  ? `${selectedClient[0].BranchName}${selectedClient.length > 1
+                    ? ` +${selectedClient.length - 1}`
+                    : ''
+                  }`
+                  : 'Select Client'}
+              </Text>
+              <Icon name="chevron-down" size={18} color={themed.chevronColor} />
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={themed.inputContainer}>
-          <View style={tw`flex-row items-center`}>
-            <Text style={themed.inputLabel}>Client/Panel</Text>
-            <Text style={tw`text-red-500 text-base ml-1`}>*</Text>
-            <Text style={[themed.transactionLabel, tw`ml-1`]}>
-              ({selectedClient?.length || 0} selected)
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={openModal}
-            style={[
-              styles.dropDownButton,
-              themed.inputBox,
-              tw`flex-row justify-between items-center`,
-            ]}
-          >
-            <Text numberOfLines={1} style={[themed.inputText, tw`flex-1`]}>
-              {selectedClient?.length > 0
-                ? `${selectedClient[0].BranchName}${selectedClient.length > 1
-                  ? ` +${selectedClient.length - 1}`
-                  : ''
-                }`
-                : 'Select Client'}
-            </Text>
-            <Icon name="chevron-down" size={18} color={themed.chevronColor} />
-          </TouchableOpacity>
-        </View>
-
         <TouchableOpacity
           onPress={handleSearch}
           style={[themed.searchButton, tw`mt-3`]}
@@ -461,7 +462,7 @@ const PatientInformation = () => {
         ) : null}
       </ScrollView>
 
-      
+
 
       {showFromDatePicker && (
         <DateTimePicker

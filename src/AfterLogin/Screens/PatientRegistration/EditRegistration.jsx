@@ -466,7 +466,7 @@ const EditRegistration = () => {
             onPress={() => setServoceItemModal(true)}
             style={[themed.searchButton, tw`mb-3`]}
           >
-            <Text style={[themed.inputText]}>Add New Test</Text>
+            <Text style={[themed.saveButtonText]}>Add New Test</Text>
           </TouchableOpacity>
 
           {hasNewTests ? (

@@ -188,7 +188,7 @@ export const getThemeStyles = (theme) => {
     inputText: tw.style(
       isDark ? 'text-white' : 'text-gray-800'
     ),
-
+   
     inputPlaceholder: '#9CA3AF',
 
     // List items
@@ -357,7 +357,7 @@ export const getThemeStyles = (theme) => {
     ),
 
     // Common colors
-    iconMuted: isDark ? '#c9cbce' : '#6B7280',
+    iconMuted: isDark ? '#f4f6f8' : '#ccced2',
     chevronColor: isDark ? '#D1D5DB' : '#6B7280',
 
 

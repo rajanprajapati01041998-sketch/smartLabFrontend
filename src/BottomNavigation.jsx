@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
-import DashboardDrawer from './DashboardDrawer';
+import DashboardStack from './DashboardStack';
 import HelpDeskStack from './HelpDeskStack';
 import RegistrationStack from './RegistrationStack';
 
@@ -29,7 +29,9 @@ const HIDE_TABS_BY_TAB = {
     'SearchPatient',
     'PatientInformation',
     'PatientInformationList',
-    'EditRegistration'
+    'EditRegistration',
+    'TRF_Print',
+    'LABReceipts'
   ]),
   Registration: new Set(['PatientInformation']),
   HelpDesk: new Set([
@@ -39,7 +41,9 @@ const HIDE_TABS_BY_TAB = {
     'DashboardPaymentHistoryDetails',
     'ViewTebularReport',
     'PatientInformationList',
-    'EditRegistration'
+    'EditRegistration',
+    'TRF_Print',
+    'LABReceipts'
   ]),
 };
 
@@ -144,7 +148,7 @@ export default function BottomTabNavigation() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardDrawer}
+        component={DashboardStack}
       />
       <Tab.Screen
         name="Registration"

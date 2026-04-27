@@ -1,7 +1,15 @@
-import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import tw from 'twrnc';
+
 import { useTheme } from '../Authorization/ThemeContext';
 
 // Screens
@@ -14,129 +22,249 @@ import DashboardPayment from './AfterLogin/Screens/DashboardData/DashboardPaymen
 import DashboardPaymentHistoryDetails from './AfterLogin/Screens/DashboardData/DashboardPaymentHistoryDetails';
 import PatientInformationList from './AfterLogin/Screens/PatientRegistration/PatientInformationList';
 import EditRegistration from './AfterLogin/Screens/PatientRegistration/EditRegistration';
+import TRF_Print from './AfterLogin/Screens/PatientRegistration/TRF_Print';
+import LABReceipts from './AfterLogin/Screens/PatientRegistration/LabReceipts';
 
 const Stack = createNativeStackNavigator();
 
-export default function DashboardStack() {
-    const { colors } = useTheme();
+const HeaderRightMenu = ({ navigation }) => {
+  const { colors, theme, setThemeMode } = useTheme();
+  const [visible, setVisible] = useState(false);
 
-    return (
-        <Stack.Navigator
-            screenOptions={() => ({
-                headerStyle: { backgroundColor: colors.surface },
-                headerTintColor: colors.text,
-                headerTitleStyle: { color: colors.text },
-                headerShadowVisible: false,
-                headerShown: true,
-                headerBackVisible: true,
-                headerBackTitleVisible: false,
-                headerBackButtonDisplayMode: 'minimal',
-                headerBackTitle: '',
-                headerTitleAlign: 'center',
-                contentStyle: { backgroundColor: colors.background },
-            })}
+  const changeTheme = async mode => {
+    setVisible(false);
+
+    // ✅ Use your ThemeContext function name here
+    // If your context uses toggleTheme instead, replace this line.
+    if (setThemeMode) {
+      await setThemeMode(mode);
+    }
+  };
+
+  return (
+    <View style={tw`flex-row items-center  gap-2`}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Profile')}
+        activeOpacity={0.7}
+        style={tw`mr-2`}
+      >
+        <MaterialCommunityIcons
+          name="account-circle"
+          size={30}
+          color={colors.text}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => setVisible(true)}
+        activeOpacity={0.7}
+        style={tw`p-1`}
+      >
+        <MaterialCommunityIcons
+          name="dots-vertical"
+          size={25}
+          color={colors.text}
+        />
+      </TouchableOpacity>
+
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <Pressable
+          onPress={() => setVisible(false)}
+          style={tw`flex-1`}
         >
+          <View
+            style={[
+              tw`absolute top-12 right-3 w-44 rounded-2xl p-2 shadow-lg`,
+              {
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                tw`px-3 py-2 text-xs font-bold`,
+                { color: colors.text, opacity: 0.55 },
+              ]}
+            >
+              Appearance
+            </Text>
 
-            {/* Dashboard */}
-            <Stack.Screen
-                name="DashboardHome"
-                component={LabDashboard}
-                options={({ navigation }) => ({
-                    headerTitle: "Dashboard",
-                    headerRight: () => (
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('Profile')}
-                            style={{ marginRight: 15 }}
-                        >
-                            <MaterialCommunityIcons
-                                name="account-circle"
-                                size={28}
-                                color={colors.text}
-                            />
-                        </TouchableOpacity>
-                    ),
-                    headerLeft: () => (
-                        <TouchableOpacity
-                            onPress={() => {
-                                const parent = navigation.getParent?.();
-                                if (parent?.openDrawer) parent.openDrawer();
-                                else if (navigation.openDrawer) navigation.openDrawer();
-                            }}
-                            style={{ marginRight: 15 }}
-                        >
-                            <MaterialCommunityIcons
-                                name="menu"
-                                size={28}
-                                color={colors.text}
-                            />
-                        </TouchableOpacity>
-                    ),
-                   
-                })}
-            />
+            <TouchableOpacity
+              onPress={() => changeTheme('light')}
+              style={[
+                tw`flex-row items-center px-3 py-3 rounded-xl`,
+                {
+                  backgroundColor:
+                    theme === 'light' ? 'rgba(37,99,235,0.12)' : 'transparent',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="white-balance-sunny"
+                size={21}
+                color={theme === 'light' ? '#2563eb' : colors.text}
+              />
+              <Text
+                style={[
+                  tw`ml-3 text-sm font-semibold`,
+                  { color: theme === 'light' ? '#2563eb' : colors.text },
+                ]}
+              >
+                Light Mode
+              </Text>
+            </TouchableOpacity>
 
-            {/* Registration */}
-            <Stack.Screen
-                name="Registration"
-                component={Registration}
-                options={{
-                    title: 'Patient Registration',
-                }}
-            />
+            <TouchableOpacity
+              onPress={() => changeTheme('dark')}
+              style={[
+                tw`flex-row items-center px-3 py-3 rounded-xl mt-1`,
+                {
+                  backgroundColor:
+                    theme === 'dark' ? 'rgba(37,99,235,0.12)' : 'transparent',
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="moon-waning-crescent"
+                size={21}
+                color={theme === 'dark' ? '#2563eb' : colors.text}
+              />
+              <Text
+                style={[
+                  tw`ml-3 text-sm font-semibold`,
+                  { color: theme === 'dark' ? '#2563eb' : colors.text },
+                ]}
+              >
+                Dark Mode
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+};
 
-            <Stack.Screen
-                name="PatientInformation"
-                component={PatientInformation}
-                options={{ title: 'Patient Information' }}
-            />
-            <Stack.Screen
-                name="PatientInformationList"
-                component={PatientInformationList}
-                options={{ title: 'All Patient' }}
-            />
-            <Stack.Screen
-                name="EditRegistration"
-                component={EditRegistration}
-                options={{ title: 'Patient Details' }}
-            />
+export default function DashboardStack() {
+  const { colors } = useTheme();
 
-            {/* Login History */}
-            <Stack.Screen
-                name="UserLoginHistory"
-                component={UserLoginHistory}
-                options={{ title: 'Login History' }}
-            />
+  const openDrawer = navigation => {
+    let parent = navigation.getParent?.();
 
-            {/* Profile */}
-            <Stack.Screen
-                name="Profile"
-                component={Profile}
-                options={{
-                    title: 'My Profile',
-                    headerShown: true,
-                    headerStyle: { backgroundColor: colors.surface },
-                    headerTintColor: colors.text,
-                    headerTitleStyle: { color: colors.text },
-                    headerShadowVisible: false,
-                }}
-            />
-            <Stack.Screen
-                name="DashboardPayment"
-                component={DashboardPayment}
-                options={{
-                    title: 'Payment',
-                    headerShown: true,
-                }}
-            />
-            <Stack.Screen
-                name="DashboardPaymentHistoryDetails"
-                component={DashboardPaymentHistoryDetails}
-                options={{
-                    title: 'History',
-                    headerShown: true,
-                }}
-            />
+    while (parent && !parent.openDrawer) {
+      parent = parent.getParent?.();
+    }
 
-        </Stack.Navigator>
-    );
+    if (parent?.openDrawer) parent.openDrawer();
+    else if (navigation.openDrawer) navigation.openDrawer();
+  };
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        headerShadowVisible: false,
+        headerShown: true,
+        headerBackVisible: true,
+        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
+        headerBackTitle: '',
+        headerTitleAlign: 'center',
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <Stack.Screen
+        name="DashboardHome"
+        component={LabDashboard}
+        options={({ navigation }) => ({
+          headerTitle: 'Dashboard',
+          headerRight: () => <HeaderRightMenu navigation={navigation} />,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => openDrawer(navigation)}
+              style={{ marginLeft: 12 }}
+            >
+              <MaterialCommunityIcons
+                name="menu"
+                size={28}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+
+      <Stack.Screen
+        name="Registration"
+        component={Registration}
+        options={{ title: 'Patient Registration' }}
+      />
+
+      <Stack.Screen
+        name="PatientInformation"
+        component={PatientInformation}
+        options={{ title: 'Patient Information' }}
+      />
+
+      <Stack.Screen
+        name="PatientInformationList"
+        component={PatientInformationList}
+        options={{ title: 'All Patient' }}
+      />
+
+      <Stack.Screen
+        name="EditRegistration"
+        component={EditRegistration}
+        options={{ title: 'Patient Details' }}
+      />
+
+      <Stack.Screen
+        name="TRF_Print"
+        component={TRF_Print}
+        options={{ title: 'Test Details' }}
+      />
+
+      <Stack.Screen
+        name="LABReceipts"
+        component={LABReceipts}
+        options={{ title: 'Receipts' }}
+      />
+
+      <Stack.Screen
+        name="UserLoginHistory"
+        component={UserLoginHistory}
+        options={{ title: 'Login History' }}
+      />
+
+      <Stack.Screen
+        name="Profile"
+        component={Profile}
+        options={{
+          title: 'My Profile',
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="DashboardPayment"
+        component={DashboardPayment}
+        options={{ title: 'Payment' }}
+      />
+
+      <Stack.Screen
+        name="DashboardPaymentHistoryDetails"
+        component={DashboardPaymentHistoryDetails}
+        options={{ title: 'History' }}
+      />
+    </Stack.Navigator>
+  );
 }

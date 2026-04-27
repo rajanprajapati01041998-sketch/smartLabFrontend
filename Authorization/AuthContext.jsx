@@ -1,10 +1,10 @@
+// context/AuthContext.js (Updated)
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDeviceInfo } from '../src/utils/deviceInfo';
 import { logoutUser } from '../src/utils/logoutService/logout';
 import { NetworkInfo } from 'react-native-network-info';
-
+import { useCustomAlert } from '../src/hooks/useCustomAlert'; // Import the hook
 
 const AuthContext = createContext();
 
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [hosId, setHosId] = useState(1)
   const [patientData, setPatientData] = useState(null)
   const [userId, setUserId] = useState(null)
-  const [mainBranchId,setMainBranchId] = useState(1)
+  const [mainBranchId, setMainBranchId] = useState(1)
   const [allBranchInfo, setAllBranchInfo] = useState([])
   const [deviceData, setDeviceData] = useState(null);
   const [sessionId, setSessionId] = useState(null)
@@ -29,12 +29,12 @@ export const AuthProvider = ({ children }) => {
   const [updateFlag, setUpdateFlag] = useState(0);
   const [addBarcode, setAddBarcode] = useState(false)
 
+  // Initialize custom alert hook
+  const { showCustomAlert, AlertComponent } = useCustomAlert();
+
   const triggerUpdate = () => {
     setUpdateFlag(prev => prev + 1);
   };
-
-  // console.log("updateg fleg",updateFlag)
-
 
   // Load stored auth data on app startup
   useEffect(() => {
@@ -44,10 +44,7 @@ export const AuthProvider = ({ children }) => {
     getLocalIP();
   }, []);
 
-
-  console.log("corpoteid",corporateId)
-
-
+  console.log("corpoteid", corporateId)
 
   const getLocalIP = async () => {
     try {
@@ -61,8 +58,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
-
   const loadDeviceInfo = async () => {
     const info = await getDeviceInfo();
     setDeviceData(info);
@@ -71,29 +66,17 @@ export const AuthProvider = ({ children }) => {
   const getBranchInfo = async () => {
     try {
       const data = await AsyncStorage.getItem('AllBranch');
-
       if (data) {
         const parsedData = JSON.parse(data);
         setAllBranchInfo(parsedData);
-
-        // ✅ default select first branch
         if (parsedData.length > 0) {
           const defaultBranch = parsedData[0];
-          // setSelectedItem(defaultBranch);
-          // getrateListPanel(defaultBranch.branchId);
         }
       }
     } catch (error) {
       console.log("Error reading branches", error);
     }
   };
-
-
-
-
-
-
-
 
   const loadStoredData = async () => {
     try {
@@ -112,7 +95,6 @@ export const AuthProvider = ({ children }) => {
         setUserId(parsedUser?.user?.id)
         setSessionId(parsedUser?.sessionId)
       }
-
     } catch (error) {
       console.log('Error loading auth data:', error);
     } finally {
@@ -122,7 +104,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (token, userInfo) => {
     try {
-      // Store in AsyncStorage  
       console.log("token", token)
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
@@ -137,71 +118,89 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    Alert.alert(
-      "Logout Confirmation",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => console.log("Logout Cancelled"),
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('token');
-              await AsyncStorage.removeItem('userInfo');
-              await logoutUser(sessionId)
-              setToken(null);
-              setUserData({});
-              setUser(null);
-              setUserId(null);
-              setCorporateId(null)
-              setSessionId(null)
-              setAllBranchInfo(null)
-              console.log("User Logged Out");
-            } catch (error) {
-              console.log('Error during logout:', error);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    showCustomAlert({
+      title: "Logout Confirmation",
+      message: "Are you sure you want to logout? You will need to login again to access your account.",
+      confirmText: "Logout",
+      cancelText: "Cancel",
+      type: "warning",
+      onCancel: () => {
+        console.log('Logout Cancelled');
+      },
+      onConfirm: async () => {
+        try {
+          // Show loading indicator if needed
+          console.log('Logging out...');
+          
+          // Clear AsyncStorage
+          await AsyncStorage.removeItem('token');
+          await AsyncStorage.removeItem('userInfo');
+          
+          // Call logout API if sessionId exists
+          if (sessionId) {
+            await logoutUser(sessionId);
+          }
+          
+          // Clear all states
+          setToken(null);
+          setUserData({});
+          setUser(null);
+          setUserId(null);
+          setCorporateId(null);
+          setSessionId(null);
+          setAllBranchInfo(null);
+          setLoginBranchId(null);
+          setCenterLoginBranchId(null);
+          
+          console.log('User Logged Out Successfully');
+        } catch (error) {
+          console.log('Error during logout:', error);
+          
+          // Show error alert if logout fails
+          showCustomAlert({
+            title: "Logout Failed",
+            message: "An error occurred while logging out. Please try again.",
+            confirmText: "OK",
+            cancelText: null,
+            type: "error",
+          });
+        }
+      },
+    });
   };
 
-
   return (
-    <AuthContext.Provider
-      value={{
-        triggerUpdate, updateFlag,
-        user, userData,
-        isLoading, login,
-        logout,
-        token,
-        setToken,
-        setUserData,
-        ipAddress,
-        serviceItem, setServiceItem,
-        selectedDoctor, setSelectedDoctor,
-        corporateId, setCorporateId,
-        patientData, setPatientData,
-        userId, setUserId,
-        mainBranchId,setMainBranchId,
-        loginBranchId, setLoginBranchId,
-        allBranchInfo, setAllBranchInfo,
-        deviceData, setDeviceData, loadDeviceInfo,
-        sessionId, setSessionId,
-        centerLoginBranchId, setCenterLoginBranchId,
-        hosId, setHosId,
-        addBarcode, setAddBarcode
-
-      }}
-    >
-      {!isLoading && children}
-    </AuthContext.Provider>
+    <>
+      <AuthContext.Provider
+        value={{
+          triggerUpdate, updateFlag,
+          user, userData,
+          isLoading, login,
+          logout,
+          token,
+          setToken,
+          setUserData,
+          ipAddress,
+          serviceItem, setServiceItem,
+          selectedDoctor, setSelectedDoctor,
+          corporateId, setCorporateId,
+          patientData, setPatientData,
+          userId, setUserId,
+          mainBranchId, setMainBranchId,
+          loginBranchId, setLoginBranchId,
+          allBranchInfo, setAllBranchInfo,
+          deviceData, setDeviceData, loadDeviceInfo,
+          sessionId, setSessionId,
+          centerLoginBranchId, setCenterLoginBranchId,
+          hosId, setHosId,
+          addBarcode, setAddBarcode
+        }}
+      >
+        {!isLoading && children}
+      </AuthContext.Provider>
+      {/* Render the AlertComponent here */}
+      <AlertComponent />
+    </>
   );
 }
 

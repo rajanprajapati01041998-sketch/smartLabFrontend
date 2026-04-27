@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { useAuth } from './Authorization/AuthContext';
-import BottomTabNavigation from './src/BottomNavigation';
+import DashboardDrawer from './src/DashboardDrawer';
 import LoginScreen from './src/Login';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, PermissionsAndroid, Platform } from 'react-native';
@@ -54,7 +54,7 @@ export default function App() {
             },
           }}
         >
-          {token ? <BottomTabNavigation /> : <LoginScreen />}
+          {token ? <DashboardDrawer /> : <LoginScreen />}
         </NavigationContainer>
       </ResponsiveProvider>
     </SafeAreaProvider>
