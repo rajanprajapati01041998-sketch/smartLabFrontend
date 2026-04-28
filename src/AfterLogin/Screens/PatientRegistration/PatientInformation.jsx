@@ -397,7 +397,7 @@ const PatientInformation = () => {
           onPress={handleSearch}
           style={[themed.searchButton, tw`mt-3`]}
           activeOpacity={0.8}
-        >
+         >
           <Feather name="search" size={16} color="#fff" />
           <Text style={[themed.searchButtonText, tw`ml-2`]}>Search</Text>
         </TouchableOpacity>

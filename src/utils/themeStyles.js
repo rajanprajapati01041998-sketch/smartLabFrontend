@@ -13,9 +13,9 @@ export const getThemeStyles = (theme) => {
 
     childScreen: tw.style(
       'flex-1',
-      isDark ? 'bg-gray-800' : ''
+      isDark ? 'bg-gray-800' : 'bg-white'
     ),
-    
+
     labelText: tw.style(
       'text-md font-bold',
       isDark ? 'text-gray-400' : 'text-gray-500'
@@ -58,10 +58,7 @@ export const getThemeStyles = (theme) => {
     cardPadding: tw.style('p-4'),
 
     cardCompact: tw.style('p-2'),
-    addButton: tw.style(
-      'p-2 rounded-lg w-12',
-      isDark ? 'bg-blue-600' : 'bg-blue-500'
-    ),
+   
     checkbox: {
       margin: 0,
       padding: 0,
@@ -87,6 +84,15 @@ export const getThemeStyles = (theme) => {
     sectionHeaderText: tw.style(
       'text-xs font-semibold uppercase tracking-wide',
       isDark ? 'text-gray-300' : 'text-gray-600'
+    ),
+
+    addButton: tw.style(
+      'flex-row gap-1 items-center px-3 py-2.5 rounded-lg',
+      isDark ? 'bg-blue-600' : 'bg-blue-500'
+    ),
+
+    addButtonText: tw.style(
+       isDark ? 'text-white' : 'text-white'
     ),
 
     mutedText: tw.style(
@@ -194,7 +200,7 @@ export const getThemeStyles = (theme) => {
     inputText: tw.style(
       isDark ? 'text-white' : 'text-gray-800'
     ),
-   
+
     inputPlaceholder: '#9CA3AF',
 
     // List items
@@ -419,7 +425,7 @@ export const getThemeStyles = (theme) => {
 
     // search button 
     searchButton: tw.style(
-      'flex-row items-center justify-center py-2.5 px-7 rounded-lg',
+      'flex-row items-center justify-center py-3.5 px-7 rounded-lg',
       isDark ? 'bg-blue-600' : 'bg-blue-500'
     ),
 

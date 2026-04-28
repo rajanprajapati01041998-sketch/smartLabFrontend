@@ -70,6 +70,8 @@ const SearchSelectServiceItem = ({
           }));
 
         setDetailsList(formatted);
+
+        console.log("barcode service",formatted)
       } catch (error) {
         if (!cancelled) console.error('Error:', error);
       } finally {

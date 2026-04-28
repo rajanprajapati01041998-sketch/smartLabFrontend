@@ -6,7 +6,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   referLabList,
   searchInvestigation,
-  SearchGetInvestigationListDetails,
   allBankList,
   referDoctorList
 } from './services/doctorService';
@@ -1455,7 +1454,7 @@ const Registration = () => {
           transparent
           animationType="slide"
           onRequestClose={() => setBarcodeModalVisible(false)}
-        >
+         >
           <View style={[themed.modalOverlay]}>
             <TouchableWithoutFeedback onPress={() => setBarcodeModalVisible(false)}>
               <View style={tw`absolute inset-0`} />
@@ -1503,6 +1502,7 @@ const Registration = () => {
                   const id = s?.ServiceItemId;
                   const draft = id ? barcodeDraft?.[id] : null;
                   const isRemarkOpen = Boolean(id && remarkExpanded?.[id]);
+                    console.log(`Render Service ${idx + 1} 👉`, JSON.stringify(s, null, 2));
 
                   return (
                     <View
@@ -1511,6 +1511,7 @@ const Registration = () => {
                         tw`p-4 mb-4 rounded-xl `
                       ]}
                     >
+                      {console.log("service ",s)}
                       <Text style={[themed.inputText]}>
                         {s?.ServiceName || ''}
                       </Text>

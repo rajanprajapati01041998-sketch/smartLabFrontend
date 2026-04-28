@@ -4,6 +4,7 @@ import ListHelpDeskPatient from './AfterLogin/Screens/HelpDesk/ListHelpDeskPatie
 import ViewLabReport from './AfterLogin/Screens/HelpDesk/ViewLabReport';
 import ViewTebularReport from './AfterLogin/Screens/HelpDesk/ViewTebularReport';
 import { useTheme } from '../Authorization/ThemeContext';
+import BarcodeScannerScreen from './BarcodeScannerScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +58,15 @@ export default function HelpDeskStack() {
         options={{
           title: 'Report',
           headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="BarcodeScanner"
+        component={BarcodeScannerScreen}
+        options={{
+          headerShown: false,
+          presentation: 'modal',
         }}
       />
     </Stack.Navigator>

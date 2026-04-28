@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
   };
-
+console.log(corporateId)
   const logout = () => {
     showCustomAlert({
       title: "Logout Confirmation",

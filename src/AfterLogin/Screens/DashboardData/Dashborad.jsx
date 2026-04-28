@@ -279,15 +279,17 @@ const LabDashboard = () => {
               </Text>
             </View>
           </View>
-
           <TouchableOpacity
-            onPress={() => navigation.navigate('DashboardPayment')}
-            style={tw`bg-blue-500 px-4 py-2 rounded-lg flex-row items-center gap-2`}
+            style={themed.addButton}
             activeOpacity={0.8}
-          >
-            <Icon name="plus" size={18} color="#fff" />
-            <Text style={tw`text-white font-semibold text-sm`}>Add Money</Text>
+            onPress={() => navigation.navigate('DashboardPayment')}
+           >
+            <Icon name="plus-circle" size={18} color="#fff" />
+            <Text style={themed.addButtonText}>
+              Add Money
+            </Text>
           </TouchableOpacity>
+
         </View>
       </View>
 
@@ -429,7 +431,7 @@ const LabDashboard = () => {
                         activeOpacity={0.7}
                         onPress={() => toggleBranch(item)}
                         style={[themed.border, tw`flex flex-row p-2 mx-2 my-1 rounded-md`]}
-                       >
+                      >
                         <View style={tw`flex-row items-center flex-1`}>
 
                           {/* ICON */}

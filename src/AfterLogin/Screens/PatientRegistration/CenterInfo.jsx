@@ -301,7 +301,7 @@ const CenterInfo = ({ condition }) => {
                     setIsModalVisible(false);
                     setBranchSearch('');
                 }}
-            >
+             >
                 <TouchableWithoutFeedback
                     onPress={() => {
                         setIsModalVisible(false);
@@ -314,7 +314,7 @@ const CenterInfo = ({ condition }) => {
                         <TouchableWithoutFeedback onPress={() => { }}>
                             <View
                                 style={[
-                                    themed.childScreen,
+                                    themed.childScreen ,themed.border,
                                     tw`rounded-t-3xl p-4 max-h-[85%]`,
                                 ]}
                             >

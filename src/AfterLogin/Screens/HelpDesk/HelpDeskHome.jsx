@@ -387,7 +387,7 @@ const HelpDeskHome = () => {
         >
           <TouchableOpacity
             onPress={toggleFilter}
-            style={[styles.cardShadow,themed.card,themed.cardPadding,themed.childScreen,tw`flex-row justify-between items-center mb-3`]}
+            style={[styles.cardShadow, themed.card, themed.cardPadding, themed.childScreen, tw`flex-row justify-between items-center mb-3`]}
             activeOpacity={0.7}
           >
             <Text style={[themed.inputLabel, tw`font-medium`]}>Filter</Text>
@@ -422,7 +422,7 @@ const HelpDeskHome = () => {
             ]}
           >
             {showFilter && (
-               <View style={[styles.cardShadow, themed.card, themed.cardPadding]}>
+              <View style={[styles.cardShadow, themed.card, themed.cardPadding]}>
                 <View style={tw`flex-row gap-3 mb-3`}>
                   <View style={themed.inputContainer}>
                     <Text style={themed.inputLabel}>UHID</Text>
@@ -504,14 +504,14 @@ const HelpDeskHome = () => {
                   value={form.investigationName}
                   onChangeText={(t) => handleChange('investigationName', t)}
                   placeholder="Enter investigation name"
-                      style={[styles.inputBox, themed.inputBox, themed.inputText]}
+                  style={[styles.inputBox, themed.inputBox, themed.inputText]}
                   placeholderTextColor={themed.inputPlaceholder}
                 />
               </View>
 
               <View style={tw`flex-col gap-3 mb-3`}>
                 <View style={themed.inputContainer}>
-                  <Text style={[themed.inputLabel,tw`py-1`]}>Select Department</Text>
+                  <Text style={[themed.inputLabel, tw`py-1`]}>Select Department</Text>
                   <TouchableOpacity
                     onPress={() => openModal('department')}
                     style={[
@@ -560,17 +560,12 @@ const HelpDeskHome = () => {
 
           <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
             <TouchableOpacity
-              disabled={selectedClient.length === 0}
               onPress={handleSearch}
-              style={[
-                tw`py-3.5 rounded-md shadow-md mt-5`,
-                selectedClient.length === 0 ? tw`bg-gray-400` : tw`bg-blue-500`,
-              ]}
+              style={[themed.searchButton, tw`mt-3`]}
               activeOpacity={0.8}
             >
-              <Text style={tw`text-white text-center font-bold text-base`}>
-                Search Patients
-              </Text>
+              <Icon name="search" size={16} color="#fff" />
+              <Text style={[themed.searchButtonText, tw`ml-2`]}>Search</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
@@ -600,8 +595,8 @@ const HelpDeskHome = () => {
           transparent
           animationType="none"
           onRequestClose={() => closeModal('department')}
-         >
-          <View style={[themed.modalOverlay,tw``]}>
+        >
+          <View style={[themed.modalOverlay, tw``]}>
             <TouchableOpacity
               style={tw`flex-1`}
               activeOpacity={1}
@@ -623,7 +618,7 @@ const HelpDeskHome = () => {
                 },
               ]}
             >
-             
+
               <AllDepartMent
                 onClose={() => closeModal('department')}
                 onSelect={(item) => setSelectedDepartment(item)}
@@ -637,7 +632,7 @@ const HelpDeskHome = () => {
           transparent
           animationType="none"
           onRequestClose={() => closeModal('client')}
-         >
+        >
           <View style={tw`flex-1 bg-black/50`}>
             <TouchableOpacity
               style={tw`flex-1`}

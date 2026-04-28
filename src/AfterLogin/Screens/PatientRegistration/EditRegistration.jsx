@@ -27,7 +27,7 @@ const EditRegistration = () => {
   const { theme } = useTheme();
   const { showToast } = useToast();
   const themed = getThemeStyles(theme);
-  const { ipAddress, loginBranchId, userId } = useAuth();
+  const { ipAddress, loginBranchId, userId,corporateId } = useAuth();
 
   const [serviceItemModal, setServoceItemModal] = useState(false);
   const [basicInfoExpanded, setBasicInfoExpanded] = useState(false);
@@ -188,6 +188,7 @@ const EditRegistration = () => {
             IsUrgent: Number(service?.isUrgent) || 0,
             Barcode: service?.barcode || '',
             TestRemark: service?.testRemark || '',
+            CorporateId: Number(corporateId) || 0,
             isNewlyAdded: true,
           });
 
@@ -247,6 +248,8 @@ const EditRegistration = () => {
           isUrgent: Number(item?.IsUrgent || item?.isUrgent) || 0,
           barcode: item?.Barcode || item?.barcode || '',
           testRemark: item?.TestRemark || item?.testRemark || '',
+          corporateId: Number(corporateId) || 0,
+
         })),
       };
 

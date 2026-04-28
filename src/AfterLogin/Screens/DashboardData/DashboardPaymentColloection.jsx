@@ -29,12 +29,12 @@ const DashboardPaymentColloection = ({ selectedBranches }) => {
     <View>
       <View style={tw`flex-row justify-end py-1`}>
         <TouchableOpacity
-          style={tw`bg-blue-500 flex-row items-center px-4 py-2.5 rounded-lg`}
+          style={[themed.addButton]}
           activeOpacity={0.8}
           onPress={() => setModalVisible(true)}
         >
           <Icon name="plus-circle" size={18} color="#fff" />
-          <Text style={tw`text-white font-semibold text-sm ml-2`}>
+          <Text style={[themed.addButtonText]}>
             Add Fund
           </Text>
         </TouchableOpacity>

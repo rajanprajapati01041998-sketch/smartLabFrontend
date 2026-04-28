@@ -55,7 +55,7 @@ const ListHelpDeskPatient = () => {
   const { showToast } = useToast();
   const [downloadingId, setDownloadingId] = useState(null);
   const { loginBranchId, userId, mainBranchId } = useAuth();
-
+  const filterSlideAnim = useRef(new Animated.Value(1)).current;
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -68,6 +68,55 @@ const ListHelpDeskPatient = () => {
 
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
+
+  useEffect(() => {
+    const scanned = route?.params?.scannedBarcode;
+    if (!scanned) return;
+    setSearchText(String(scanned));
+    navigation.setParams({ scannedBarcode: undefined });
+  }, [navigation, route?.params?.scannedBarcode]);
+
+  const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const openFilterModal = () => {
+    setFilterModal(true);
+    filterSlideAnim.setValue(1);
+
+    Animated.timing(filterSlideAnim, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeFilterModal = () => {
+    Animated.timing(filterSlideAnim, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setFilterModal(false);
+    });
+  };
+
+  const onPressScan = async () => {
+    const ok = await requestCameraPermission();
+    if (!ok) {
+      Alert.alert('Camera permission', 'Please allow camera permission to scan barcode.');
+      return;
+    }
+    navigation.navigate('BarcodeScanner', { returnScreen: 'ListHelpDeskPatient' });
+  };
 
   const statusLegend = [
     { key: 'sample_pending', label: 'Sample Collection Pending', color: '#ef4444', bg: '#fee2e2', condition: (item) => !item.IsSampleCollected && !item.IsResultDone },
@@ -717,7 +766,7 @@ const ListHelpDeskPatient = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setFilterModal(true)}
+              onPress={openFilterModal}
               style={tw`flex-row items-center bg-blue-500 px-3 py-2 rounded-lg shadow-sm`}
             >
               <MaterialCommunityIcons name="filter-variant" size={18} color="white" />
@@ -754,6 +803,7 @@ const ListHelpDeskPatient = () => {
           <TouchableOpacity
             style={tw`bg-blue-500 px-4 min-h-[50px] rounded-xl flex-row items-center justify-center`}
             activeOpacity={0.7}
+            onPress={onPressScan}
           >
             <MaterialIcons name="qr-code-scanner" size={18} color="white" />
             <Text style={tw`text-white text-sm font-medium ml-2`}>Scan</Text>
@@ -904,83 +954,77 @@ const ListHelpDeskPatient = () => {
         }
       />
 
-      <Modal
-        visible={filterModal}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setFilterModal(false)}
-          style={themed.modalOverlay}
-        >
-          <View style={[themed.modalContainer, tw`rounded-t-2xl max-h-[80%]`]}>
-            <View style={[themed.globalDivider, tw`p-4 border-b flex-row justify-between items-center`]}>
-              <Text style={[themed.listItemText, tw`text-xl font-bold`]}>
-                Filter Patients
-              </Text>
-
-              <TouchableOpacity onPress={() => setFilterModal(false)}>
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={themed.chevronColor}
-                />
+      <Modal visible={filterModal} transparent animationType="fade" statusBarTranslucent onRequestClose={closeFilterModal} >
+        <View style={tw`flex-1 flex-row bg-black/50`}>
+          <TouchableOpacity activeOpacity={1} onPress={closeFilterModal} style={tw`flex-1`} />
+          <Animated.View
+            style={[
+              themed.modalContainer,
+              tw`h-full w-[60%] rounded-l-3xl rounded-r-none`,
+              {
+                transform: [{
+                  translateX: filterSlideAnim.interpolate({
+                    inputRange: [0, 1], outputRange: [0, 500],
+                  }),
+                },],
+              },]} >
+            <View style={[themed.globalDivider, tw`p-4 border-b flex-row justify-between items-center`,]}>
+              <Text style={[themed.listItemText, tw`text-lg font-bold`]}>  Filter Patients  </Text>
+              <TouchableOpacity onPress={closeFilterModal}>
+                <MaterialCommunityIcons name="close" size={24} color={themed.chevronColor} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={tw`p-4`} showsVerticalScrollIndicator={false}>
-              <Text style={[themed.listItemText, tw`text-base font-semibold mb-3`]}>
-                Status
-              </Text>
+            <ScrollView style={tw`flex-1 p-4`} showsVerticalScrollIndicator={false}>
+              <Text style={[themed.listItemText, tw`text-base font-semibold mb-3`]}> Status  </Text>
+              <View style={tw`gap-2 mb-6`}>
+                {statusLegend.map((status) => {
+                  const isSelected = selectedStatus === status.key;
 
-              <View style={tw`flex-row flex-wrap gap-2 mb-6`}>
-                {statusLegend.map((status) => (
-                  <TouchableOpacity
-                    key={status.key}
-                    onPress={() => setSelectedStatus(status.key)}
-                    style={[
-                      themed.chip,
-                      selectedStatus === status.key && { backgroundColor: status.color }
-                    ]}
-                  >
-                    <Text
+                  return (
+                    <TouchableOpacity
+                      key={status.key}
+                      onPress={() => setSelectedStatus(status.key)}
+                      activeOpacity={0.85}
                       style={[
-                        tw`text-sm font-medium`,
-                        selectedStatus === status.key
-                          ? themed.chipSelectedText
-                          : themed.listItemText
+                        tw`w-full flex-row items-center rounded-xl px-3 py-3 border`,
+                        {
+                          backgroundColor: isSelected ? status.color : status.bg,
+                          borderColor: status.color,
+                          borderWidth: isSelected ? 2 : 1,
+                        },
                       ]}
                     >
-                      {status.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <View style={[  tw`w-3 h-3 rounded-full mr-2`, {  backgroundColor: isSelected ? '#fff' : status.color, }, ]}/>
+                      <Text
+                        style={[ tw`text-sm font-semibold flex-1`, {  color: isSelected ? '#fff' : status.color, },]} >
+                        {status.label}
+                      </Text>
+                      {isSelected && (
+                        <MaterialCommunityIcons name="check-circle" size={18}color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </ScrollView>
 
-            <View style={[themed.transactionDivider, tw`p-4 border-t flex-row gap-3`]}>
+            <View style={[themed.transactionDivider, tw`p-4 border-t gap-3 flex flex-row`]}>
               <TouchableOpacity
                 onPress={clearFilters}
-                style={[themed.card, tw`flex-1 py-3 rounded-xl`]}
+                style={[themed.card, tw`py-3 rounded-xl w-[48%]`]}
               >
-                <Text style={[themed.listItemText, tw`text-center font-medium`]}>
-                  Clear All
-                </Text>
+                <Text style={[themed.listItemText, tw`text-center font-medium`]}> Clear All</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                onPress={() => setFilterModal(false)}
-                style={[themed.primaryButton, tw`flex-1`]}
+                onPress={closeFilterModal}
+                style={[themed.primaryButton, tw`w-[48%]`]}
               >
-                <Text style={themed.primaryButtonText}>
-                  Apply Filters
-                </Text>
+                <Text style={themed.primaryButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </TouchableOpacity>
+          </Animated.View>
+        </View>
       </Modal>
     </View>
   );
