@@ -33,16 +33,17 @@ import PaymentInfo from './PaymentInfo';
 import AddReferDoctor from './AddReferDoctor';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import { SelectList } from 'react-native-dropdown-select-list';
+import { getPatientInvestigation } from '../../../utils/patinetService.js/investigation';
+import { getFullLocation } from '../../../utils/patinetService.js/location';
 
 
-const Registration = () => {
+const RegistrationScreen = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode, hosId } = useAuth();
   const { showToast } = useToast()
   const { theme, colors } = useTheme();
   const themed = getThemeStyles(theme);
   const [error, setError] = useState(false)
-  const [title, setTitle] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -58,10 +59,6 @@ const Registration = () => {
   const [contactNumber, setContactNumber] = useState(null);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
-  const [district, setDistrict] = useState('');
-  const [city, setCity] = useState('');
   const [currentIpAddress, setCurrentIpAddress] = useState(ipAddress);
   const [medicalHistory, setMedicalHistory] = useState('');
   const [vistType, setVisitype] = useState("Clinic Visit");
@@ -74,7 +71,6 @@ const Registration = () => {
   const [discountAmount, setDiscountAmount] = useState(null);
   const [discountPercent, setDiscountPercent] = useState(0);
   const [paymentData, setPaymentData] = useState({})
-
   const [discountLastEdited, setDiscountLastEdited] = useState('percent');
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
   const [isOverPaid, setIsOverPaid] = useState(false);
@@ -100,7 +96,8 @@ const Registration = () => {
   const [fieldBoyModal, setFieldBoyModal] = useState(false);
   const [selectedFieldBoy, setSelectedFieldBoy] = useState(null);
   const [selectTitleModal, setSelectTitleModal] = useState(false)
-  const [selectedTitle, setSelectedTitle] = useState(null)
+  const [selectedTitle, setSelectedTitle] = useState("MR");
+  // const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
   const [responseSuccess, setResponseSuccess] = useState(false)
   const [selectedBank, setSelectedBank] = useState(null)
@@ -116,10 +113,17 @@ const Registration = () => {
   const [remarkExpanded, setRemarkExpanded] = useState({});
   const [sampleGroupExpanded, setSampleGroupExpanded] = useState({});
   const [groupBarcodeDraft, setGroupBarcodeDraft] = useState({});
+  const [pincodeResponse, setPincodeResponse] = useState([]);
+  const [pincode, setPincode] = useState("");
+  const [district, setDistrict] = useState(null);
+  const [state, setState] = useState(null);
+  const [city, setCity] = useState(null);
+  const [isCityModal, setIsCityModal] = useState(false);
+  const [country, setCountry] = useState("India");
 
   // console.log(patientData)
   useEffect(() => {
-    setTitle(patientData?.Title || "MR")
+    setSelectedTitle(patientData?.Title || "MR.");
     setFirstName(patientData?.FirstName || "")
     setGender(patientData?.Gender || "MALE")
     setAgeDays(patientData?.AgeDays || "")
@@ -130,6 +134,11 @@ const Registration = () => {
     setContactNumber(patientData?.ContactNumber)
     setDob(patientData?.DOB ? new Date(patientData.DOB) : null);
   }, [patientData])
+
+  useEffect(() => {
+    if (selectedTitle === "Mr") setGender("MALE");
+    if (["Mrs", "Miss"].includes(selectedTitle)) setGender("FEMALE");
+  }, [selectedTitle]);
 
   useEffect(() => {
     setGender("MALE")
@@ -159,7 +168,7 @@ const Registration = () => {
     setBankModal(false);
 
     // Basic Info
-    setTitle('');
+    // setTitle('');
     setFirstName('');
     setMiddleName('');
     setLastName('');
@@ -186,6 +195,7 @@ const Registration = () => {
     setState('');
     setDistrict('');
     setCity('');
+    setPincode('')
 
     // Medical
     setMedicalHistory('');
@@ -365,16 +375,17 @@ const Registration = () => {
     //   showToast('Enter Contact number', 'error');
     //   return;
     // }
+   
 
     const finalLoginBranchId = centerLoginBranchId || loginBranchId;
     setLoading(true)
     const payload = {
-      HospId: 1,
+      HospId: hosId,
       BranchId: finalLoginBranchId,
       LoginBranchId: finalLoginBranchId,
       CorporateId: corporateId,
 
-      Title: title,
+      Title:selectedTitle || "MR.",
       FirstName: firstName,
       MiddleName: middleName,
       LastName: lastName,
@@ -409,11 +420,11 @@ const Registration = () => {
       CountryId: 1,
       Country: country || "India",
       StateId: 1,
-      State: state,
-      DistrictId: 1,
-      District: district,
-      CityId: 1,
-      City: city,
+      State: state?.stateName||" ",
+      DistrictId: district?.districtCode||" ",
+      District: district?.districtName||" ",
+      CityId: city?.cityCode||" ",
+      City: city?.cityName||" ",
 
       UserId: userId,
       IpAddress: currentIpAddress,
@@ -446,7 +457,9 @@ const Registration = () => {
         }
       ]
     };
-          console.log(payload)
+    // console.log(payload)
+    // setLoading(false)
+    // return;
 
     // console.log("paymentData 👉", paymentData);
     // console.log("Payload 👉", JSON.stringify(payload, null, 2));
@@ -616,9 +629,6 @@ const Registration = () => {
     setNetAmount(roundedNet);
   }, [discountLastEdited, discountPercent, discountAmount, grossAmount]);
 
-  // Keep cash synced with net amount when cash is still in "auto" mode and
-  // user hasn't entered other payment modes. This prevents cases like:
-  // gross=7200, discount=200 => net=7000 but cash remains 7200 (balance becomes 0).
   useEffect(() => {
     const totalPaid = Object.values(paymentData || {}).reduce((sum, p) => sum + Number(p.amount || 0), 0);
     setIsOverPaid(totalPaid > (netAmount || 0));
@@ -789,6 +799,40 @@ const Registration = () => {
       setShowTimePicker(false);
     }
   };
+
+  const handleSearchPincode = async () => {
+    try {
+      if (!pincode || pincode.length !== 6) {
+        Alert.alert("Invalid", "Please enter valid 6 digit pincode");
+        return;
+      }
+
+      const response = await getFullLocation(pincode);
+
+      console.log("location", response?.data);
+
+      const locations = response?.data || [];
+      setPincodeResponse(locations);
+
+      if (locations.length > 0) {
+        const first = locations[0];
+        setCity(first);
+        setDistrict(first);
+        setState(first);
+        setCountry(first?.CountryName || "India");
+      } else {
+        setCity(null);
+        setDistrict(null);
+        setState(null);
+        Alert.alert("Not found", "No location found for this pincode");
+      }
+    } catch (error) {
+      console.log("location error", error);
+      Alert.alert("Error", error?.message || "Failed to fetch location");
+    }
+  };
+
+
 
   const GetReferedLabList = async () => {
     try {
@@ -1095,6 +1139,82 @@ const Registration = () => {
 
             />
           </View> */}
+          {/* <View style={tw`mt-2`}>
+            <Text style={themed.inputLabel}>Pincode</Text>
+            <View style={tw`flex-row items-center`}>
+
+              <TextInput
+                placeholder="Enter pincode"
+                value={pincode}
+                keyboardType="number-pad"
+                maxLength={6}
+                onChangeText={(text) => {
+                  const numericText = text.replace(/[^0-9]/g, '');
+                  if (numericText.length <= 6) {
+                    setPincode(numericText);
+                  }
+                }}
+                style={[themed.inputBox, themed.inputText, tw`flex-1 mr-2`]}
+                placeholderTextColor={themed.inputPlaceholder}
+              />
+              <TouchableOpacity
+                onPress={handleSearchPincode}
+                style={[themed.searchButton, tw`px-4 py-3`]}>
+                <Text style={themed.searchButtonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+          </View> */}
+
+          {pincodeResponse?.length > 0 && (
+            <View>
+              <Text style={[themed.labelText, tw`my-1`]}>City</Text>
+
+              <TouchableOpacity
+                onPress={() => setIsCityModal(true)}
+                style={[
+                  themed.inputBox,
+                  themed.inputText,
+                  tw`flex-row justify-between items-center`
+                ]}
+              >
+                <Text style={themed.inputText}>
+                  {city?.cityName || "Select City"}
+                </Text>
+
+                <Text style={themed.inputText}>▼</Text>
+              </TouchableOpacity>
+
+              <View style={tw`flex-row gap-2`}>
+                <View style={tw`flex-1`}>
+                  <Text style={[themed.labelText, tw`my-1`]}>District</Text>
+                  <TextInput
+                    value={district?.districtName || ""}
+                    editable={false}
+                    style={[themed.inputBox, themed.inputText]}
+                  />
+                </View>
+
+                <View style={tw`flex-1`}>
+                  <Text style={[themed.labelText, tw`my-1`]}>State</Text>
+                  <TextInput
+                    value={state?.stateName || ""}
+                    editable={false}
+                    style={[themed.inputBox, themed.inputText]}
+                  />
+                </View>
+              </View>
+
+              <View style={tw`mt-2`}>
+                <Text style={[themed.labelText, tw`my-1`]}>Country</Text>
+                <TextInput
+                  value={country || "India"}
+                  editable={false}
+                  style={[themed.inputBox, themed.inputText]}
+                />
+              </View>
+            </View>
+          )}
+
 
           {/* <View style={tw`mt-2`}>
             <Text style={themed.inputLabel}>Medical history</Text>
@@ -1566,7 +1686,7 @@ const Registration = () => {
           transparent
           animationType="slide"
           onRequestClose={() => setBarcodeModalVisible(false)}
-         >
+        >
           <View style={[themed.modalOverlay]}>
             <TouchableWithoutFeedback onPress={() => setBarcodeModalVisible(false)}>
               <View style={tw`absolute inset-0`} />
@@ -1998,7 +2118,10 @@ const Registration = () => {
         >
           <SelectTitle
             onClose={() => setSelectTitleModal(false)}
-            onSelectTitle={setSelectedTitle}
+            onSelectTitle={(item) => {
+              setSelectedTitle(item);
+              setSelectTitleModal(false);
+            }}
           />
         </BottomModal>
 
@@ -2033,9 +2156,67 @@ const Registration = () => {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+        {/* city modal */}
+        <Modal
+          visible={isCityModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setIsCityModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setIsCityModal(false)}>
+            <View style={tw`flex-1 bg-black/50 justify-end`}>
+
+              <TouchableWithoutFeedback>
+                <View style={[themed.childScreen, tw`rounded-t-3xl p-4 max-h-[80%]`]}>
+
+                  {/* Header */}
+                  <View style={tw`flex-row justify-between items-center mb-3`}>
+                    <Text style={[themed.inputText, tw`text-lg font-semibold`]}>
+                      Select City
+                    </Text>
+
+                    <TouchableOpacity onPress={() => setIsCityModal(false)}>
+                      <Text style={themed.chevronColor}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* City List */}
+                  <ScrollView>
+                    {pincodeResponse.map((item, index) => (
+                      <TouchableOpacity
+                        key={`${item.cityCode}-${index}`}
+                        onPress={() => {
+                          setCity(item);
+                          setDistrict(item);
+                          setState(item);
+                          setCountry("India");
+                          setIsCityModal(false);
+                        }}
+                        style={[
+                          themed.inputBox,
+                          tw`mb-2`,
+                          city?.cityCode === item.cityCode && tw`border-blue-500`
+                        ]}
+                      >
+                        <Text style={themed.inputText}>
+                          {item.cityName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                </View>
+              </TouchableWithoutFeedback>
+
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
 };
+
+const Registration = (props) => <RegistrationScreen {...props} />;
 
 export default Registration;

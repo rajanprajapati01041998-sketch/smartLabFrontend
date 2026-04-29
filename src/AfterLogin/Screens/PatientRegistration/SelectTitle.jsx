@@ -8,11 +8,11 @@ const SelectTitle = ({ onSelectTitle,onClose }) => {
   const [selected, setSelected] = useState("");
 
   const titles = [
-    { label: "Mr", icon: "male" },
-    { label: "Mrs", icon: "female" },
-    { label: "Miss", icon: "female" },
-    { label: "Ms", icon: "female" },
-    { label: "Dr", icon: "user-md" },
+    { label: "Mr.", icon: "male" },
+    { label: "Mrs.", icon: "female" },
+    { label: "Miss.", icon: "female" },
+    { label: "Ms.", icon: "female" },
+    { label: "Dr.", icon: "user-md" },
     { label: "Other", icon: "user" }
   ];
 

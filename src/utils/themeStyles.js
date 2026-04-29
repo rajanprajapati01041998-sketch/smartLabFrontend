@@ -370,7 +370,7 @@ export const getThemeStyles = (theme) => {
 
     // Common colors
     iconMuted: isDark ? '#f4f6f8' : '#ccced2',
-    chevronColor: isDark ? '#D1D5DB' : '#6B7280',
+    chevronColor: isDark ? '#f8f9fa' : '#6B7280',
 
 
     // for search input 
