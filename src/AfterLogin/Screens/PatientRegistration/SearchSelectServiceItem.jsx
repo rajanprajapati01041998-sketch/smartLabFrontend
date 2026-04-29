@@ -136,6 +136,24 @@ const SearchSelectServiceItem = ({
 
       const newServices = detailsList.map(item => {
         const existing = existingById.get(item.serviceItemId);
+        const sampleTypes = Array.isArray(item?.sampleTypes) ? item.sampleTypes : [];
+        const defaultSampleTypeObj =
+          sampleTypes.find(st => Number(st?.sampleTypeId) === Number(item?.defaultSampleTypeId)) ||
+          sampleTypes[0] ||
+          null;
+
+        const nextSampleTypeId =
+          existing?.SampleTypeId ??
+          existing?.sampleTypeId ??
+          item?.defaultSampleTypeId ??
+          defaultSampleTypeObj?.sampleTypeId ??
+          null;
+
+        const nextSampleType =
+          existing?.SampleType ??
+          existing?.sampleType ??
+          (defaultSampleTypeObj?.sampleType || item?.sampleType || '');
+
         return {
           ServiceItemId: item.serviceItemId,
           SubSubCategoryId: item.subSubCategoryId,
@@ -145,6 +163,9 @@ const SearchSelectServiceItem = ({
           isUrgent: item.urgent ? 1 : 0,
           Barcode: existing?.Barcode ?? existing?.barcode ?? '',
           TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
+          SampleTypes: sampleTypes,
+          SampleTypeId: nextSampleTypeId ? Number(nextSampleTypeId) : null,
+          SampleType: nextSampleType,
         };
       });
 

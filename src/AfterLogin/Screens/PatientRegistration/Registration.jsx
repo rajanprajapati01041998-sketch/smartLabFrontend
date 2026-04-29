@@ -32,6 +32,7 @@ import SelectBank from './SelectBank';
 import PaymentInfo from './PaymentInfo';
 import AddReferDoctor from './AddReferDoctor';
 import { getThemeStyles } from '../../../utils/themeStyles';
+import { SelectList } from 'react-native-dropdown-select-list';
 
 
 const Registration = () => {
@@ -113,6 +114,8 @@ const Registration = () => {
   const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
   const [barcodeDraft, setBarcodeDraft] = useState({});
   const [remarkExpanded, setRemarkExpanded] = useState({});
+  const [sampleGroupExpanded, setSampleGroupExpanded] = useState({});
+  const [groupBarcodeDraft, setGroupBarcodeDraft] = useState({});
 
   // console.log(patientData)
   useEffect(() => {
@@ -290,15 +293,56 @@ const Registration = () => {
     (services || []).forEach((s) => {
       const id = s?.ServiceItemId;
       if (!id) return;
+      const sampleTypes = Array.isArray(s?.SampleTypes)
+        ? s.SampleTypes
+        : Array.isArray(s?.sampleTypes)
+          ? s.sampleTypes
+          : [];
+      const defaultSampleTypeObj =
+        sampleTypes.find(st => Number(st?.sampleTypeId) === Number(s?.SampleTypeId ?? s?.sampleTypeId)) ||
+        sampleTypes[0] ||
+        null;
+      const initialSampleTypeId =
+        s?.SampleTypeId ??
+        s?.sampleTypeId ??
+        defaultSampleTypeObj?.sampleTypeId ??
+        null;
+      const initialSampleType =
+        s?.SampleType ??
+        s?.sampleType ??
+        defaultSampleTypeObj?.sampleType ??
+        '';
       const existingRemark = s?.TestRemark ?? s?.testRemark ?? '';
       next[id] = {
         barcode: s?.Barcode ?? s?.barcode ?? '',
         testRemark: existingRemark,
+        sampleTypeId: initialSampleTypeId ? Number(initialSampleTypeId) : null,
+        sampleType: initialSampleType,
       };
       nextExpanded[id] = false;
     });
     setBarcodeDraft(next);
     setRemarkExpanded(nextExpanded);
+
+    // Initialize group barcodes from first item of each sample type group.
+    const servicesArr = Array.isArray(services) ? services : [];
+    const groups = new Map();
+    servicesArr.forEach((s) => {
+      const stId = (() => {
+        const id = s?.ServiceItemId;
+        const draft = id ? next?.[id] : null;
+        const val = draft?.sampleTypeId ?? s?.SampleTypeId ?? s?.sampleTypeId ?? null;
+        return val == null ? null : Number(val);
+      })();
+      const key = stId == null ? 'unknown' : String(stId);
+      if (!groups.has(key)) {
+        const id = s?.ServiceItemId;
+        const b = id ? (next?.[id]?.barcode ?? '') : '';
+        groups.set(key, String(b ?? ''));
+      }
+    });
+    setGroupBarcodeDraft(Object.fromEntries(groups.entries()));
+    setSampleGroupExpanded({});
   };
 
   const openBarcodeModal = () => {
@@ -402,6 +446,8 @@ const Registration = () => {
         }
       ]
     };
+          console.log(payload)
+
     // console.log("paymentData 👉", paymentData);
     // console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
@@ -424,12 +470,26 @@ const Registration = () => {
 
   const handleBarcodeModalSave = () => {
     const currentServices = Array.isArray(serviceItem?.Services) ? serviceItem.Services : [];
+    const trimmedGroupBarcodeByKey = Object.entries(groupBarcodeDraft || {}).reduce((acc, [k, v]) => {
+      const t = String(v ?? '').trim();
+      if (t) acc[k] = t;
+      return acc;
+    }, {});
+
     const updatedServices = currentServices.map((s) => {
       const draft = barcodeDraft?.[s.ServiceItemId];
+      const groupKey = (() => {
+        const stId = getEffectiveSampleTypeId(s);
+        return stId == null ? 'unknown' : String(stId);
+      })();
+      const groupBarcode = trimmedGroupBarcodeByKey?.[groupKey] ?? '';
+      const perTestBarcode = String(draft?.barcode ?? s?.Barcode ?? '').trim();
       return {
         ...s,
-        Barcode: draft?.barcode ?? s?.Barcode ?? '',
+        Barcode: perTestBarcode || groupBarcode,
         TestRemark: draft?.testRemark ?? s?.TestRemark ?? '',
+        SampleTypeId: draft?.sampleTypeId ?? s?.SampleTypeId ?? null,
+        SampleType: draft?.sampleType ?? s?.SampleType ?? '',
       };
     });
 
@@ -452,6 +512,58 @@ const Registration = () => {
 
     savePatientApi();
   };
+
+  const getEffectiveSampleTypeId = useCallback((service) => {
+    const id = service?.ServiceItemId;
+    const draft = id ? barcodeDraft?.[id] : null;
+    const val = draft?.sampleTypeId ?? service?.SampleTypeId ?? service?.sampleTypeId ?? null;
+    return val == null ? null : Number(val);
+  }, [barcodeDraft]);
+
+  const getEffectiveSampleTypeName = useCallback((service) => {
+    const id = service?.ServiceItemId;
+    const draft = id ? barcodeDraft?.[id] : null;
+    return (
+      draft?.sampleType ??
+      service?.SampleType ??
+      service?.sampleType ??
+      ''
+    );
+  }, [barcodeDraft]);
+
+  const groupedServicesForBarcode = useCallback(() => {
+    const services = Array.isArray(serviceItem?.Services) ? serviceItem.Services : [];
+    const groupsMap = new Map();
+
+    services.forEach((s) => {
+      const stId = getEffectiveSampleTypeId(s);
+      const stName = getEffectiveSampleTypeName(s);
+      const key = stId == null ? 'unknown' : String(stId);
+      if (!groupsMap.has(key)) {
+        groupsMap.set(key, {
+          key,
+          sampleTypeId: stId,
+          sampleType: stName || (stId == null ? 'Sample Type' : ''),
+          items: [],
+        });
+      }
+      groupsMap.get(key).items.push(s);
+    });
+
+    return Array.from(groupsMap.values());
+  }, [getEffectiveSampleTypeId, getEffectiveSampleTypeName, serviceItem]);
+
+  const setBarcodeForServiceIds = useCallback((serviceIds, txt) => {
+    const ids = Array.isArray(serviceIds) ? serviceIds : [];
+    setBarcodeDraft((prev) => {
+      const next = { ...(prev || {}) };
+      ids.forEach((id) => {
+        if (!id) return;
+        next[id] = { ...(next[id] || {}), barcode: txt };
+      });
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (serviceItem?.Services) {
@@ -1485,10 +1597,8 @@ const Registration = () => {
 
               {/* Proper Scrollable List */}
               <FlatList
-                data={Array.isArray(serviceItem?.Services) ? serviceItem.Services : []}
-                keyExtractor={(item, index) =>
-                  String(item?.ServiceItemId ?? index)
-                }
+                data={groupedServicesForBarcode()}
+                keyExtractor={(g) => String(g?.key)}
                 style={tw`flex-1`}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 }}
                 showsVerticalScrollIndicator={true}
@@ -1498,37 +1608,62 @@ const Registration = () => {
                 initialNumToRender={8}
                 maxToRenderPerBatch={8}
                 windowSize={10}
-                renderItem={({ item: s, index: idx }) => {
-                  const id = s?.ServiceItemId;
-                  const draft = id ? barcodeDraft?.[id] : null;
-                  const isRemarkOpen = Boolean(id && remarkExpanded?.[id]);
-                    console.log(`Render Service ${idx + 1} 👉`, JSON.stringify(s, null, 2));
+                renderItem={({ item: group }) => {
+                  const groupKey = String(group?.key ?? 'unknown');
+                  const expanded = Boolean(sampleGroupExpanded?.[groupKey]);
+                  const groupCount = Array.isArray(group?.items) ? group.items.length : 0;
+                  const groupLabel = String(group?.sampleType || '').trim() || 'Sample Type';
+
+                  const groupBarcode = String(groupBarcodeDraft?.[groupKey] ?? '');
+                  const serviceIdsInGroup = (group?.items || [])
+                    .map((s) => s?.ServiceItemId)
+                    .filter(Boolean);
 
                   return (
-                    <View
-                      style={[
-                        themed.childScreen, themed.border,
-                        tw`p-4 mb-4 rounded-xl `
-                      ]}
-                    >
-                      {console.log("service ",s)}
-                      <Text style={[themed.inputText]}>
-                        {s?.ServiceName || ''}
-                      </Text>
+                    <View style={[themed.childScreen, themed.border, tw`p-4 mb-4 rounded-xl`]}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSampleGroupExpanded((prev) => ({
+                            ...(prev || {}),
+                            [groupKey]: !prev?.[groupKey],
+                          }));
+                        }}
+                        activeOpacity={0.7}
+                        style={tw`flex-row items-center justify-between`}
+                      >
+                        <View style={tw`flex-1 pr-3`}>
+                          <Text style={[themed.inputText, tw`font-semibold`]}>
+                            {groupLabel} ({groupCount})
+                          </Text>
+                          <Text style={tw`text-xs text-gray-500`}>
+                            Tap to {expanded ? 'collapse' : 'expand'} tests
+                          </Text>
+                        </View>
 
-                      {/* Barcode Input */}
-                      <View style={tw`mb-4`}>
+                        <MaterialCommunityIcons
+                          name={expanded ? 'chevron-up' : 'chevron-down'}
+                          size={22}
+                          color="#6B7280"
+                        />
+                      </TouchableOpacity>
+
+                      {/* Group barcode (applies to all tests in this sample-type group) */}
+                      <View style={tw`mt-3 mb-2`}>
                         <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
                           Barcode Number
                         </Text>
                         <TextInput
-                          value={draft?.barcode ?? ''}
+                          value={groupBarcode}
                           onChangeText={(txt) => {
-                            if (!id) return;
-                            setBarcodeDraft((prev) => ({
+                            setGroupBarcodeDraft((prev) => ({
                               ...(prev || {}),
-                              [id]: { ...(prev?.[id] || {}), barcode: txt },
+                              [groupKey]: txt,
                             }));
+                          }}
+                          onEndEditing={(e) => {
+                            const txt = e?.nativeEvent?.text ?? '';
+                            const trimmed = String(txt).trim();
+                            if (trimmed) setBarcodeForServiceIds(serviceIdsInGroup, trimmed);
                           }}
                           placeholder="Enter barcode"
                           placeholderTextColor="#9CA3AF"
@@ -1536,59 +1671,143 @@ const Registration = () => {
                         />
                       </View>
 
-                      {/* Remark Input */}
-                      <View>
-                        <View style={tw`flex-row items-center justify-between`}>
-                          <Text style={[themed.inputLabel, tw`mb-0`]}>
-                            Test Remark
-                          </Text>
-
-                          <TouchableOpacity
-                            onPress={() => {
-                              if (!id) return;
-                              setRemarkExpanded((prev) => ({
-                                ...(prev || {}),
-                                [id]: !prev?.[id],
+                      {expanded ? (
+                        <View style={tw`mt-2`}>
+                          {(group?.items || []).map((s) => {
+                            const id = s?.ServiceItemId;
+                            const draft = id ? barcodeDraft?.[id] : null;
+                            const isRemarkOpen = Boolean(id && remarkExpanded?.[id]);
+                            const sampleTypes = Array.isArray(s?.SampleTypes)
+                              ? s.SampleTypes
+                              : Array.isArray(s?.sampleTypes)
+                                ? s.sampleTypes
+                                : [];
+                            const sampleTypeOptions = sampleTypes
+                              .filter(st => st?.sampleTypeId != null)
+                              .map(st => ({
+                                key: String(st.sampleTypeId),
+                                value: String(st.sampleType || ''),
                               }));
-                            }}
-                            style={[themed.inputBox, themed.inputText]}
-                            activeOpacity={0.7}
-                          >
-                            {String(draft?.testRemark ?? '').trim() ? (
-                              <View style={tw`bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full mr-2`}>
-                                <Text style={tw`text-blue-600 text-[10px] font-medium`}>
-                                  Added
+
+                            return (
+                              <View key={String(id)} style={[themed.border, tw`p-3 mb-3 rounded-xl`]}>
+                                <Text style={[themed.inputText, tw`mb-2`]}>
+                                  {s?.ServiceName || ''}
                                 </Text>
+
+                                {/* Sample Type Dropdown */}
+                                {sampleTypeOptions.length > 0 ? (
+                                  <View style={tw`mb-3`}>
+                                    <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
+                                      Sample Type
+                                    </Text>
+                                    <SelectList
+                                      data={sampleTypeOptions}
+                                      save="key"
+                                      defaultOption={
+                                        sampleTypeOptions.find(
+                                          o => o.key === String(draft?.sampleTypeId ?? s?.SampleTypeId ?? '')
+                                        ) || sampleTypeOptions[0]
+                                      }
+                                      setSelected={(key) => {
+                                        if (!id) return;
+                                        const selected = sampleTypeOptions.find(o => o.key === String(key));
+                                        setBarcodeDraft((prev) => ({
+                                          ...(prev || {}),
+                                          [id]: {
+                                            ...(prev?.[id] || {}),
+                                            sampleTypeId: key ? Number(key) : null,
+                                            sampleType: selected?.value || '',
+                                          },
+                                        }));
+                                      }}
+                                      boxStyles={[themed.inputBox]}
+                                      inputStyles={[themed.inputText]}
+                                      dropdownStyles={[themed.childScreen, themed.border]}
+                                      dropdownTextStyles={[themed.inputText]}
+                                      search={false}
+                                    />
+                                  </View>
+                                ) : null}
+
+                                {/* Per-test barcode (optional override) */}
+                                <View style={tw`mb-3`}>
+                                  <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
+                                    Barcode (override)
+                                  </Text>
+                                  <TextInput
+                                    value={draft?.barcode ?? ''}
+                                    onChangeText={(txt) => {
+                                      if (!id) return;
+                                      setBarcodeDraft((prev) => ({
+                                        ...(prev || {}),
+                                        [id]: { ...(prev?.[id] || {}), barcode: txt },
+                                      }));
+                                    }}
+                                    placeholder="Enter barcode"
+                                    placeholderTextColor="#9CA3AF"
+                                    style={[themed.inputBox, themed.inputText]}
+                                  />
+                                </View>
+
+                                {/* Remark Input */}
+                                <View>
+                                  <View style={tw`flex-row items-center justify-between`}>
+                                    <Text style={[themed.inputLabel, tw`mb-0`]}>
+                                      Test Remark
+                                    </Text>
+
+                                    <TouchableOpacity
+                                      onPress={() => {
+                                        if (!id) return;
+                                        setRemarkExpanded((prev) => ({
+                                          ...(prev || {}),
+                                          [id]: !prev?.[id],
+                                        }));
+                                      }}
+                                      style={[themed.inputBox, themed.inputText]}
+                                      activeOpacity={0.7}
+                                    >
+                                      {String(draft?.testRemark ?? '').trim() ? (
+                                        <View style={tw`bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full mr-2`}>
+                                          <Text style={tw`text-blue-600 text-[10px] font-medium`}>
+                                            Added
+                                          </Text>
+                                        </View>
+                                      ) : null}
+
+                                      <MaterialCommunityIcons
+                                        name={isRemarkOpen ? 'message-text' : 'message-text-outline'}
+                                        size={20}
+                                        color="#6B7280"
+                                      />
+                                    </TouchableOpacity>
+                                  </View>
+
+                                  {isRemarkOpen && (
+                                    <TextInput
+                                      value={draft?.testRemark ?? ''}
+                                      onChangeText={(txt) => {
+                                        if (!id) return;
+                                        setBarcodeDraft((prev) => ({
+                                          ...(prev || {}),
+                                          [id]: { ...(prev?.[id] || {}), testRemark: txt },
+                                        }));
+                                      }}
+                                      placeholder="Enter test remark (optional)"
+                                      placeholderTextColor="#9CA3AF"
+                                      multiline
+                                      numberOfLines={3}
+                                      textAlignVertical="top"
+                                      style={[themed.inputBox, themed.inputText]}
+                                    />
+                                  )}
+                                </View>
                               </View>
-                            ) : null}
-
-                            <MaterialCommunityIcons
-                              name={isRemarkOpen ? 'message-text' : 'message-text-outline'}
-                              size={20}
-                              color="#6B7280"
-                            />
-                          </TouchableOpacity>
+                            );
+                          })}
                         </View>
-
-                        {isRemarkOpen && (
-                          <TextInput
-                            value={draft?.testRemark ?? ''}
-                            onChangeText={(txt) => {
-                              if (!id) return;
-                              setBarcodeDraft((prev) => ({
-                                ...(prev || {}),
-                                [id]: { ...(prev?.[id] || {}), testRemark: txt },
-                              }));
-                            }}
-                            placeholder="Enter test remark (optional)"
-                            placeholderTextColor="#9CA3AF"
-                            multiline
-                            numberOfLines={3}
-                            textAlignVertical="top"
-                            style={[themed.inputBox, themed.inputText]}
-                          />
-                        )}
-                      </View>
+                      ) : null}
                     </View>
                   );
                 }}
