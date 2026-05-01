@@ -38,6 +38,7 @@ import { useDash } from '../../../../Authorization/DashContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import CheckBox from '@react-native-community/checkbox';
+import { formatBillDateTime } from '../../../utils/dateUtils';
 
 
 const { width } = Dimensions.get('window');
@@ -585,7 +586,7 @@ const ListHelpDeskPatient = () => {
                     <MaterialCommunityIcons name="calendar-clock" size={14} color={themed.iconMuted} />
                     <Text style={[themed.transactionLabel, tw`ml-2 text-xs`]}>Bill Date</Text>
                   </View>
-                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{item.CreatedOn}</Text>
+                  <Text style={[themed.transactionLabel, tw`text-xs`]}>{formatBillDateTime(item.CreatedOn)}</Text>
                 </View>
               )}
 

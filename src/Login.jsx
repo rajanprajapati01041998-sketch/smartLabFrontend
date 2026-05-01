@@ -186,8 +186,14 @@ export default function LoginScreen({ navigation }) {
         try {
             const formData = {
                 userName: username,
-                userPassword: password
+                userPassword: password,
+                branchId: 0,
+                browser: "Handset",
+                device: Platform.OS === "android" ? "Android Phone" : "iPhone",
+                os: Platform.OS === "android" ? "Android" : "iOS",
             };
+
+            console.log("formadte", formData)
 
             const response = await api.post(`Login/branch-list`, formData);
             console.log("branch response", response);
@@ -240,10 +246,10 @@ export default function LoginScreen({ navigation }) {
             }
         } catch (error) {
             console.log("Final Login error", error.response?.data?.message);
-            showToast(error.response?.data?.message , 'error');
+            showToast(error.response?.data?.message, 'error');
             setIsLoading(false)
-        } 
-    
+        }
+
     };
 
     const handleMenuOption = (option) => {

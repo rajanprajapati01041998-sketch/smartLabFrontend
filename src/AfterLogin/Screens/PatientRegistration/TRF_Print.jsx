@@ -102,7 +102,7 @@ const TRF_Print = () => {
                 path,
                 addAndroidDownloads: {
                     useDownloadManager: true,
-                    notification: false, // ✅ hide top download notification
+                    notification: true, // ✅ hide top download notification
                     path,
                     title: safeName,
                     description: 'TRF PDF downloaded',

@@ -26,6 +26,7 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import UpdatePatientInfo from './UpdatePatientInfo';
 import { getPatientInvestigation } from '../../../utils/patinetService.js/investigation';
 import ViewUpdateAllTestDetails from './ViewUpdateAllTestDetails';
+import { formatToIST } from '../../../utils/dateUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +38,7 @@ const PatientInformationList = () => {
     const { showToast } = useToast();
 
     const payload = route?.params?.payload;
+    console.log(payload)
 
     const [viewAllUpdateTestModal, setViewAllUpdateTestModal] = useState(false);
     const [list, setList] = useState([]);
@@ -74,7 +76,7 @@ const PatientInformationList = () => {
         } finally {
             setLoading(false);
         }
-    }, [showToast]);
+    }, []);
 
     const handleViewAllTestUpdateetails = (item) => {
         closeActionMenu();
@@ -329,7 +331,7 @@ Balance: ₹${item?.TotalBalanceAmount}
                                     value={barcodeValue}
                                     format="CODE128"
                                     width={Platform.OS === 'ios' ? 1.5 : 1.2}
-                                    maxWidth={Math.min(200, width - 160)}
+                                    maxWidth={Math.min(100, width - 160)}
                                     height={Platform.OS === 'ios' ? 24 : 20}
                                     lineColor={theme === 'dark' ? '#e5ebf1' : '#848994'}
                                     background="transparent"
@@ -351,7 +353,7 @@ Balance: ₹${item?.TotalBalanceAmount}
                             </View>
                         ) : null}
 
-                        <View style={tw`flex-row justify-between items-start`}>
+                        <View style={tw`flex-row justify-between items-center `}>
                             <View style={tw`flex-1`}>
                                 <View style={tw`flex-row items-center mb-1`}>
                                     <Feather name="user" size={14} color={themed.chevronColor} />
@@ -375,11 +377,12 @@ Balance: ₹${item?.TotalBalanceAmount}
                                 </View>
                             </View>
 
-                            <View style={tw`items-end`}>
+                            <View style={tw`items-end `}>
                                 <View style={tw`flex-row items-center mb-1`}>
                                     <Ionicons name="calendar-outline" size={12} color={themed.chevronColor} />
                                     <Text style={[themed.transactionLabel, tw`text-xs ml-1`]}>
-                                        {item?.BillDate || ''}
+                                        {item?.CreatedOn || ''}
+                                          {/* {formatToIST(item?.CreatedOn)} */}
                                     </Text>
                                 </View>
 

@@ -26,7 +26,7 @@ export const referDoctorList = async () => {
 
 export const referLabList = async () => {
     try {
-        const response = await api.get('OutSourceLab/GetOutSourceLabList');
+        const response = await api.get('OutSourceLab/GetOutSourceLabList?activeStatus=1');
         return response.data;
     } catch (error) {
         console.error('API Error:', error);

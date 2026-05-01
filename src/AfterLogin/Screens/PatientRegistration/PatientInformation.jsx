@@ -212,7 +212,6 @@ const PatientInformation = () => {
 
   const handleSearch = () => {
     Keyboard.dismiss();
-
     const selectedBranchIds =
       selectedClient?.length > 0
         ? selectedClient.map((item) => item.BranchId).join(',')

@@ -51,6 +51,7 @@ const RegistrationScreen = () => {
   const [ageMonths, setAgeMonths] = useState('');
   const [ageDays, setAgeDays] = useState('');
   const [dob, setDob] = useState(null);
+  const [ageLastEdited, setAgeLastEdited] = useState('dob'); // 'dob' | 'age'
   const [showPicker, setShowPicker] = useState(false);
   const [gender, setGender] = useState("MALE");
   const [maritalStatus, setMaritalStatus] = useState('');
@@ -121,19 +122,67 @@ const RegistrationScreen = () => {
   const [isCityModal, setIsCityModal] = useState(false);
   const [country, setCountry] = useState("India");
 
+  const parseDOBValue = useCallback((value) => {
+    if (!value) return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    const raw = String(value).trim();
+    if (!raw) return null;
+
+    // ISO / RFC compatible strings
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw) || raw.includes('T')) {
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    // Common API format in India: DD/MM/YYYY (also accept D/M/YYYY)
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+      const [a, b, c] = raw.split('/');
+      const dd = Number(a);
+      const mm = Number(b);
+      const yyyy = Number(c);
+      if (!dd || !mm || !yyyy) return null;
+      const d = new Date(yyyy, mm - 1, dd);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    // Another common API format: DD-MM-YYYY
+    if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(raw)) {
+      const [a, b, c] = raw.split('-');
+      const dd = Number(a);
+      const mm = Number(b);
+      const yyyy = Number(c);
+      if (!dd || !mm || !yyyy) return null;
+      const d = new Date(yyyy, mm - 1, dd);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    // Fallback
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }, []);
+
   // console.log(patientData)
   useEffect(() => {
     setSelectedTitle(patientData?.Title || "MR.");
     setFirstName(patientData?.FirstName || "")
     setGender(patientData?.Gender || "MALE")
-    setAgeDays(patientData?.AgeDays || "")
-    setAgeMonths(patientData?.AgeMonths || "")
-    setAgeYears(patientData?.AgeYears || "")
     setGender(patientData?.Gender || "")
     setBalanceAmount(patientData?.TotalBalanceOfAdvanceAmount || 0)
     setContactNumber(patientData?.ContactNumber)
-    setDob(patientData?.DOB ? new Date(patientData.DOB) : null);
-  }, [patientData])
+    const nextDob = parseDOBValue(patientData?.DOB);
+    setDob(nextDob);
+    if (nextDob) {
+      setAgeLastEdited('dob');
+      setAgeYears('');
+      setAgeMonths('');
+      setAgeDays('');
+    } else {
+      // If DOB is not available, fall back to Age fields from API.
+      setAgeDays(patientData?.AgeDays || "")
+      setAgeMonths(patientData?.AgeMonths || "")
+      setAgeYears(patientData?.AgeYears || "")
+    }
+  }, [patientData, parseDOBValue])
 
   useEffect(() => {
     if (selectedTitle === "Mr") setGender("MALE");
@@ -178,6 +227,7 @@ const RegistrationScreen = () => {
     setAgeMonths('');
     setAgeDays('');
     setDob(null);
+    setAgeLastEdited('dob');
 
     // Personal
     setGender('MALE');
@@ -637,8 +687,8 @@ const RegistrationScreen = () => {
   const onChangeDate1 = (event, selectedDate) => {
     setShowPicker(false);
     if (selectedDate) {
+      setAgeLastEdited('dob');
       setDob(selectedDate);
-      calculateAge(selectedDate);
     }
   };
 
@@ -654,10 +704,18 @@ const RegistrationScreen = () => {
   };
 
   useEffect(() => {
+    if (ageLastEdited !== 'age') return;
     if (ageYears || ageMonths || ageDays) {
       calculateDOB(ageYears, ageMonths, ageDays);
     }
-  }, [ageYears, ageMonths, ageDays]);
+  }, [ageYears, ageMonths, ageDays, ageLastEdited]);
+
+  useEffect(() => {
+    if (ageLastEdited !== 'dob') return;
+    if (dob instanceof Date && !Number.isNaN(dob.getTime())) {
+      calculateAge(dob);
+    }
+  }, [dob, ageLastEdited]);
 
   const calculateAge = (dobDate) => {
     const today = new Date();
@@ -918,6 +976,7 @@ const RegistrationScreen = () => {
               <TextInput
                 value={ageYears}
                 onChangeText={(text) => {
+                  setAgeLastEdited('age');
                   let numeric = text.replace(/[^0-9]/g, '')
                   let num = Number(numeric)
                   if (numeric === '') {
@@ -927,7 +986,7 @@ const RegistrationScreen = () => {
                   }
                 }}
                 style={[themed.inputBox, themed.inputText]}
-                placeholder='29'
+                placeholder='0'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
               />
@@ -937,6 +996,7 @@ const RegistrationScreen = () => {
               <TextInput
                 value={ageMonths}
                 onChangeText={(text) => {
+                  setAgeLastEdited('age');
                   let numeric = text.replace(/[^0-9]/g, '')
                   let num = Number(numeric)
                   if (numeric === '') {
@@ -946,7 +1006,7 @@ const RegistrationScreen = () => {
                   }
                 }}
                 style={[themed.inputBox, themed.inputText]}
-                placeholder='04'
+                placeholder='00'
                 placeholderTextColor={colors.placeholder}
                 keyboardType='numeric'
                 maxLength={2}
@@ -957,6 +1017,7 @@ const RegistrationScreen = () => {
               <TextInput
                 value={ageDays}
                 onChangeText={(text) => {
+                  setAgeLastEdited('age');
                   let numeric = text.replace(/[^0-9]/g, '')
                   let num = Number(numeric)
                   if (numeric === '') {
@@ -982,7 +1043,7 @@ const RegistrationScreen = () => {
                   value={dob ? dob.toLocaleDateString() : ''}
                   editable={false}
                   pointerEvents="none"
-                  placeholder="1/4/1998"
+                  placeholder="D/MM/YYYY"
                   placeholderTextColor={themed.inputPlaceholder}
                   style={[themed.inputBox, themed.inputText]}
                 />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,12 @@ const SearchSelectServiceItem = ({
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
 
+  const totalAmount = useMemo(() => {
+    return detailsList.reduce((sum, item) => {
+      return sum + Number(item?.rate || 0) * Number(item?.qty || 1);
+    }, 0);
+  }, [detailsList]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -70,8 +76,6 @@ const SearchSelectServiceItem = ({
           }));
 
         setDetailsList(formatted);
-
-        console.log("barcode service",formatted)
       } catch (error) {
         if (!cancelled) console.error('Error:', error);
       } finally {
@@ -158,8 +162,8 @@ const SearchSelectServiceItem = ({
           ServiceItemId: item.serviceItemId,
           SubSubCategoryId: item.subSubCategoryId,
           ServiceName: item.serviceName,
-          Amount: item.rate,
-          qty: item.qty,
+          Amount: Number(item.rate || 0),
+          qty: Number(item.qty || 1),
           isUrgent: item.urgent ? 1 : 0,
           Barcode: existing?.Barcode ?? existing?.barcode ?? '',
           TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
@@ -202,7 +206,7 @@ const SearchSelectServiceItem = ({
     const colorCode = getColorCode(item?.containerColor);
 
     return (
-      <View style={[themed.childScreen ,themed.border,tw` rounded-xl p-3 mb-3 `]}>
+      <View style={[themed.childScreen, themed.border, tw`rounded-xl p-3 mb-3`]}>
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`flex-row items-center flex-1`}>
             <View
@@ -211,7 +215,7 @@ const SearchSelectServiceItem = ({
                 { backgroundColor: colorCode || '#ccc' },
               ]}
             />
-            <Text style={[themed.inputText, tw` flex-1`]}>
+            <Text style={[themed.inputText, tw`flex-1`]}>
               {item.serviceName}
             </Text>
           </View>
@@ -221,7 +225,7 @@ const SearchSelectServiceItem = ({
           </TouchableOpacity>
         </View>
 
-        <View style={[themed.border,tw`h-[0.5px]  my-2`]} />
+        <View style={[themed.border, tw`h-[0.5px] my-2`]} />
 
         <View style={tw`flex-row justify-between items-center`}>
           <View>
@@ -258,11 +262,12 @@ const SearchSelectServiceItem = ({
           {item.sampleVolume ? (
             <View>
               <Text style={tw`text-[10px] text-gray-400`}>Volume</Text>
-              <Text style={[themed.inputText, tw`text-xs`]}>{item.sampleVolume}</Text>
+              <Text style={[themed.inputText, tw`text-xs`]}>
+                {item.sampleVolume}
+              </Text>
             </View>
           ) : null}
 
-          {/* ✅ urgent area fixed for smooth scroll */}
           <Pressable
             onPress={() => toggleUrgent(index)}
             android_ripple={null}
@@ -271,7 +276,7 @@ const SearchSelectServiceItem = ({
           >
             <View pointerEvents="none" style={tw`flex-row items-center`}>
               <Checkbox status={item.urgent ? 'checked' : 'unchecked'} />
-              <Text style={[themed.inputText, tw`text-[10px] `]}>Urgent</Text>
+              <Text style={[themed.inputText, tw`text-[10px]`]}>Urgent</Text>
             </View>
           </Pressable>
 
@@ -293,7 +298,7 @@ const SearchSelectServiceItem = ({
   );
 
   return (
-    <View style={tw`flex-1 min-h-0 `}>
+    <View style={tw`flex-1 min-h-0`}>
       {loading ? (
         <View style={tw`flex-1 justify-center items-center`}>
           <ActivityIndicator size="large" />
@@ -311,7 +316,7 @@ const SearchSelectServiceItem = ({
               style={tw`flex-1`}
               contentContainerStyle={{
                 paddingTop: 12,
-                paddingBottom: isDirty && detailsList.length > 0 ? 110 : 20,
+                paddingBottom: detailsList.length > 0 ? 125 : 20,
                 flexGrow: detailsList.length === 0 ? 1 : 0,
               }}
               showsVerticalScrollIndicator={true}
@@ -326,16 +331,33 @@ const SearchSelectServiceItem = ({
             />
           </View>
 
-          {isDirty && detailsList.length > 0 && (
-            <View style={[themed.borderTop,tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3  border-t `]}>
-              <TouchableOpacity
-                onPress={createPayload}
-                style={tw`bg-blue-500 p-3 rounded-lg`}
-              >
-                <Text style={tw`text-white text-center font-bold`}>
-                  Add ({detailsList.length}) Tests
+          {detailsList.length > 0 && (
+            <View
+              style={[
+                themed.borderTop,
+                themed.childScreen,
+                tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3 border-t`,
+              ]}
+            >
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={[themed.inputText, tw`font-semibold`]}>
+                  Total Amount
                 </Text>
-              </TouchableOpacity>
+                <Text style={tw`text-lg font-bold text-green-600`}>
+                  ₹ {totalAmount}
+                </Text>
+              </View>
+
+              {isDirty && (
+                <TouchableOpacity
+                  onPress={createPayload}
+                  style={tw`bg-blue-500 p-3 rounded-lg`}
+                >
+                  <Text style={tw`text-white text-center font-bold`}>
+                    Add ({detailsList.length}) Tests
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </>
