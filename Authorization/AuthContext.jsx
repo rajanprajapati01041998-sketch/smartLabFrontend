@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
   const [centerLoginBranchId, setCenterLoginBranchId] = useState(null)
   const [updateFlag, setUpdateFlag] = useState(0);
   const [addBarcode, setAddBarcode] = useState(false)
+  const [barcodeScan,setBarcodeScan] = useState(null)
 
   // Initialize custom alert hook
   const { showCustomAlert, AlertComponent } = useCustomAlert();
@@ -193,7 +194,8 @@ console.log(corporateId)
           sessionId, setSessionId,
           centerLoginBranchId, setCenterLoginBranchId,
           hosId, setHosId,
-          addBarcode, setAddBarcode
+          addBarcode, setAddBarcode,
+          barcodeScan,setBarcodeScan
         }}
       >
         {children}

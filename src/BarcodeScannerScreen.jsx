@@ -21,25 +21,31 @@ export default function BarcodeScannerScreen() {
   const route = useRoute();
   const { colors } = useTheme();
 
-  const returnScreen = route?.params?.returnScreen || null;
+  const onScanSuccess = route?.params?.onScanSuccess;
+
   const [hasScanned, setHasScanned] = useState(false);
   const lastValueRef = useRef('');
 
   const onReadCode = useCallback(
     event => {
       const value = getCodeFromEvent(event).trim();
-      if (!value || hasScanned || lastValueRef.current === value) return;
+
+      if (!value) return;
+      if (hasScanned) return;
+      if (lastValueRef.current === value) return;
 
       lastValueRef.current = value;
       setHasScanned(true);
 
-      if (returnScreen) {
-        navigation.navigate(returnScreen, { scannedBarcode: value });
-      } else {
-        navigation.goBack();
+      console.log('Scanned barcode value:', value);
+
+      if (typeof onScanSuccess === 'function') {
+        onScanSuccess(value);
       }
+
+      navigation.goBack();
     },
-    [hasScanned, navigation, returnScreen],
+    [hasScanned, navigation, onScanSuccess],
   );
 
   return (
@@ -51,8 +57,8 @@ export default function BarcodeScannerScreen() {
         scanBarcode={true}
         onReadCode={onReadCode}
         showFrame={true}
-        laserColor={colors.primary || '#3b82f6'}
-        frameColor={colors.primary || '#3b82f6'}
+        laserColor={colors?.primary || '#3b82f6'}
+        frameColor={colors?.primary || '#3b82f6'}
       />
 
       <View

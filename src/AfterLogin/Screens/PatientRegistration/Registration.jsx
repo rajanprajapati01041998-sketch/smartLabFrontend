@@ -1685,7 +1685,7 @@ const RegistrationScreen = () => {
         </View>
 
         {/* Payment Fields */}
-        {/* <PaymentInfo
+        <PaymentInfo
           netAmount={netAmount}  
           cash={cash}
           setCash={setCash}
@@ -1719,7 +1719,7 @@ const RegistrationScreen = () => {
           onPaymentChange={setPaymentData}
           onBalanceChange={setBalanceAmount}
 
-        /> */}
+        />
 
 
         <TouchableOpacity

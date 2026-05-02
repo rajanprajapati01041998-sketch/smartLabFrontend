@@ -112,11 +112,21 @@ const ListHelpDeskPatient = () => {
 
   const onPressScan = async () => {
     const ok = await requestCameraPermission();
+
     if (!ok) {
-      Alert.alert('Camera permission', 'Please allow camera permission to scan barcode.');
+      Alert.alert(
+        'Camera permission',
+        'Please allow camera permission to scan barcode.'
+      );
       return;
     }
-    navigation.navigate('BarcodeScanner', { returnScreen: 'ListHelpDeskPatient' });
+
+    navigation.navigate('BarcodeScanner', {
+      onScanSuccess: (code) => {
+        console.log('Scanned barcode:', code);
+        setSearchText(String(code));
+      },
+    });
   };
 
   const statusLegend = [
@@ -996,13 +1006,13 @@ const ListHelpDeskPatient = () => {
                         },
                       ]}
                     >
-                      <View style={[  tw`w-3 h-3 rounded-full mr-2`, {  backgroundColor: isSelected ? '#fff' : status.color, }, ]}/>
+                      <View style={[tw`w-3 h-3 rounded-full mr-2`, { backgroundColor: isSelected ? '#fff' : status.color, },]} />
                       <Text
-                        style={[ tw`text-sm font-semibold flex-1`, {  color: isSelected ? '#fff' : status.color, },]} >
+                        style={[tw`text-sm font-semibold flex-1`, { color: isSelected ? '#fff' : status.color, },]} >
                         {status.label}
                       </Text>
                       {isSelected && (
-                        <MaterialCommunityIcons name="check-circle" size={18}color="#fff" />
+                        <MaterialCommunityIcons name="check-circle" size={18} color="#fff" />
                       )}
                     </TouchableOpacity>
                   );
