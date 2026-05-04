@@ -14,14 +14,17 @@ import { useToast } from '../../../../Authorization/ToastContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 
-const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
+const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName, AllItem }) => {
     const { showToast } = useToast();
     const { theme } = useTheme();
     const themed = getThemeStyles(theme);
     const isDark = theme === 'dark';
 
     const [rangeDetails, setRangeDetails] = useState([]);
+    const [packageList, setPackageList] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    const isPackage = Number(AllItem?.categoryId) === 11;
 
     const getRangeDetailaByServiceItemId = useCallback(async (id) => {
         if (!id) return;
@@ -33,13 +36,10 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
                 `ServiceAllDetailsForOPDBilling/get-investigation-range?investigationId=${id}`
             );
 
-            console.log('Range details:', response?.data);
-
             if (response?.data?.status) {
                 setRangeDetails(response?.data?.data || []);
             } else {
                 setRangeDetails([]);
-                showToast(response?.data?.message || 'No range details found', 'error');
             }
         } catch (error) {
             console.log('Error fetching range details:', error);
@@ -50,17 +50,51 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
         }
     }, [showToast]);
 
+    const getPackagelist = useCallback(async (id) => {
+        if (!id) return;
+
+        try {
+            setLoading(true);
+
+            const response = await api.get(
+                `ServiceAllDetailsForOPDBilling/GetPackageAllDetails?id=${id}`
+            );
+
+            console.log('package all list', response?.data);
+
+            if (response?.data?.success) {
+                setPackageList(response?.data?.data || []);
+            } else {
+                setPackageList([]);
+                showToast(response?.data?.message || 'No package details found', 'error');
+            }
+        } catch (error) {
+            console.log('package list error', error?.response || error);
+            setPackageList([]);
+            showToast('Failed to fetch package details', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [showToast]);
+
     useFocusEffect(
         useCallback(() => {
-            getRangeDetailaByServiceItemId(serviceItemId);
+            setRangeDetails([]);
+            setPackageList([]);
+
+            if (isPackage) {
+                getPackagelist(serviceItemId);
+            } else {
+                getRangeDetailaByServiceItemId(serviceItemId);
+            }
 
             return () => {
                 console.log('Unfocused from ViewTestRangeDetails');
             };
-        }, [serviceItemId])
+        }, [serviceItemId, isPackage, getPackagelist, getRangeDetailaByServiceItemId])
     );
 
-    const renderItem = ({ item, index }) => {
+    const renderRangeItem = ({ item, index }) => {
         const rowStyle =
             index % 2 === 0
                 ? isDark
@@ -109,6 +143,62 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
         );
     };
 
+    const renderPackageItem = ({ item, index }) => {
+        const rowStyle =
+            index % 2 === 0
+                ? isDark
+                    ? tw`bg-gray-800`
+                    : tw`bg-white`
+                : isDark
+                    ? tw`bg-gray-900`
+                    : tw`bg-gray-50`;
+
+        return (
+            <View style={[tw`px-4 py-3`, rowStyle]}>
+                <View style={tw`flex-row justify-between items-start`}>
+                    <View style={tw`flex-1 pr-3`}>
+                        <Text style={[themed.normalText, tw`text-sm font-bold`]}>
+                            {item?.packageServiceName || '-'}
+                        </Text>
+
+                        <Text style={[themed.mutedText, tw`text-xs mt-1`]}>
+                            Code: {item?.packageServiceCode || '-'}
+                        </Text>
+                    </View>
+
+                    <View style={tw`px-2 py-1 rounded-full bg-blue-100`}>
+                        <Text style={tw`text-blue-700 text-[11px] font-semibold`}>
+                            Qty {item?.qty || 1}
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={tw`flex-row flex-wrap mt-3`}>
+                    <View style={tw`mr-5 mb-2`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Category</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.packageServiceCategory || '-'}
+                        </Text>
+                    </View>
+
+                    <View style={tw`mr-5 mb-2`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>Sample</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.sampleTypeList || '-'}
+                        </Text>
+                    </View>
+
+                    <View style={tw`mr-5 mb-2`}>
+                        <Text style={[themed.mutedText, tw`text-[10px]`]}>ServiceId</Text>
+                        <Text style={[themed.normalText, tw`text-xs`]}>
+                            {item?.packageServiceId || '-'}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     const renderSeparator = () => (
         <View style={[tw`h-[1px]`, isDark ? tw`bg-gray-700` : tw`bg-gray-200`]} />
     );
@@ -119,28 +209,33 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
         return (
             <View style={tw`flex-1 justify-center items-center px-4 py-10`}>
                 <Text style={tw`text-sm text-gray-500 text-center`}>
-                    No range details found
+                    {isPackage ? 'No package services found' : 'No range details found'}
                 </Text>
             </View>
         );
     };
 
+    const currentCount = isPackage ? packageList.length : rangeDetails.length;
+
     const renderHeader = () => (
         <View style={[themed.modalHeader, tw`px-4 pt-5 pb-3`]}>
             <View style={tw`flex-row justify-between items-start`}>
-                {/* Title with Badge */}
                 <View style={tw`flex-1 relative`}>
                     <Text style={[themed.modalHeaderTitle, tw`pr-6`]}>
-                        {serviceItemName || 'Test Range Details'}
+                        {serviceItemName || (isPackage ? 'Package Details' : 'Test Range Details')}
                     </Text>
-                    {/* 🔥 Floating Cart Badge */}
+
+                    <Text style={[themed.mutedText, tw`text-xs mt-1`]}>
+                        {isPackage ? 'Package Services' : 'Range Details'}
+                    </Text>
+
                     <View style={tw`absolute -top-5 -left-3 bg-red-500 w-6 h-6 rounded-full items-center justify-center`}>
                         <Text style={tw`text-white text-[11px] font-bold`}>
-                            {rangeDetails.length}
+                            {currentCount}
                         </Text>
                     </View>
                 </View>
-                {/* Close Button */}
+
                 <TouchableOpacity
                     onPress={onClose}
                     style={[
@@ -161,7 +256,7 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
                 <View style={tw`flex-1 justify-center items-center`}>
                     <ActivityIndicator size="large" color="#2563EB" />
                     <Text style={[themed.mutedText, tw`mt-2 text-sm`]}>
-                        Loading range details...
+                        {isPackage ? 'Loading package details...' : 'Loading range details...'}
                     </Text>
                 </View>
             </View>
@@ -174,17 +269,18 @@ const ViewTestRangeDetails = ({ onClose, serviceItemId, serviceItemName }) => {
 
             <FlatList
                 style={tw`flex-1`}
-                data={rangeDetails}
+                data={isPackage ? packageList : rangeDetails}
                 keyExtractor={(item, index) =>
-                    `${item?.observationId || index}-${index}`
+                    isPackage
+                        ? `${item?.packageServiceId || index}-${index}`
+                        : `${item?.observationId || index}-${index}`
                 }
-                renderItem={renderItem}
+                renderItem={isPackage ? renderPackageItem : renderRangeItem}
                 ItemSeparatorComponent={renderSeparator}
                 ListEmptyComponent={renderEmpty}
-                // ListHeaderComponent={renderHeader}
                 contentContainerStyle={[
                     { paddingBottom: 30, flexGrow: 1 },
-                    rangeDetails.length === 0 ? tw`justify-center` : null,
+                    currentCount === 0 ? tw`justify-center` : null,
                 ]}
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled={true}

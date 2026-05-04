@@ -25,6 +25,7 @@ const CustomAlert = ({
   cancelText,
   type = 'warning', // 'warning', 'success', 'error', 'info'
   animationType = 'spring', // 'spring', 'bounce', 'fade', 'slide'
+  disabled = false,
 }) => {
   const scaleValue = useRef(new Animated.Value(0)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
@@ -185,13 +186,13 @@ const CustomAlert = ({
   };
 
   const handleConfirm = () => {
-    if (!isAnimating) {
+    if (!isAnimating && !disabled) {
       onConfirm?.();
     }
   };
 
   const handleCancel = () => {
-    if (!isAnimating) {
+    if (!isAnimating && !disabled) {
       onCancel?.();
     }
   };
@@ -240,6 +241,7 @@ const CustomAlert = ({
                 style={[styles.button, styles.cancelButton]}
                 onPress={handleCancel}
                 activeOpacity={0.7}
+                disabled={disabled}
               >
                 <Text style={styles.cancelButtonText}>{cancelText || 'Cancel'}</Text>
               </TouchableOpacity>
@@ -252,9 +254,11 @@ const CustomAlert = ({
                   type === 'warning' && styles.warningButton,
                   type === 'error' && styles.errorButton,
                   type === 'success' && styles.successButton,
+                  disabled && styles.disabledButton,
                 ]}
                 onPress={handleConfirm}
                 activeOpacity={0.7}
+                disabled={disabled}
               >
                 <Text style={styles.confirmButtonText}>{confirmText || 'Confirm'}</Text>
               </TouchableOpacity>
@@ -353,6 +357,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

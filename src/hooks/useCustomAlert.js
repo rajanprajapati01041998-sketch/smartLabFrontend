@@ -13,6 +13,7 @@ export const useCustomAlert = () => {
     cancelText: '',
     type: 'warning',
     animationType: 'spring',
+    processing: false,
   });
 
   const showCustomAlert = useCallback((config) => {
@@ -26,23 +27,42 @@ export const useCustomAlert = () => {
       cancelText: config.cancelText !== undefined ? config.cancelText : 'Cancel',
       type: config.type || 'warning',
       animationType: config.animationType || 'spring',
+      processing: false,
     });
   }, []);
 
   const hideAlert = useCallback(() => {
-    setAlertConfig(prev => ({ ...prev, visible: false }));
+    setAlertConfig(prev => ({ ...prev, visible: false, processing: false }));
   }, []);
 
   const AlertComponent = useCallback(() => (
     <CustomAlert
       visible={alertConfig.visible}
-      onConfirm={() => {
-        alertConfig.onConfirm?.();
-        hideAlert();
+      disabled={alertConfig.processing}
+      onConfirm={async () => {
+        if (alertConfig.processing) return;
+        setAlertConfig(prev => ({ ...prev, processing: true }));
+        try {
+          await alertConfig.onConfirm?.();
+          hideAlert();
+        } finally {
+          // If consumer didn't close it (e.g., throws), re-enable buttons.
+          setAlertConfig(prev =>
+            prev.visible ? { ...prev, processing: false } : prev
+          );
+        }
       }}
-      onCancel={() => {
-        alertConfig.onCancel?.();
-        hideAlert();
+      onCancel={async () => {
+        if (alertConfig.processing) return;
+        setAlertConfig(prev => ({ ...prev, processing: true }));
+        try {
+          await alertConfig.onCancel?.();
+          hideAlert();
+        } finally {
+          setAlertConfig(prev =>
+            prev.visible ? { ...prev, processing: false } : prev
+          );
+        }
       }}
       title={alertConfig.title}
       message={alertConfig.message}

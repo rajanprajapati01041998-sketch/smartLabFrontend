@@ -552,6 +552,7 @@ const RegistrationScreen = () => {
 
             SampleTypeId: item.SampleTypeId || null,
             SampleType: item.SampleType || ""
+            
           };
         }),
         // 🔥 PAYMENTS
@@ -566,6 +567,7 @@ const RegistrationScreen = () => {
       };
 
       console.log("FINAL PAYLOAD 👉", JSON.stringify(payload, null, 2));
+      return;
 
       const response = await api.post("Patient/save", payload);
 

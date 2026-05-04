@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchInvestigation } from './services/doctorService';
 import Icon from "react-native-vector-icons/Feather"; // or Ionicons
 import tw from 'twrnc';
@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     TextInput,
     Keyboard,
+    InteractionManager,
 } from 'react-native';
 
 import SearchSelectServiceItem from './SearchSelectServiceItem';
@@ -33,6 +34,26 @@ const SearchSelectService = ({ onClose }) => {
     // ✅ MULTI SELECT STATE
     const [selectedServices, setSelectedServices] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
+    const searchInputRef = useRef(null);
+
+    const focusSearchInput = useCallback(() => {
+        // Make focus reliable inside nested Modal animations (esp. Android).
+        InteractionManager.runAfterInteractions(() => {
+            setTimeout(() => {
+                searchInputRef.current?.focus?.();
+            }, 50);
+        });
+    }, []);
+
+    useEffect(() => {
+        // Auto-focus when this modal content mounts.
+        focusSearchInput();
+    }, [focusSearchInput]);
+
+    useEffect(() => {
+        // When user returns back from item sheet to search list, focus again.
+        if (!modalVisible) focusSearchInput();
+    }, [modalVisible, focusSearchInput]);
 
     // 🔹 API call
     const searchInvestigationService = async (query) => {
@@ -58,8 +79,10 @@ const SearchSelectService = ({ onClose }) => {
     // 🔹 Debounce
     useEffect(() => {
         const delay = setTimeout(() => {
-            if (searchQuery.trim()) {
-                searchInvestigationService(searchQuery);
+            const q = searchQuery.trim();
+            // Search only after 3+ characters for better UX and fewer API calls.
+            if (q.length >= 3) {
+                searchInvestigationService(q);
             } else {
                 setResults([]);
             }
@@ -83,6 +106,9 @@ const SearchSelectService = ({ onClose }) => {
             setIsDirty(true);
             return [...prev, item];
         });
+        // Clear search so user can immediately type a new test name.
+        setSearchQuery('');
+        setResults([]);
         setModalVisible(true);
     };
 
@@ -111,11 +137,13 @@ const SearchSelectService = ({ onClose }) => {
                     <Icon name="search" size={18} color={themed.iconColor} />
 
                     <TextInput
+                        ref={searchInputRef}
                         placeholder="Search Investigation..."
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         style={themed.searchInput}
                         placeholderTextColor={themed.placeholderColor}
+                        autoFocus
                     />
                 </View>
             </View>

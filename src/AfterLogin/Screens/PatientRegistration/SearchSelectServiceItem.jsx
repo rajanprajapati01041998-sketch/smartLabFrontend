@@ -32,7 +32,7 @@ const SearchSelectServiceItem = ({
   const [rangeModalVisible, setRangeModalVisible] = useState(false);
   const [selectedServiceItemId, setSelectedServiceItemId] = useState(null);
   const [selectedServiceItemName, setSelectedServiceItemName] = useState(null);
-
+  const [selectedAllItem, setSelectedAllItem] = useState(null)
   const { setServiceItem, selectedDoctor, corporateId, loginBranchId } = useAuth();
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -170,6 +170,8 @@ const SearchSelectServiceItem = ({
           SampleTypes: sampleTypes,
           SampleTypeId: nextSampleTypeId ? Number(nextSampleTypeId) : null,
           SampleType: nextSampleType,
+          isUnderPackage: 0,
+          packageId: 0,
         };
       });
 
@@ -197,6 +199,7 @@ const SearchSelectServiceItem = ({
   };
 
   const handleViewRange = useCallback((item) => {
+    setSelectedAllItem(item)
     setSelectedServiceItemName(item?.serviceName);
     setSelectedServiceItemId(item.serviceItemId);
     setRangeModalVisible(true);
@@ -235,14 +238,14 @@ const SearchSelectServiceItem = ({
 
           <View>
             <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
-            {item.isRateEditable === false ? (
+            {item.isRateEditable === true ? (
               <View style={tw`flex-row items-center`}>
                 <Text style={tw`text-green-600 font-bold mr-1`}>₹</Text>
                 <TextInput
                   value={
                     item.rate === '' ||
-                    item.rate === null ||
-                    item.rate === undefined
+                      item.rate === null ||
+                      item.rate === undefined
                       ? ''
                       : String(item.rate)
                   }
@@ -386,6 +389,7 @@ const SearchSelectServiceItem = ({
               ]}
             >
               <ViewTestRangeDetails
+                AllItem={selectedAllItem}
                 serviceItemName={selectedServiceItemName}
                 serviceItemId={selectedServiceItemId}
                 onClose={() => setRangeModalVisible(false)}
