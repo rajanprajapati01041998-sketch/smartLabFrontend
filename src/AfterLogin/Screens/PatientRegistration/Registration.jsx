@@ -60,7 +60,6 @@ const RegistrationScreen = () => {
   const [contactNumber, setContactNumber] = useState(null);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [currentIpAddress, setCurrentIpAddress] = useState(ipAddress);
   const [medicalHistory, setMedicalHistory] = useState('');
   const [vistType, setVisitype] = useState("Clinic Visit");
   const [collectionDateTime, setCollectionDateTime] = useState(null);
@@ -76,6 +75,7 @@ const RegistrationScreen = () => {
   const [balanceAmount, setBalanceAmount] = useState(patientData?.TotalBalanceOfAdvanceAmount || null);
   const [isOverPaid, setIsOverPaid] = useState(false);
   const [netAmount, setNetAmount] = useState(null);
+  const [roundOff, setRoundOff] = useState(0);
   const [cash, setCash] = useState(null);
   const [isCashAuto, setIsCashAuto] = useState(true);
   const [debitCardAmt, setDebitCardAmt] = useState(null);
@@ -98,6 +98,7 @@ const RegistrationScreen = () => {
   const [selectedFieldBoy, setSelectedFieldBoy] = useState(null);
   const [selectTitleModal, setSelectTitleModal] = useState(false)
   const [selectedTitle, setSelectedTitle] = useState("MR");
+  const [receiptAmount, setReceiptAmount] = useState(0);
   // const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
   const [responseSuccess, setResponseSuccess] = useState(false)
@@ -266,10 +267,12 @@ const RegistrationScreen = () => {
     setDiscountPercent(0);
     setDiscountLastEdited('percent');
     setNetAmount(null);
+    setRoundOff(0);
     setBalanceAmount(null);
     setIsCashAuto(true);
     setIsOverPaid(false);
     setShowBillingInfo(false);
+
 
     // Payments
     setCash(null);
@@ -279,6 +282,7 @@ const RegistrationScreen = () => {
     setPhonePayAmt(null);
     setPayTm(null);
     setPaymentData({});
+    setReceiptAmount(0);
 
     // Others
     setDiscountReason('');
@@ -417,118 +421,171 @@ const RegistrationScreen = () => {
       : Array.isArray(serviceItem?.Services)
         ? serviceItem.Services
         : [];
-    // if (!selectedDoctor) {
-    //   showToast('Select Doctor', 'error');
-    //   return;
-    // }
-    // if (!contactNumber) {
-    //   showToast('Enter Contact number', 'error');
-    //   return;
-    // }
-   
+
+    if (!validateBeforeSave()) return;
 
     const finalLoginBranchId = centerLoginBranchId || loginBranchId;
-    setLoading(true)
-    const payload = {
-      HospId: hosId,
-      BranchId: finalLoginBranchId,
-      LoginBranchId: finalLoginBranchId,
-      CorporateId: corporateId,
 
-      Title:selectedTitle || "MR.",
-      FirstName: firstName,
-      MiddleName: middleName,
-      LastName: lastName,
+    setLoading(true);
 
-      AgeYears: Number(ageYears || 0),
-      AgeMonths: Number(ageMonths || 0),
-      AgeDays: Number(ageDays || 0),
-
-      DOB: dob
-        ? new Date(dob).toISOString().split("T")[0]
-        : null,
-
-      Gender: gender,
-      MaritalStatus: maritalStatus,
-      Relation: relation,
-      RelativeName: relativeName,
-
-      ContactNumber: contactNumber,
-      Address: address,
-
-      DoctorId: selectedDoctor || 0,
-      ReferDoctorId: selectedReferDoctor?.referDoctorId || 0,
-      ReferLabId: selectedReferLab?.outSourceLabId || 0,
-      FieldBoyId: selectedFieldBoy?.fieldBoyId || 0,
-
-      MedicalHistory: medicalHistory,
-
-      CollectionDateTime: collectionDateTime
-        ? new Date(collectionDateTime).toISOString()
-        : null,
-
-      CountryId: 1,
-      Country: country || "India",
-      StateId: 1,
-      State: state?.stateName||" ",
-      DistrictId: district?.districtCode||" ",
-      District: district?.districtName||" ",
-      CityId: city?.cityCode||" ",
-      City: city?.cityName||" ",
-
-      UserId: userId,
-      IpAddress: currentIpAddress,
-
-      GrossAmount: Number(grossAmount || 0),
-      DiscountAmount: Number(discountAmount || 0),
-      NetAmount: Number(netAmount || 0),
-
-      // ✅ Services from context
-      Services: services.map(item => ({
-        ServiceItemId: item.ServiceItemId,
-        SubSubCategoryId: item.SubSubCategoryId,
-        ServiceName: item.ServiceName,
-        Amount: Number(item.Amount || 0),
-        qty: Number(item.qty || 1),
-        IsUrgent: Number(item.IsUrgent ?? item.isUrgent ?? 0),
-        Barcode: item.Barcode ?? item.barcode ?? "",
-        TestRemark: item.TestRemark ?? item.testRemark ?? ""
-      })) || [],
-
-      // ✅ Payments
-      payments: payments,
-
-      // ✅ Investigations (sample static or modify as needed)
-      Investigations: [
-        {
-          ReportingBranchId: finalLoginBranchId,
-          Barcode: "",
-          TestRemark: ""
-        }
-      ]
-    };
-    // console.log(payload)
-    // setLoading(false)
-    // return;
-
-    // console.log("paymentData 👉", paymentData);
-    // console.log("Payload 👉", JSON.stringify(payload, null, 2));
     try {
-      console.log(payload)
-      const response = await api.post(`Patient/save`, payload)
-      console.log("booking suceess", response)
-      showToast("Patinet Saved Sucessfully", 'success');
-      setResponseSuccess((prev) => !prev);
+      // =============================
+      // 🔥 PAYMENT CALCULATION
+      // =============================
+      const totalPaidAmount = payments.reduce(
+        (sum, p) => sum + Number(p.amount || 0),
+        0
+      );
+
+      const finalGrossAmount = Number(grossAmount || 0);
+      const finalDiscountPercentage = Number(discountPercent || 0);
+      const finalDiscountAmount = Number(discountAmount || 0);
+      const finalNetAmount = Number(netAmount || 0);
+
+      const finalRoundOff = Number(
+        (finalNetAmount - (finalGrossAmount - finalDiscountAmount)).toFixed(2)
+      );
+
+      const finalBalanceAmount =
+        finalNetAmount - totalPaidAmount;
+
+      // =============================
+      // 🔥 PAYLOAD
+      // =============================
+      const payload = {
+        HospId: hosId,
+        BranchId: finalLoginBranchId,
+        LoginBranchId: finalLoginBranchId,
+        CorporateId: corporateId,
+
+        Title: selectedTitle || "MR.",
+        FirstName: firstName,
+        MiddleName: middleName,
+        LastName: lastName,
+
+        AgeYears: Number(ageYears || 0),
+        AgeMonths: Number(ageMonths || 0),
+        AgeDays: Number(ageDays || 0),
+
+        DOB: dob
+          ? new Date(dob).toISOString().split("T")[0]
+          : null,
+
+        Gender: gender,
+        MaritalStatus: maritalStatus,
+        Relation: relation,
+        RelativeName: relativeName,
+
+        ContactNumber: contactNumber || "",
+        Address: address || "",
+
+        DoctorId: selectedDoctor || 0,
+        ReferDoctorId: selectedReferDoctor?.referDoctorId || 0,
+        ReferLabId: selectedReferLab?.outSourceLabId || 0,
+        FieldBoyId: selectedFieldBoy?.fieldBoyId || 0,
+
+        MedicalHistory: medicalHistory || "",
+
+        CollectionDateTime: collectionDateTime
+          ? new Date(collectionDateTime).toISOString()
+          : null,
+
+        CountryId: 1,
+        Country: country || "India",
+        StateId: 1,
+        State: state?.stateName || "",
+        DistrictId: district?.districtCode || 0,
+        District: district?.districtName || "",
+        CityId: city?.cityCode || 0,
+        City: city?.cityName || "",
+
+        UserId: userId,
+        IpAddress: ipAddress,
+        // 🔥 BILL LEVEL
+        GrossAmount: finalGrossAmount,
+        DiscountPercentage: finalDiscountPercentage,
+        DiscountAmount: finalDiscountAmount,
+        RoundOff: finalRoundOff,
+        NetAmount: finalNetAmount,
+
+        TotalPayableAmount: finalNetAmount,
+        TotalPaidAmount: totalPaidAmount,
+        TotalBalanceAmount: finalBalanceAmount,
+
+        TotalPatientPayableAmount: finalNetAmount,
+        TotalCorporatePayableAmount: 0,
+        TotalPatientPaidAmount: totalPaidAmount,
+        TotalCorporatePaidAmount: 0,
+
+        // receipt amount
+        ReceiptAmount: Number(receiptAmount || 0),
+        DiscountApprovedById: userId || 0,
+        DiscountReason: discountReason || "",
+        Remarks: remark || "",
+        // 🔥 SERVICES
+        Services: services.map(item => {
+          const rate = Number(item.Amount || item.Rate || 0);
+          const qty = Number(item.qty || item.Qty || 1);
+          const gross = rate * qty;
+          const discPer = finalDiscountPercentage;
+          const discAmt = Number(((gross * discPer) / 100).toFixed(2));
+          const net = gross - discAmt;
+          return {
+            ServiceItemId: item.ServiceItemId,
+            SubSubCategoryId: item.SubSubCategoryId,
+            ServiceName: item.ServiceName,
+
+            Rate: rate,
+            Amount: rate,
+            Qty: qty,
+
+            GrossAmt: rate,
+            DiscPer: 0,
+            DiscAmt: 0,
+            TotalTaxPer: 0,
+            TotalTaxAmt: 0,
+            NetAmt: rate,
+
+            IsUrgent: Number(item.IsUrgent ?? item.isUrgent ?? 0),
+            Barcode: item.Barcode ?? item.barcode ?? "",
+            TestRemark: item.TestRemark ?? item.testRemark ?? "",
+
+            SampleTypeId: item.SampleTypeId || null,
+            SampleType: item.SampleType || ""
+          };
+        }),
+        // 🔥 PAYMENTS
+        payments: payments,
+        // 🔥 INVESTIGATION
+        Investigations: [
+          {
+            ReportingBranchId: finalLoginBranchId,
+            TestRemark: "bahut mst "
+          }
+        ]
+      };
+
+      console.log("FINAL PAYLOAD 👉", JSON.stringify(payload, null, 2));
+
+      const response = await api.post("Patient/save", payload);
+
+      console.log("SUCCESS 👉", response);
+
+      showToast("Patient Saved Successfully", "success");
+
+      setResponseSuccess(prev => !prev);
       resetForm();
 
     } catch (error) {
-      console.log("erroer", error.response)
-      showToast(error?.response?.data?.message, 'warning');
-    }
-    finally {
-      setLoading(false)
-    }
+      console.log("ERROR 👉", error?.response);
 
+      showToast(
+        error?.response?.data?.message || "Something went wrong",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBarcodeModalSave = () => {
@@ -643,7 +700,6 @@ const RegistrationScreen = () => {
 
   useEffect(() => {
     const gross = Number(grossAmount || 0);
-
     const discPer = Number(discountPercent || 0);
     const discAmt = Number(discountAmount || 0);
 
@@ -652,6 +708,7 @@ const RegistrationScreen = () => {
       setDiscountAmount(0);
       setDiscountPercent(0);
       setNetAmount(0);
+      setRoundOff(0);
       return;
     }
 
@@ -664,19 +721,22 @@ const RegistrationScreen = () => {
     } else {
       // User edited discount amount => recalc percent.
       nextDiscAmt = discAmt;
-      nextDiscPer = (nextDiscAmt / gross) * 100;
+      nextDiscPer = gross > 0 ? (nextDiscAmt / gross) * 100 : 0;
     }
 
     // Keep stable rounding to avoid endless re-renders due to float precision.
     const roundedDiscAmt = Number(nextDiscAmt.toFixed(2));
     const roundedDiscPer = Number(nextDiscPer.toFixed(2));
 
-    const net = gross - roundedDiscAmt;
-    const roundedNet = Math.round(net);
+    // Example: gross=750, discount=52.50 => rawNet=697.50, net=698, roundOff=0.50
+    const rawNet = gross - roundedDiscAmt;
+    const roundedNet = Math.round(rawNet);
+    const nextRoundOff = Number((roundedNet - rawNet).toFixed(2));
 
     setDiscountAmount(roundedDiscAmt);
     setDiscountPercent(roundedDiscPer);
     setNetAmount(roundedNet);
+    setRoundOff(nextRoundOff);
   }, [discountLastEdited, discountPercent, discountAmount, grossAmount]);
 
   useEffect(() => {
@@ -1607,13 +1667,12 @@ const RegistrationScreen = () => {
                 <View style={tw`w-[30%] mr-1`}>
                   <Text style={themed.inputLabel}>Round off</Text>
                   <TextInput
-                    readOnly
-                    value={grossAmount ? String(grossAmount) : ""}
+                    editable={false}
+                    value={String(roundOff || 0)}
                     keyboardType="numeric"
                     style={[themed.inputBox, themed.inputText]}
-                    placeholder='1.4'
+                    placeholder='0'
                     placeholderTextColor={themed.inputPlaceholder}
-
                   />
                 </View>
 
@@ -1686,7 +1745,7 @@ const RegistrationScreen = () => {
 
         {/* Payment Fields */}
         <PaymentInfo
-          netAmount={netAmount}  
+          netAmount={netAmount}
           cash={cash}
           setCash={setCash}
           debitCardAmt={debitCardAmt}
@@ -1699,11 +1758,9 @@ const RegistrationScreen = () => {
           setPayTm={setPayTm}
           phonePayAmt={phonePayAmt}
           setPhonePayAmt={setPhonePayAmt}
-
           selectedBank={selectedBank}
           openBankModal={() => setBankModal(true)}
           setSelectedBank={setSelectedBank}
-
           chequeRefrence={chequeRefrence}
           setChequeRefrence={setChequeRefrence}
           neftRefrence={neftRefrence}
@@ -1714,11 +1771,10 @@ const RegistrationScreen = () => {
           setPhonePayReference={setPhonePayReference}
           debitCardReference={debitCardReference}
           setDebitCardReference={setDebitCardReference}
-
           parseMoney={parseMoney}
           onPaymentChange={setPaymentData}
           onBalanceChange={setBalanceAmount}
-
+          onReceiptAmountChange={setReceiptAmount}
         />
 
 
