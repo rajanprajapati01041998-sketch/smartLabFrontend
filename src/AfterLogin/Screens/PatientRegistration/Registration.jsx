@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform, FlatList } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform, FlatList, Image } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import tw from 'twrnc';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +35,7 @@ import { getThemeStyles } from '../../../utils/themeStyles';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { getPatientInvestigation } from '../../../utils/patinetService.js/investigation';
 import { getFullLocation } from '../../../utils/patinetService.js/location';
+import SelectApproval from './SelectApproval';
 
 
 const RegistrationScreen = () => {
@@ -122,6 +123,9 @@ const RegistrationScreen = () => {
   const [city, setCity] = useState(null);
   const [isCityModal, setIsCityModal] = useState(false);
   const [country, setCountry] = useState("India");
+  const [discountApprovalModal, setDiscountApprovalModal] = useState(false);
+  const [selectedDiscountApproval, setSelectedDiscountApproval] = useState(null);
+  const [discountApprovalId, setDiscountApprovalId] = useState(0);
 
   const parseDOBValue = useCallback((value) => {
     if (!value) return null;
@@ -519,40 +523,52 @@ const RegistrationScreen = () => {
 
         // receipt amount
         ReceiptAmount: Number(receiptAmount || 0),
-        DiscountApprovedById: userId || 0,
+        DiscountApprovedById: discountApprovalId || 0,
         DiscountReason: discountReason || "",
         Remarks: remark || "",
         // 🔥 SERVICES
         Services: services.map(item => {
-          const rate = Number(item.Amount || item.Rate || 0);
-          const qty = Number(item.qty || item.Qty || 1);
+          const isUnderPackage = Number(item.IsUnderPackage ?? 0);
+          const rate = Number(item.Amount ?? item.Rate ?? 0);
+          const qty = Number(item.Qty ?? item.qty ?? 1);
           const gross = rate * qty;
-          const discPer = finalDiscountPercentage;
-          const discAmt = Number(((gross * discPer) / 100).toFixed(2));
-          const net = gross - discAmt;
+
+          const discPer = isUnderPackage === 1 ? 0 : finalDiscountPercentage;
+          const discAmt = isUnderPackage === 1
+            ? 0
+            : Number(((gross * discPer) / 100).toFixed(2));
+
+          const net = isUnderPackage === 1 ? 0 : gross - discAmt;
+
           return {
             ServiceItemId: item.ServiceItemId,
             SubSubCategoryId: item.SubSubCategoryId,
+            SubCategoryId: item.SubCategoryId ?? 0,
+            CategoryId: item.CategoryId ?? 0,
+
             ServiceName: item.ServiceName,
+            Code: item.Code ?? "",
 
             Rate: rate,
             Amount: rate,
             Qty: qty,
 
-            GrossAmt: rate,
-            DiscPer: 0,
-            DiscAmt: 0,
+            GrossAmt: gross,
+            DiscPer: discPer,
+            DiscAmt: discAmt,
             TotalTaxPer: 0,
             TotalTaxAmt: 0,
-            NetAmt: rate,
+            NetAmt: net,
 
-            IsUrgent: Number(item.IsUrgent ?? item.isUrgent ?? 0),
-            Barcode: item.Barcode ?? item.barcode ?? "",
-            TestRemark: item.TestRemark ?? item.testRemark ?? "",
+            IsUrgent: Number(item.IsUrgent ?? 0),
+            IsUnderPackage: isUnderPackage,
+            PackageId: item.PackageId ?? item.packageId ?? 0,
 
-            SampleTypeId: item.SampleTypeId || null,
-            SampleType: item.SampleType || ""
-            
+            Barcode: item.Barcode ?? "",
+            TestRemark: item.TestRemark ?? "",
+
+            SampleTypeId: item.SampleTypeId ?? null,
+            SampleType: item.SampleType ?? "",
           };
         }),
         // 🔥 PAYMENTS
@@ -561,13 +577,13 @@ const RegistrationScreen = () => {
         Investigations: [
           {
             ReportingBranchId: finalLoginBranchId,
-            TestRemark: "bahut mst "
+            TestRemark: remark || ""
           }
         ]
       };
 
       console.log("FINAL PAYLOAD 👉", JSON.stringify(payload, null, 2));
-      return;
+      // return;
 
       const response = await api.post("Patient/save", payload);
 
@@ -1641,7 +1657,7 @@ const RegistrationScreen = () => {
                       setDiscountPercent(num);
                     }}
                     style={[themed.inputBox, themed.inputText]}
-                    placeholder='1%'
+                    placeholder='%'
                     placeholderTextColor={themed.inputPlaceholder}
 
                   />
@@ -1710,8 +1726,13 @@ const RegistrationScreen = () => {
                 {/* Discount approved by */}
                 <View style={tw`w-[30%] mr-1`}>
                   <Text numberOfLines={1} style={themed.inputLabel}>Dis Approved by</Text>
-                  <TouchableOpacity style={[themed.inputBox]}>
-                    <Text style={themed.inputLabel}>Select</Text>
+                  <TouchableOpacity
+                    onPress={() => setDiscountApprovalModal(true)}
+                    style={[themed.inputBox, tw`justify-center`]}
+                  >
+                    <Text numberOfLines={1} style={themed.inputText}>
+                      {selectedDiscountApproval?.name || 'Select'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -1745,8 +1766,30 @@ const RegistrationScreen = () => {
           )}
         </View>
 
+        {netAmount > 0 && (
+          <View style={[themed.border, themed.cardPadding, themed.childScreen, tw`my-2`]}>
+            <View style={tw`flex-row items-center justify-between`}>
+
+              {/* LEFT SIDE (Icon + Text) */}
+              <View style={tw`flex-row items-center`}>
+                <Image
+                  style={tw`h-5 w-5 mr-3`}
+                  source={{ uri: 'https://cdn-icons-png.flaticon.com/128/7460/7460812.png' }}
+                />
+                <Text style={themed.inputText}>Cash</Text>
+              </View>
+
+              {/* RIGHT SIDE (Amount) */}
+              <Text style={[tw`font-bold`, themed.labelText]}>
+                ₹ {Number(netAmount || 0).toFixed(2)}
+              </Text>
+
+            </View>
+          </View>
+        )}
+
         {/* Payment Fields */}
-        <PaymentInfo
+        {/* <PaymentInfo
           netAmount={netAmount}
           cash={cash}
           setCash={setCash}
@@ -1777,7 +1820,7 @@ const RegistrationScreen = () => {
           onPaymentChange={setPaymentData}
           onBalanceChange={setBalanceAmount}
           onReceiptAmountChange={setReceiptAmount}
-        />
+        /> */}
 
 
         <TouchableOpacity
@@ -2328,6 +2371,31 @@ const RegistrationScreen = () => {
                 </View>
               </TouchableWithoutFeedback>
 
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* Approval discount modal */}
+        <Modal
+          visible={discountApprovalModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setDiscountApprovalModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setDiscountApprovalModal(false)}>
+            <View style={[themed.modalOverlay]}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={[themed.modalContainer, tw` rounded-t-2xl w-full h-100 `]}>
+                  <SelectApproval
+                    loginBranchId={loginBranchId}
+                    onClose={() => setDiscountApprovalModal(false)}
+                    onSelectedApproval={(item) => {
+                      setSelectedDiscountApproval(item);
+                      setDiscountApprovalId(item?.id || 0);
+                    }}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
         </Modal>

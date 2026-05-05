@@ -1,6 +1,7 @@
-# Razorpay (MANDATORY)
+# Razorpay
 -keep class com.razorpay.** { *; }
 -dontwarn com.razorpay.**
+-keep class * implements com.razorpay.PaymentResultListener { *; }
 
 # Keep annotations
 -keepattributes *Annotation*
@@ -10,14 +11,14 @@
     @com.razorpay.** *;
 }
 
-# Keep okhttp (used internally sometimes)
+# OkHttp / Okio
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# React Native (safe rules)
+# React Native
 -keep class com.facebook.react.** { *; }
 -dontwarn com.facebook.react.**
 
-# Gson (if used anywhere)
+# Gson
 -keep class com.google.gson.** { *; }
 -dontwarn com.google.gson.**

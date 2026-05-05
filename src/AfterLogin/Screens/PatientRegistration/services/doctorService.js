@@ -36,7 +36,7 @@ export const referLabList = async () => {
 
 export const searchInvestigation = async (query) => {
     try {
-        const response = await api.get(`Investigation/SearchInvestigation?searchText=${query}`);
+        const response = await api.get(`Investigation/service-item-list?name=${query}`);
         return response.data;
     } catch (error) {
         console.error('API Error:', error);
@@ -70,6 +70,19 @@ export const SearchGetInvestigationListDetails = async ({
             }
         );
 
+        return response.data;
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+};
+
+export const GetPackageAllDetails = async (packageId) => {
+    try {
+        const response = await api.get(
+            '/ServiceAllDetailsForOPDBilling/GetPackageAllDetails',
+            { params: { id: packageId } }
+        );
         return response.data;
     } catch (error) {
         console.error('API Error:', error);

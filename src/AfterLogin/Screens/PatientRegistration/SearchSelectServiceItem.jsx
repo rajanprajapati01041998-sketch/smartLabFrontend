@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   Pressable,
+  Alert,
 } from 'react-native';
 import tw from 'twrnc';
 import { Checkbox } from 'react-native-paper';
@@ -19,6 +20,7 @@ import { getColorCode } from '../../../utils/colorUtils';
 import ViewTestRangeDetails from './ViewTestRangeDetails';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
+import api from '../../../../Authorization/api';
 
 const SearchSelectServiceItem = ({
   data,
@@ -32,8 +34,16 @@ const SearchSelectServiceItem = ({
   const [rangeModalVisible, setRangeModalVisible] = useState(false);
   const [selectedServiceItemId, setSelectedServiceItemId] = useState(null);
   const [selectedServiceItemName, setSelectedServiceItemName] = useState(null);
-  const [selectedAllItem, setSelectedAllItem] = useState(null)
-  const { setServiceItem, selectedDoctor, corporateId, loginBranchId } = useAuth();
+  const [selectedAllItem, setSelectedAllItem] = useState(null);
+
+  const {
+    setServiceItem,
+    serviceItem,
+    selectedDoctor,
+    corporateId,
+    loginBranchId,
+  } = useAuth();
+
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
 
@@ -50,6 +60,7 @@ const SearchSelectServiceItem = ({
       if (!data || data.length === 0) return;
 
       setLoading(true);
+
       try {
         const responses = await Promise.all(
           data.map(item =>
@@ -61,8 +72,8 @@ const SearchSelectServiceItem = ({
               subCategoryId: item.subCategoryId,
               subSubCategoryId: item.subSubCategoryId,
               bedTypeId: 0,
-            })
-          )
+            }),
+          ),
         );
 
         if (cancelled) return;
@@ -94,112 +105,363 @@ const SearchSelectServiceItem = ({
     };
   }, [data, corporateId, selectedDoctor]);
 
-  const toggleUrgent = useCallback((index) => {
-    setDetailsList(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        urgent: !updated[index].urgent,
-      };
-      return updated;
-    });
-    onDirtyChange?.(true);
-  }, [onDirtyChange]);
+  const toggleUrgent = useCallback(
+    index => {
+      setDetailsList(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          urgent: !updated[index].urgent,
+        };
+        return updated;
+      });
 
-  const updateRate = useCallback((index, txt) => {
-    const cleaned = String(txt).replace(/[^0-9.]/g, '');
-    const next = cleaned === '' ? '' : Number(cleaned);
+      onDirtyChange?.(true);
+    },
+    [onDirtyChange],
+  );
 
-    setDetailsList(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        rate: next === '' ? '' : next,
-      };
-      return updated;
-    });
+  const updateRate = useCallback(
+    (index, txt) => {
+      const cleaned = String(txt).replace(/[^0-9.]/g, '');
+      const next = cleaned === '' ? '' : Number(cleaned);
 
-    onDirtyChange?.(true);
-  }, [onDirtyChange]);
+      setDetailsList(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          rate: next === '' ? '' : next,
+        };
+        return updated;
+      });
 
-  const handleDeleteLocal = useCallback((item) => {
-    setDetailsList(prev =>
-      prev.filter(i => i.serviceItemId !== item.serviceItemId)
-    );
+      onDirtyChange?.(true);
+    },
+    [onDirtyChange],
+  );
 
-    onDelete?.(item);
-    onDirtyChange?.(true);
-  }, [onDelete, onDirtyChange]);
-
-  const createPayload = () => {
-    setServiceItem(prev => {
-      const existingServices = Array.isArray(prev?.Services) ? prev.Services : [];
-      const existingById = new Map(
-        existingServices.map(service => [service.ServiceItemId, service])
+  const handleDeleteLocal = useCallback(
+    item => {
+      setDetailsList(prev =>
+        prev.filter(i => i.serviceItemId !== item.serviceItemId),
       );
 
-      const newServices = detailsList.map(item => {
-        const existing = existingById.get(item.serviceItemId);
-        const sampleTypes = Array.isArray(item?.sampleTypes) ? item.sampleTypes : [];
+      onDelete?.(item);
+      onDirtyChange?.(true);
+    },
+    [onDelete, onDirtyChange],
+  );
+
+  const makeKey = service => {
+    const serviceItemId = Number(
+      service?.serviceItemId ?? service?.ServiceItemId ?? 0,
+    );
+    const packageId = Number(service?.packageId ?? service?.PackageId ?? 0);
+    const isUnderPackage = Number(
+      service?.isUnderPackage ?? service?.IsUnderPackage ?? 0,
+    );
+
+    return `${serviceItemId}_${packageId}_${isUnderPackage}`;
+  };
+
+  const fetchPackageServices = async packageItem => {
+    try {
+      const res = await api.get(
+        `ServiceAllDetailsForOPDBilling/GetPackageAllDetails?id=${packageItem.serviceItemId}`,
+      );
+
+      const list = res?.data?.data || [];
+      const urgentValue = packageItem.urgent ? 1 : 0;
+
+      return list.map(item => ({
+        ServiceItemId: item?.packageServiceId ?? 0,
+        serviceItemId: item?.packageServiceId ?? 0,
+
+        ServiceName: item?.packageServiceName ?? '',
+        serviceName: item?.packageServiceName ?? '',
+
+        Code: item?.packageServiceCode ?? '',
+        code: item?.packageServiceCode ?? '',
+
+        CategoryId: item?.packageServiceCategoryId ?? 0,
+        categoryId: item?.packageServiceCategoryId ?? 0,
+
+        SubCategoryId: item?.packageServiceSubCategoryId ?? 0,
+        subCategoryId: item?.packageServiceSubCategoryId ?? 0,
+
+        SubSubCategoryId: item?.packageServiceSubSubCategoryId ?? 0,
+        subSubCategoryId: item?.packageServiceSubSubCategoryId ?? 0,
+
+        CorporateAlias: '',
+        corporateAlias: '',
+
+        CorporateCode: '',
+        corporateCode: '',
+
+        Qty: Number(item?.qty || 1),
+        qty: Number(item?.qty || 1),
+
+        Rate: 0,
+        rate: 0,
+
+        Amount: 0,
+        amount: 0,
+
+        GrossAmt: 0,
+        grossAmt: 0,
+
+        DiscPer: 0,
+        discPer: 0,
+
+        DiscAmt: 0,
+        discAmt: 0,
+
+        DiscountReason: '',
+        discountReason: '',
+
+        NetAmt: 0,
+        netAmt: 0,
+
+        DoctorId: selectedDoctor ?? 0,
+        doctorId: selectedDoctor ?? 0,
+
+        RateListId: 0,
+        rateListId: 0,
+
+        ValidityDays: 0,
+        validityDays: 0,
+
+        SampleTypeId: item?.defaultSampleTypeId
+          ? Number(item.defaultSampleTypeId)
+          : 0,
+        sampleTypeId: item?.defaultSampleTypeId
+          ? Number(item.defaultSampleTypeId)
+          : 0,
+
+        SampleType: item?.sampleTypeList ?? '',
+        sampleType: item?.sampleTypeList ?? '',
+
+        IsNonPayable: 0,
+        isNonPayable: 0,
+
+        // ✅ CHILD TEST INSIDE PACKAGE
+        IsUnderPackage: 1,
+        isUnderPackage: 1,
+
+        PackageId: packageItem?.serviceItemId ?? 0,
+        packageId: packageItem?.serviceItemId ?? 0,
+
+        IsUrgent: urgentValue,
+        isUrgent: urgentValue,
+
+        Barcode: '',
+        barcode: '',
+
+        TestRemark: '',
+        testRemark: '',
+      }));
+    } catch (error) {
+      console.log('Package fetch error:', error?.response || error);
+      return [];
+    }
+  };
+
+  const createPayload = async () => {
+    setLoading(true);
+
+    try {
+      const invalidItem = detailsList.find(
+        item => !item.rate || Number(item.rate) <= 0,
+      );
+
+      if (invalidItem) {
+        Alert.alert('Validation', 'Rate cannot be less than or equal to 0');
+        setLoading(false);
+        return;
+      }
+
+      const existingServices = Array.isArray(serviceItem?.Services)
+        ? serviceItem.Services
+        : [];
+
+      const existingMap = new Map(
+        existingServices.map(service => [makeKey(service), service]),
+      );
+
+      const finalServices = [];
+
+      for (const item of detailsList) {
+        // ✅ IMPORTANT FIX:
+        // Package parent/name should be IsUnderPackage = 0
+        const desiredIsUnderPackage = 0;
+
+        const baseKey = `${Number(item.serviceItemId)}_0_`;
+        const existing =
+          existingMap.get(`${baseKey}${desiredIsUnderPackage}`) ||
+          existingMap.get(`${baseKey}0`) ||
+          existingMap.get(`${baseKey}1`);
+
+        const sampleTypes = Array.isArray(item?.sampleTypes)
+          ? item.sampleTypes
+          : [];
+
         const defaultSampleTypeObj =
-          sampleTypes.find(st => Number(st?.sampleTypeId) === Number(item?.defaultSampleTypeId)) ||
+          sampleTypes.find(
+            st => Number(st?.sampleTypeId) === Number(item?.defaultSampleTypeId),
+          ) ||
           sampleTypes[0] ||
           null;
 
-        const nextSampleTypeId =
+        const sampleTypeId =
           existing?.SampleTypeId ??
           existing?.sampleTypeId ??
           item?.defaultSampleTypeId ??
           defaultSampleTypeObj?.sampleTypeId ??
-          null;
+          0;
 
-        const nextSampleType =
+        const sampleType =
           existing?.SampleType ??
           existing?.sampleType ??
-          (defaultSampleTypeObj?.sampleType || item?.sampleType || '');
+          defaultSampleTypeObj?.sampleType ??
+          item?.sampleType ??
+          '';
 
-        return {
+        const qty = Number(item?.qty || 1);
+        const rate = Number(item?.rate || 0);
+        const gross = rate * qty;
+        const isUrgent = item.urgent ? 1 : 0;
+
+        const parentService = {
           ServiceItemId: item.serviceItemId,
-          SubSubCategoryId: item.subSubCategoryId,
+          serviceItemId: item.serviceItemId,
+
           ServiceName: item.serviceName,
-          Amount: Number(item.rate || 0),
-          qty: Number(item.qty || 1),
-          isUrgent: item.urgent ? 1 : 0,
-          Barcode: existing?.Barcode ?? existing?.barcode ?? '',
-          TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
+          serviceName: item.serviceName,
+
+          Code: item.code || '',
+          code: item.code || '',
+
+          CategoryId: item.categoryId,
+          categoryId: item.categoryId,
+
+          SubCategoryId: item.subCategoryId,
+          subCategoryId: item.subCategoryId,
+
+          SubSubCategoryId: item.subSubCategoryId,
+          subSubCategoryId: item.subSubCategoryId,
+
+          CorporateAlias: item.corporateAlias || '',
+          corporateAlias: item.corporateAlias || '',
+
+          CorporateCode: item.corporateCode || '',
+          corporateCode: item.corporateCode || '',
+
+          Qty: qty,
+          qty,
+
+          Rate: rate,
+          rate,
+
+          Amount: rate,
+          amount: rate,
+
+          GrossAmt: gross,
+          grossAmt: gross,
+
+          DiscPer: 0,
+          discPer: 0,
+
+          DiscAmt: 0,
+          discAmt: 0,
+
+          DiscountReason: '',
+          discountReason: '',
+
+          NetAmt: gross,
+          netAmt: gross,
+
+          DoctorId: selectedDoctor ?? 0,
+          doctorId: selectedDoctor ?? 0,
+
+          RateListId: item.rateListId ?? 0,
+          rateListId: item.rateListId ?? 0,
+
+          ValidityDays: item.validityDays ?? 0,
+          validityDays: item.validityDays ?? 0,
+
           SampleTypes: sampleTypes,
-          SampleTypeId: nextSampleTypeId ? Number(nextSampleTypeId) : null,
-          SampleType: nextSampleType,
+
+          SampleTypeId: sampleTypeId ? Number(sampleTypeId) : 0,
+          sampleTypeId: sampleTypeId ? Number(sampleTypeId) : 0,
+
+          SampleType: sampleType,
+          sampleType,
+
+          IsNonPayable: item.isNonPayable ?? 0,
+          isNonPayable: item.isNonPayable ?? 0,
+
+          // ✅ PACKAGE PARENT / PACKAGE NAME = 0
+          IsUnderPackage: 0,
           isUnderPackage: 0,
+
+          PackageId: 0,
           packageId: 0,
+
+          IsUrgent: isUrgent,
+          isUrgent,
+
+          Barcode: existing?.Barcode ?? existing?.barcode ?? '',
+          barcode: existing?.Barcode ?? existing?.barcode ?? '',
+
+          TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
+          testRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
         };
-      });
+
+        finalServices.push(parentService);
+
+        // ✅ PACKAGE CHILD TESTS = 1
+        if (Number(item.categoryId) === 11) {
+          const childServices = await fetchPackageServices(item);
+          finalServices.push(...childServices);
+        }
+      }
 
       const mergedMap = new Map(
-        existingServices.map(service => [service.ServiceItemId, service])
+        existingServices.map(service => [makeKey(service), service]),
       );
 
-      newServices.forEach(service => {
-        mergedMap.set(service.ServiceItemId, service);
+      finalServices.forEach(service => {
+        mergedMap.set(makeKey(service), service);
       });
 
-      return {
+      const finalSelectedServices = Array.from(mergedMap.values());
+
+      console.log(
+        'FINAL SELECTED SERVICES 👉',
+        JSON.stringify(finalSelectedServices, null, 2),
+      );
+
+      setServiceItem(prev => ({
         ...(prev || {}),
-        Services: Array.from(mergedMap.values()),
+        Services: finalSelectedServices,
         Investigations: {
           ...(prev?.Investigations || {}),
           isUrgent: 0,
           ReportingBranchId: loginBranchId,
         },
-      };
-    });
+      }));
 
-    onDirtyChange?.(false);
-    onSaved?.();
+      onDirtyChange?.(false);
+      onSaved?.();
+    } catch (error) {
+      console.log('Create package payload error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleViewRange = useCallback((item) => {
-    setSelectedAllItem(item)
+  const handleViewRange = useCallback(item => {
+    setSelectedAllItem(item);
     setSelectedServiceItemName(item?.serviceName);
     setSelectedServiceItemId(item.serviceItemId);
     setRangeModalVisible(true);
@@ -207,6 +469,7 @@ const SearchSelectServiceItem = ({
 
   const renderItem = ({ item, index }) => {
     const colorCode = getColorCode(item?.containerColor);
+    const isPackage = Number(item?.categoryId) === 11;
 
     return (
       <View style={[themed.childScreen, themed.border, tw`rounded-xl p-3 mb-3`]}>
@@ -218,9 +481,18 @@ const SearchSelectServiceItem = ({
                 { backgroundColor: colorCode || '#ccc' },
               ]}
             />
-            <Text style={[themed.inputText, tw`flex-1`]}>
-              {item.serviceName}
-            </Text>
+
+            <View style={tw`flex-1`}>
+              <Text style={[themed.inputText, tw`flex-1`]}>
+                {item.serviceName}
+              </Text>
+
+              {isPackage && (
+                <Text style={tw`text-[10px] text-purple-600 mt-1 font-bold`}>
+                  PACKAGE
+                </Text>
+              )}
+            </View>
           </View>
 
           <TouchableOpacity onPress={() => handleDeleteLocal(item)}>
@@ -238,14 +510,15 @@ const SearchSelectServiceItem = ({
 
           <View>
             <Text style={tw`text-[10px] text-gray-400`}>Rate</Text>
+
             {item.isRateEditable === true ? (
               <View style={tw`flex-row items-center`}>
                 <Text style={tw`text-green-600 font-bold mr-1`}>₹</Text>
                 <TextInput
                   value={
                     item.rate === '' ||
-                      item.rate === null ||
-                      item.rate === undefined
+                    item.rate === null ||
+                    item.rate === undefined
                       ? ''
                       : String(item.rate)
                   }
@@ -253,6 +526,7 @@ const SearchSelectServiceItem = ({
                   keyboardType="numeric"
                   style={tw`min-w-[70px] px-2 py-1 border border-green-200 rounded-lg text-green-700 font-bold`}
                   placeholder="0"
+                  placeholderTextColor="#9ca3af"
                 />
               </View>
             ) : (
@@ -322,10 +596,10 @@ const SearchSelectServiceItem = ({
                 paddingBottom: detailsList.length > 0 ? 125 : 20,
                 flexGrow: detailsList.length === 0 ? 1 : 0,
               }}
-              showsVerticalScrollIndicator={true}
+              showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
-              nestedScrollEnabled={true}
+              nestedScrollEnabled
               scrollEventThrottle={16}
               removeClippedSubviews={false}
               initialNumToRender={12}
