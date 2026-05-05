@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchInvestigation } from './services/doctorService';
-import Icon from "react-native-vector-icons/Feather"; // or Ionicons
+import Icon from 'react-native-vector-icons/Feather';
 import tw from 'twrnc';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    Pressable,
-    FlatList,
-    ActivityIndicator,
-    TextInput,
-    Keyboard,
-    InteractionManager,
+  View,
+  Text,
+  TouchableOpacity,
+  Pressable,
+  FlatList,
+  ActivityIndicator,
+  TextInput,
+  Keyboard,
+  InteractionManager,
 } from 'react-native';
 
 import SearchSelectServiceItem from './SearchSelectServiceItem';
@@ -22,212 +22,256 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 
 const SearchSelectService = ({ onClose }) => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const { serviceItem } = useAuth()
-    const { showToast } = useToast()
-    const { theme } = useTheme()
-    const themed = getThemeStyles(theme)
-    const [isDirty, setIsDirty] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
 
-    // ✅ MULTI SELECT STATE
-    const [selectedServices, setSelectedServices] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
-    const searchInputRef = useRef(null);
+  const searchInputRef = useRef(null);
 
-    const focusSearchInput = useCallback(() => {
-        // Make focus reliable inside nested Modal animations (esp. Android).
-        InteractionManager.runAfterInteractions(() => {
-            setTimeout(() => {
-                searchInputRef.current?.focus?.();
-            }, 50);
-        });
-    }, []);
+  const { serviceItem } = useAuth();
+  const { showToast } = useToast();
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
 
-    useEffect(() => {
-        // Auto-focus when this modal content mounts.
-        focusSearchInput();
-    }, [focusSearchInput]);
+  const getItemId = useCallback(item => {
+    return Number(item?.itemId ?? item?.serviceItemId ?? item?.id ?? 0);
+  }, []);
 
-    useEffect(() => {
-        // When user returns back from item sheet to search list, focus again.
-        if (!modalVisible) focusSearchInput();
-    }, [modalVisible, focusSearchInput]);
+  const focusSearchInput = useCallback(() => {
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        searchInputRef.current?.focus?.();
+      }, 50);
+    });
+  }, []);
 
-    // 🔹 API call
-    const searchInvestigationService = async (query) => {
-        try {
-            setLoading(true);
+  useEffect(() => {
+    focusSearchInput();
+  }, [focusSearchInput]);
 
-            const response = await searchInvestigation(query);
+  useEffect(() => {
+    if (!Array.isArray(serviceItem?.Services) || serviceItem.Services.length === 0) {
+      return;
+    }
 
-            if (response?.success) {
-                setResults(response.data);
-            } else {
-                setResults([]);
-            }
+    setSelectedServices(prev => {
+      if (prev.length > 0) return prev;
 
-        } catch (error) {
-            console.error('Error:', error);
-            setResults([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+      return serviceItem.Services
+        .filter(s => Number(s?.IsUnderPackage ?? s?.isUnderPackage ?? 0) === 0)
+        .map(s => ({
+          itemId: s?.ServiceItemId ?? s?.serviceItemId,
+          serviceItemId: s?.ServiceItemId ?? s?.serviceItemId,
+          categoryId: s?.CategoryId ?? s?.categoryId ?? 0,
+          subCategoryId: s?.SubCategoryId ?? s?.subCategoryId ?? 0,
+          subSubCategoryId: s?.SubSubCategoryId ?? s?.subSubCategoryId ?? 0,
+          name: s?.ServiceName ?? s?.serviceName ?? '',
+        }))
+        .filter(x => x.itemId);
+    });
+  }, [serviceItem?.Services]);
 
-    // 🔹 Debounce
-    useEffect(() => {
-        const delay = setTimeout(() => {
-            const q = searchQuery.trim();
-            // Search only after 3+ characters for better UX and fewer API calls.
-            if (q.length >= 3) {
-                searchInvestigationService(q);
-            } else {
-                setResults([]);
-            }
-        }, 500);
+  useEffect(() => {
+    if (!modalVisible) {
+      focusSearchInput();
+    }
+  }, [modalVisible, focusSearchInput]);
 
-        return () => clearTimeout(delay);
-    }, [searchQuery]);
+  const searchInvestigationService = async query => {
+    try {
+      setLoading(true);
 
-    // 🔹 MULTI SELECT ADD
-    const handleSelectItem = (item) => {
-        Keyboard.dismiss();
-        setSelectedServices((prev) => {
-            const exists = prev.find(i => i.itemId === item.itemId);
-            if (exists) {
-                showToast('This service is already selected.', 'warning')
-                // Alert.alert('Already Selected', 'This service is already selected.');
-                return prev;
-            }
+      const response = await searchInvestigation(query);
 
-            // Any NEW selection means footer needs Add Tests again.
-            setIsDirty(true);
-            return [...prev, item];
-        });
-        // Clear search so user can immediately type a new test name.
-        setSearchQuery('');
+      if (response?.success) {
+        setResults(response.data || []);
+      } else {
         setResults([]);
-        setModalVisible(true);
-    };
+      }
+    } catch (error) {
+      console.log('Search error:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 🔹 DELETE
-    const handleDelete = (item) => {
-        setSelectedServices(prev =>
-            prev.filter(i => i.itemId !== item.serviceItemId)
-        );
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      const q = searchQuery.trim();
 
-        // If user deletes/changes, require Add Tests again.
-        setIsDirty(true);
-    };
+      if (q.length >= 3) {
+        searchInvestigationService(q);
+      } else {
+        setResults([]);
+      }
+    }, 500);
 
-    const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
 
-    return (
-        <View style={[themed.childScreen,tw`flex-1  relative`]}>
-            {/* Drag Handle */}
-            <View style={tw`px-4 pt-3`}>
-                <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
-            </View>
+  const handleSelectItem = item => {
+    const normalizedItemId = getItemId(item);
 
-            {/* 🔍 Search */}
-            <View style={themed.searchContainer}>
-                <View style={themed.searchBox}>
-                    <Icon name="search" size={18} color={themed.iconColor} />
+    if (!normalizedItemId) {
+      showToast('Invalid service item. Please try another test.', 'warning');
+      return;
+    }
 
-                    <TextInput
-                        ref={searchInputRef}
-                        placeholder="Search Investigation..."
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        style={themed.searchInput}
-                        placeholderTextColor={themed.placeholderColor}
-                        autoFocus
-                    />
-                </View>
-            </View>
+    Keyboard.dismiss();
 
-            {/* 🔄 Loader */}
-            {loading && <ActivityIndicator size="large" />}
+    const exists = selectedServices.some(i => getItemId(i) === normalizedItemId);
 
-            {/* 📋 Results */}
-            <FlatList
-                data={results}
-                keyExtractor={(item, index) => String(item?.itemId ?? item?.serviceItemId ?? item?.id ?? index)}
-                style={tw`flex-1`}
-                contentContainerStyle={tw`px-4 pt-3 pb-6`}
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled
-                keyboardDismissMode="on-drag"
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        onPress={() => handleSelectItem(item)}
-                        style={[themed.childScreen, themed.border,tw`p-3 mb-2   rounded`]}
-                    >
-                        <Text style={themed.inputText}>{item?.name}</Text>
-                    </TouchableOpacity>
-                )}
-            />
+    if (exists) {
+      showToast('This service is already selected.', 'warning');
+      return;
+    }
 
-            <View style={tw`px-4`}>
-                <TouchableOpacity
-                    onPress={onClose}
-                    style={[styles.closeButton, tw` `]}
-                >
-                    <Text style={tw`text-white text-center font-semibold`}>
-                        Close
-                    </Text>
-                </TouchableOpacity>
-            </View>
+    setSelectedServices(prev => [
+      ...prev,
+      {
+        ...item,
+        itemId: normalizedItemId,
+        serviceItemId: normalizedItemId,
+      },
+    ]);
 
-            {/* iOS: avoid nested native Modals (Registration already renders this inside a Modal) */}
-            {modalVisible && (
-                <View style={tw`absolute inset-0 justify-end`}>
-                    <Pressable style={tw`absolute inset-0 bg-black/40`} onPress={() => setModalVisible(false)} />
-                    <View style={[themed.childScreen,tw`w-full  rounded-t-3xl pt-3 `]}>
+    setIsDirty(true);
+    setSearchQuery('');
+    setResults([]);
+    setModalVisible(true);
+  };
 
-                        <View style={[themed.cardPadding,themed.card,tw`flex-1 border`]}>
-                            <SearchSelectServiceItem
-                                data={selectedServices}
-                                onDelete={handleDelete}
-                                isDirty={isDirty}
-                                onDirtyChange={setIsDirty}
-                                onSaved={() => setIsDirty(false)}
-                            />
-                        </View>
+  const handleDelete = item => {
+    const deleteId = getItemId(item);
 
-                        <View style={tw`pb-4 pt-2`}>
-                            <View style={tw`flex-row gap-3`}>
-                                <TouchableOpacity
-                                    style={tw`flex-1 bg-blue-300 border border-blue-200 py-3 rounded-full`}
-                                    onPress={() => setModalVisible(false)}
-                                >
-                                    <Text style={tw`text-blue-500 text-center font-medium`}>
-                                        Select Another
-                                    </Text>
-                                </TouchableOpacity>
+    setSelectedServices(prev => prev.filter(i => getItemId(i) !== deleteId));
+    setIsDirty(true);
+  };
 
-                                {showNext && (
-                                    <TouchableOpacity
-                                        style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
-                                        onPress={() => {
-                                            setModalVisible(false);
-                                            onClose();
-                                        }}
-                                    >
-                                        <Text style={tw`text-green-500 text-center font-medium`}>
-                                            Next
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                </View>
-            )}
+  const handleSaved = () => {
+    setIsDirty(false);
+  };
+
+  const showNext = Boolean(serviceItem?.Services?.length > 0 && !isDirty);
+  const selectedCount = selectedServices.length;
+
+  return (
+    <View style={[themed.childScreen, tw`flex-1 relative`]}>
+      <View style={tw`px-4 pt-3`}>
+        <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
+      </View>
+
+      <View style={themed.searchContainer}>
+        <View style={themed.searchBox}>
+          <Icon name="search" size={18} color={themed.iconColor} />
+
+          <TextInput
+            ref={searchInputRef}
+            placeholder="Search Investigation..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={themed.searchInput}
+            placeholderTextColor={themed.placeholderColor}
+            autoFocus
+          />
         </View>
-    );
+      </View>
+
+      {loading && <ActivityIndicator size="large" />}
+
+      <FlatList
+        data={results}
+        keyExtractor={(item, index) =>
+          String(item?.itemId ?? item?.serviceItemId ?? item?.id ?? index)
+        }
+        style={tw`flex-1`}
+        contentContainerStyle={tw`px-4 pt-3 pb-6`}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+        keyboardDismissMode="on-drag"
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => handleSelectItem(item)}
+            style={[
+              themed.childScreen,
+              themed.border,
+              tw`p-3 mb-2 rounded`,
+            ]}
+          >
+            <Text style={themed.inputText}>{item?.name}</Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {selectedCount > 0 && (
+        <View style={tw`px-4 pb-2`}>
+          <Text style={tw`text-xs text-gray-500`}>
+            {selectedCount} test{selectedCount > 1 ? 's' : ''} selected
+          </Text>
+        </View>
+      )}
+
+      <View style={tw`px-4`}>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Text style={tw`text-white text-center font-semibold`}>
+            Close
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {modalVisible && (
+        <View style={tw`absolute inset-0 justify-end`}>
+          <Pressable
+            style={tw`absolute inset-0 bg-black/40`}
+            onPress={() => setModalVisible(false)}
+          />
+
+          <View style={[themed.childScreen, tw`w-full rounded-t-3xl pt-3`]}>
+            <View style={[themed.cardPadding, themed.card, tw`flex-1 border`]}>
+              <SearchSelectServiceItem
+                data={selectedServices}
+                onDelete={handleDelete}
+                isDirty={isDirty}
+                onDirtyChange={setIsDirty}
+                onSaved={handleSaved}
+              />
+            </View>
+
+            <View style={tw`pb-4 pt-2`}>
+              <View style={tw`flex-row gap-3`}>
+                <TouchableOpacity
+                  style={tw`flex-1 bg-blue-300 border border-blue-200 py-3 rounded-full`}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={tw`text-blue-500 text-center font-medium`}>
+                    Select Another
+                  </Text>
+                </TouchableOpacity>
+
+                {showNext && (
+                  <TouchableOpacity
+                    style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
+                    onPress={() => {
+                      setModalVisible(false);
+                      onClose?.();
+                    }}
+                  >
+                    <Text style={tw`text-green-500 text-center font-medium`}>
+                      Next
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+    </View>
+  );
 };
 
 export default SearchSelectService;

@@ -149,8 +149,8 @@ export const getThemeStyles = (theme) => {
     ),
 
     modalCloseButton: tw.style(
-      'p-2 rounded-full',
-      isDark ? 'bg-gray-700' : 'bg-gray-100'
+      'p-1 rounded-full',
+      isDark ? 'bg-gray-700 border border-gray-500' : 'bg-gray-100'
     ),
 
     // Divider / labels

@@ -36,6 +36,7 @@ import { SelectList } from 'react-native-dropdown-select-list';
 import { getPatientInvestigation } from '../../../utils/patinetService.js/investigation';
 import { getFullLocation } from '../../../utils/patinetService.js/location';
 import SelectApproval from './SelectApproval';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 
 const RegistrationScreen = () => {
@@ -310,12 +311,30 @@ const RegistrationScreen = () => {
     return Number.isFinite(num) ? num : null;
   };
 
-  const handleRemoveService = (indexToRemove) => {
-    if (!serviceItem?.Services) return;
+  const getServiceItemId = (item) => Number(item?.ServiceItemId ?? item?.serviceItemId ?? 0);
+  const getPackageId = (item) => Number(item?.PackageId ?? item?.packageId ?? 0);
+  const isUnderPackage = (item) => Number(item?.IsUnderPackage ?? item?.isUnderPackage ?? 0) === 1;
 
-    const updatedServices = serviceItem.Services.filter(
-      (_, index) => index !== indexToRemove
-    );
+  const handleRemoveService = (serviceToRemove) => {
+    const currentServices = Array.isArray(serviceItem?.Services) ? serviceItem.Services : [];
+    if (currentServices.length === 0) return;
+
+    const removeServiceId = getServiceItemId(serviceToRemove);
+    if (!removeServiceId) return;
+
+    // If selected chip is a package parent, remove parent + all package child tests.
+    const updatedServices = currentServices.filter((item) => {
+      const itemServiceId = getServiceItemId(item);
+      const itemPackageId = getPackageId(item);
+
+      // remove exact selected service always
+      if (itemServiceId === removeServiceId) return false;
+
+      // remove children linked to package parent
+      if (itemPackageId === removeServiceId) return false;
+
+      return true;
+    });
 
     setServiceItem({
       ...serviceItem,
@@ -589,7 +608,15 @@ const RegistrationScreen = () => {
 
       console.log("SUCCESS 👉", response);
 
-      showToast("Patient Saved Successfully", "success");
+      const uhid = response?.data?.uhid;
+
+      if (uhid) {
+        Clipboard.setString(uhid); 
+        showToast(
+          `Patient saved. UHID ${uhid} copied to clipboard`,
+          "success"
+        );
+      }
 
       setResponseSuccess(prev => !prev);
       resetForm();
@@ -1574,29 +1601,31 @@ const RegistrationScreen = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`flex-row items-center`}
           >
-            {serviceItem?.Services?.map((s, index) => (
-              <View key={index} style={tw`mr-2 mb-2 pt-2`}>
-                <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
-                  <Text
-                    numberOfLines={1}
-                    style={tw`text-blue-700 text-xs font-medium mr-2`}
-                  >
-                    {s.ServiceName.replace('\n', ' ').slice(0, 15)}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveService(index)}
-                    style={tw`ml-1`}
-                  >
-                    <MaterialCommunityIcons name="close-circle" size={16} color="#ef4444" />
-                  </TouchableOpacity>
-                  {s.isUrgent === 1 && (
-                    <View style={tw`absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[16px] h-[16px] items-center justify-center px-[3px]`}>
-                      <Text style={tw`text-white text-[9px] font-bold`}>U</Text>
-                    </View>
-                  )}
+            {(serviceItem?.Services || [])
+              .filter((s) => !isUnderPackage(s))
+              .map((s, index) => (
+                <View key={`${getServiceItemId(s)}-${index}`} style={tw`mr-2 mb-2 pt-2`}>
+                  <View style={tw`relative bg-blue-100 px-3 py-2 rounded-full flex-row items-center`}>
+                    <Text
+                      numberOfLines={1}
+                      style={tw`text-blue-700 text-xs font-medium mr-2`}
+                    >
+                      {s.ServiceName.replace('\n', ' ').slice(0, 15)}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveService(s)}
+                      style={tw`ml-1`}
+                    >
+                      <MaterialCommunityIcons name="close-circle" size={16} color="#ef4444" />
+                    </TouchableOpacity>
+                    {Number(s?.IsUrgent ?? s?.isUrgent ?? 0) === 1 && (
+                      <View style={tw`absolute -top-2 -right-2 bg-red-500 rounded-full min-w-[16px] h-[16px] items-center justify-center px-[3px]`}>
+                        <Text style={tw`text-white text-[9px] font-bold`}>U</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))}
           </ScrollView>
 
           <View style={tw`flex-row items-center mt-1`}>
@@ -1613,214 +1642,197 @@ const RegistrationScreen = () => {
           </View>
         </View>
 
-        <View style={[themed.card, themed.childScreen, themed.cardPadding, tw`mt-3`]}>
-          {/* Toggle Header for Billing Info */}
-          <TouchableOpacity
-            onPress={() => setShowBillingInfo(!showBillingInfo)}
-            activeOpacity={0.7}
-            style={tw`flex-row justify-between items-center mb-3`}
-          >
-            <Text style={styles.patientInfoText}>Billing Info:</Text>
-            <View style={tw`bg-gray-100 p-1 rounded-full`}>
+        {netAmount > 0 && (
+          <View style={[themed.card, themed.childScreen, themed.cardPadding, tw`mt-3`]}>
+            {/* Toggle Header for Billing Info */}
+            <TouchableOpacity
+              onPress={() => setShowBillingInfo(!showBillingInfo)}
+              activeOpacity={0.7}
+              style={tw`flex-row justify-between items-center mb-3`}
+            >
+              <Text style={styles.patientInfoText}>Billing Info:</Text>
               <MaterialIcons
+                style={[
+                  tw`rounded-full p-1`,
+                  themed.modalCloseButton,
+                ]}
                 name={showBillingInfo ? "expand-less" : "expand-more"}
                 size={20}
-                color="#6B7280"
+                color={themed.chevronColor}
               />
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          {showBillingInfo && (
-            <>
-              <View style={tw`flex-row items-center gap-2.5`}>
-                {/* Gross Amount */}
-                <View style={tw`w-[30%] mr-1`}>
-                  <Text style={themed.inputLabel}>Gross Amount</Text>
-                  <TextInput
-                    editable={false}
-                    value={grossAmount ? String(grossAmount) : ""}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder=''
-                  />
+            {showBillingInfo && (
+              <>
+                <View style={tw`flex-row items-center gap-2.5`}>
+                  {/* Gross Amount */}
+                  <View style={tw`w-[30%] mr-1`}>
+                    <Text style={themed.inputLabel}>Gross Amount</Text>
+                    <TextInput
+                      editable={false}
+                      value={grossAmount ? String(grossAmount) : ""}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder=''
+                    />
+                  </View>
+
+                  {/* Discount % */}
+                  <View style={tw`w-[30%] mx-1`}>
+                    <Text style={themed.inputLabel}>Disc (%)</Text>
+                    <TextInput
+                      value={discountPercent ? String(discountPercent) : ""}
+                      keyboardType="numeric"
+                      onChangeText={(txt) => {
+                        setDiscountLastEdited('percent');
+                        const cleaned = txt.replace(/[^0-9.]/g, '');
+                        const num = cleaned === '' ? 0 : Number(cleaned);
+                        setDiscountPercent(num);
+                      }}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='%'
+                      placeholderTextColor={themed.inputPlaceholder}
+
+                    />
+                  </View>
+
+                  {/* Discount Amount */}
+                  <View style={tw`w-[30%] ml-1`}>
+                    <Text style={themed.inputLabel}>Disc Amt</Text>
+                    <TextInput
+                      value={discountAmount ? String(discountAmount) : ""}
+                      keyboardType="numeric"
+                      onChangeText={(txt) => {
+                        setDiscountLastEdited('amount');
+                        const cleaned = txt.replace(/[^0-9.]/g, '');
+                        const num = cleaned === '' ? 0 : Number(cleaned);
+                        setDiscountAmount(num);
+                      }}
+                      style={[themed.inputBox, themed.inputText]}
+                    />
+                  </View>
                 </View>
 
-                {/* Discount % */}
-                <View style={tw`w-[30%] mx-1`}>
-                  <Text style={themed.inputLabel}>Disc (%)</Text>
-                  <TextInput
-                    value={discountPercent ? String(discountPercent) : ""}
-                    keyboardType="numeric"
-                    onChangeText={(txt) => {
-                      setDiscountLastEdited('percent');
-                      const cleaned = txt.replace(/[^0-9.]/g, '');
-                      const num = cleaned === '' ? 0 : Number(cleaned);
-                      setDiscountPercent(num);
-                    }}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='%'
-                    placeholderTextColor={themed.inputPlaceholder}
+                <View style={tw`flex-row items-center gap-2.5 mt-2`}>
+                  {/* Round off Amount */}
+                  <View style={tw`w-[30%] mr-1`}>
+                    <Text style={themed.inputLabel}>Round off</Text>
+                    <TextInput
+                      editable={false}
+                      value={String(roundOff || 0)}
+                      keyboardType="numeric"
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='0'
+                      placeholderTextColor={themed.inputPlaceholder}
+                    />
+                  </View>
 
-                  />
+                  {/* Net Amount */}
+                  <View style={tw`w-[30%] mx-1`}>
+                    <Text style={themed.inputLabel}>Net Amount</Text>
+                    <TextInput
+                      value={netAmount ? String(netAmount) : ""}
+                      editable={false}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='120'
+                      placeholderTextColor={themed.inputBox}
+
+                    />
+                  </View>
+
+                  {/* Balance Amount */}
+                  <View style={tw`w-[30%] ml-1`}>
+                    <Text style={themed.inputLabel}>Balance Amt</Text>
+                    <TextInput
+                      value={balanceAmount ? String(balanceAmount) : 0}
+                      editable={false}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='Avl Bal'
+                      placeholderTextColor={themed.inputPlaceholder}
+
+                    />
+                  </View>
                 </View>
 
-                {/* Discount Amount */}
-                <View style={tw`w-[30%] ml-1`}>
-                  <Text style={themed.inputLabel}>Disc Amt</Text>
-                  <TextInput
-                    value={discountAmount ? String(discountAmount) : ""}
-                    keyboardType="numeric"
-                    onChangeText={(txt) => {
-                      setDiscountLastEdited('amount');
-                      const cleaned = txt.replace(/[^0-9.]/g, '');
-                      const num = cleaned === '' ? 0 : Number(cleaned);
-                      setDiscountAmount(num);
-                    }}
-                    style={[themed.inputBox, themed.inputText]}
-                  />
+                {/* discount reason section */}
+                <View style={tw`flex-row items-center gap-2.5 mt-2`}>
+                  {/* Discount approved by */}
+                  <View style={tw`w-[30%] mr-1`}>
+                    <Text numberOfLines={1} style={themed.inputLabel}>Dis Approved by</Text>
+                    <TouchableOpacity
+                      onPress={() => setDiscountApprovalModal(true)}
+                      style={[themed.inputBox, tw`flex-row items-center justify-between px-3`,
+                      ]} activeOpacity={0.7}>
+                      <Text numberOfLines={1} style={[themed.inputText, tw`flex-1`]}>
+                        {selectedDiscountApproval?.name || 'Select Approval'}
+                      </Text>
+                      <Icon name="chevron-down" size={18} color={themed.chevronColor} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Discount reason */}
+                  <View style={tw`w-[30%] mx-1`}>
+                    <Text style={themed.inputLabel}>Disc Reason</Text>
+                    <TextInput
+                      value={discountReason}
+                      onChangeText={setDiscountReason}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='test'
+                      placeholderTextColor={themed.inputPlaceholder}
+
+                    />
+                  </View>
+
+                  {/* Remark */}
+                  <View style={tw`w-[30%] mx-1`}>
+                    <Text style={themed.inputLabel}>Remark</Text>
+                    <TextInput
+                      value={remark}
+                      onChangeText={setRemark}
+                      style={[themed.inputBox, themed.inputText]}
+                      placeholder='Remark'
+                      placeholderTextColor={themed.inputPlaceholder}
+
+                    />
+                  </View>
                 </View>
-              </View>
-
-              <View style={tw`flex-row items-center gap-2.5 mt-2`}>
-                {/* Round off Amount */}
-                <View style={tw`w-[30%] mr-1`}>
-                  <Text style={themed.inputLabel}>Round off</Text>
-                  <TextInput
-                    editable={false}
-                    value={String(roundOff || 0)}
-                    keyboardType="numeric"
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='0'
-                    placeholderTextColor={themed.inputPlaceholder}
-                  />
-                </View>
-
-                {/* Net Amount */}
-                <View style={tw`w-[30%] mx-1`}>
-                  <Text style={themed.inputLabel}>Net Amount</Text>
-                  <TextInput
-                    value={netAmount ? String(netAmount) : ""}
-                    editable={false}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='120'
-                    placeholderTextColor={themed.inputBox}
-
-                  />
-                </View>
-
-                {/* Balance Amount */}
-                <View style={tw`w-[30%] ml-1`}>
-                  <Text style={themed.inputLabel}>Balance Amt</Text>
-                  <TextInput
-                    value={balanceAmount ? String(balanceAmount) : 0}
-                    editable={false}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='Avl Bal'
-                    placeholderTextColor={themed.inputPlaceholder}
-
-                  />
-                </View>
-              </View>
-
-              {/* discount reason section */}
-              <View style={tw`flex-row items-center gap-2.5 mt-2`}>
-                {/* Discount approved by */}
-                <View style={tw`w-[30%] mr-1`}>
-                  <Text numberOfLines={1} style={themed.inputLabel}>Dis Approved by</Text>
-                  <TouchableOpacity
-                    onPress={() => setDiscountApprovalModal(true)}
-                    style={[themed.inputBox, tw`justify-center`]}
-                  >
-                    <Text numberOfLines={1} style={themed.inputText}>
-                      {selectedDiscountApproval?.name || 'Select'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Discount reason */}
-                <View style={tw`w-[30%] mx-1`}>
-                  <Text style={themed.inputLabel}>Disc Reason</Text>
-                  <TextInput
-                    value={discountReason}
-                    onChangeText={setDiscountReason}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='test'
-                    placeholderTextColor={themed.inputPlaceholder}
-
-                  />
-                </View>
-
-                {/* Remark */}
-                <View style={tw`w-[30%] mx-1`}>
-                  <Text style={themed.inputLabel}>Remark</Text>
-                  <TextInput
-                    value={remark}
-                    onChangeText={setRemark}
-                    style={[themed.inputBox, themed.inputText]}
-                    placeholder='Remark'
-                    placeholderTextColor={themed.inputPlaceholder}
-
-                  />
-                </View>
-              </View>
-            </>
-          )}
-        </View>
-
-        {netAmount > 0 && (
-          <View style={[themed.border, themed.cardPadding, themed.childScreen, tw`my-2`]}>
-            <View style={tw`flex-row items-center justify-between`}>
-
-              {/* LEFT SIDE (Icon + Text) */}
-              <View style={tw`flex-row items-center`}>
-                <Image
-                  style={tw`h-5 w-5 mr-3`}
-                  source={{ uri: 'https://cdn-icons-png.flaticon.com/128/7460/7460812.png' }}
-                />
-                <Text style={themed.inputText}>Cash</Text>
-              </View>
-
-              {/* RIGHT SIDE (Amount) */}
-              <Text style={[tw`font-bold`, themed.labelText]}>
-                ₹ {Number(netAmount || 0).toFixed(2)}
-              </Text>
-
-            </View>
+              </>
+            )}
           </View>
         )}
-
-        {/* Payment Fields */}
-        {/* <PaymentInfo
-          netAmount={netAmount}
-          cash={cash}
-          setCash={setCash}
-          debitCardAmt={debitCardAmt}
-          setDebitCardAmt={setDebitCardAmt}
-          chequeAmt={chequeAmt}
-          setChequeAmt={setChequeAmt}
-          neftrtgsAmt={neftrtgsAmt}
-          setNeftRtgsAmt={setNeftRtgsAmt}
-          payTmAmt={payTmAmt}
-          setPayTm={setPayTm}
-          phonePayAmt={phonePayAmt}
-          setPhonePayAmt={setPhonePayAmt}
-          selectedBank={selectedBank}
-          openBankModal={() => setBankModal(true)}
-          setSelectedBank={setSelectedBank}
-          chequeRefrence={chequeRefrence}
-          setChequeRefrence={setChequeRefrence}
-          neftRefrence={neftRefrence}
-          setNeftReference={setNeftReference}
-          paytmRefrence={paytmRefrence}
-          setPaytmRefrence={setPaytmRefrence}
-          phonePayReference={phonePayReference}
-          setPhonePayReference={setPhonePayReference}
-          debitCardReference={debitCardReference}
-          setDebitCardReference={setDebitCardReference}
-          parseMoney={parseMoney}
-          onPaymentChange={setPaymentData}
-          onBalanceChange={setBalanceAmount}
-          onReceiptAmountChange={setReceiptAmount}
-        /> */}
+        {netAmount > 0 && (
+          < PaymentInfo
+            netAmount={netAmount}
+            cash={cash}
+            setCash={setCash}
+            debitCardAmt={debitCardAmt}
+            setDebitCardAmt={setDebitCardAmt}
+            chequeAmt={chequeAmt}
+            setChequeAmt={setChequeAmt}
+            neftrtgsAmt={neftrtgsAmt}
+            setNeftRtgsAmt={setNeftRtgsAmt}
+            payTmAmt={payTmAmt}
+            setPayTm={setPayTm}
+            phonePayAmt={phonePayAmt}
+            setPhonePayAmt={setPhonePayAmt}
+            selectedBank={selectedBank}
+            openBankModal={() => setBankModal(true)}
+            setSelectedBank={setSelectedBank}
+            chequeRefrence={chequeRefrence}
+            setChequeRefrence={setChequeRefrence}
+            neftRefrence={neftRefrence}
+            setNeftReference={setNeftReference}
+            paytmRefrence={paytmRefrence}
+            setPaytmRefrence={setPaytmRefrence}
+            phonePayReference={phonePayReference}
+            setPhonePayReference={setPhonePayReference}
+            debitCardReference={debitCardReference}
+            setDebitCardReference={setDebitCardReference}
+            parseMoney={parseMoney}
+            onPaymentChange={setPaymentData}
+            onBalanceChange={setBalanceAmount}
+            onReceiptAmountChange={setReceiptAmount}
+          />
+        )}
 
 
         <TouchableOpacity
