@@ -29,7 +29,12 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
 
   const { showToast } = useToast()
   const { loginBranchId, userId, hosId } = useAuth()
-  const { dashboardWallet, getAllDashboardPaymentHistory } = useDash()
+  const {
+    dashboardWallet,
+    getAllDashboardPaymentHistory,
+    walletData,
+    walletLoading,
+  } = useDash()
 
   const [fromDate, setFromDate] = useState(null)
   const [toDate, setToDate] = useState(null)
@@ -72,6 +77,11 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
   const resolvedHospId = Number(hosId || 0)
   const resolvedBranchId = Number(loginBranchId || 0)
   const resolvedUserId = Number(userId || 0)
+
+  useEffect(() => {
+    if (!resolvedBranchId || resolvedBranchId <= 0) return
+    dashboardWallet(resolvedBranchId)
+  }, [dashboardWallet, resolvedBranchId])
 
   const paymentPayload = useMemo(() => {
     return {
@@ -169,12 +179,10 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
         onSuccess={async data => {
           try {
             console.log('Payment success:', data)
-
             showToast?.(
               data?.message || 'Payment successful and saved in database.',
               'success'
             )
-
             setAmount('')
             setRemarks('')
 
@@ -213,7 +221,21 @@ const DashboardAddFund = ({ onClose, onPaymentSuccess }) => {
       />
 
       <View>
-        <Text style={[themed.labelText, tw`my-2`]}>Enter Amount</Text>
+        <View style={tw`flex-row items-center justify-between my-2`}>
+          <Text style={themed.labelText}>Enter Amount</Text>
+          <View style={tw`items-end`}>
+            <Text style={themed.mutedText}>Wallet Balance</Text>
+            {walletLoading ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Text
+                style={tw`${Number(walletData?.balanceMain || 0) > 0 ? 'text-green-800' : 'text-red-500'} text-base font-bold`}
+              >
+                ₹ {walletData?.balanceMain ?? 0}
+              </Text>
+            )}
+          </View>
+        </View>
         <TextInput
           value={amount}
           onChangeText={handleAmountChange}

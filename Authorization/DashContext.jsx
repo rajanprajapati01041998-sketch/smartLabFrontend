@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+} from 'react';
 import api from './api';
 
 const DashContext = createContext();
@@ -11,7 +17,7 @@ export const DashProvider = ({ children }) => {
     const [summaryData, setSummaryData] = useState(null);
     const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false);
 
-    const dashboardWallet = async (ids) => {
+    const dashboardWallet = useCallback(async (ids) => {
         try {
             setWalletLoading(true);
 
@@ -25,9 +31,9 @@ export const DashProvider = ({ children }) => {
         } finally {
             setWalletLoading(false);
         }
-    };
+    }, []);
 
-    const getAllDashboardPaymentHistory = async ({
+    const getAllDashboardPaymentHistory = useCallback(async ({
         selectedFilter = 'all',
         selectedBranches = [],
         loginBranchId,
@@ -63,23 +69,35 @@ export const DashProvider = ({ children }) => {
         } finally {
             setPaymentHistoryLoading(false);
         }
-    };
+    }, []);
+
+    const value = useMemo(() => {
+        return {
+            walletData,
+            setWalletData,
+            walletLoading,
+            dashboardWallet,
+
+            paymentHistoryList,
+            setPaymentHistoryList,
+            summaryData,
+            setSummaryData,
+            paymentHistoryLoading,
+            getAllDashboardPaymentHistory,
+        };
+    }, [
+        walletData,
+        walletLoading,
+        dashboardWallet,
+        paymentHistoryList,
+        summaryData,
+        paymentHistoryLoading,
+        getAllDashboardPaymentHistory,
+    ]);
 
     return (
         <DashContext.Provider
-            value={{
-                walletData,
-                setWalletData,
-                walletLoading,
-                dashboardWallet,
-
-                paymentHistoryList,
-                setPaymentHistoryList,
-                summaryData,
-                setSummaryData,
-                paymentHistoryLoading,
-                getAllDashboardPaymentHistory,
-            }}
+            value={value}
         >
             {children}
         </DashContext.Provider>

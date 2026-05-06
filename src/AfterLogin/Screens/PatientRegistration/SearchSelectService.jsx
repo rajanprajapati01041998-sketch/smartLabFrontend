@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { searchInvestigation } from './services/doctorService';
 import Icon from 'react-native-vector-icons/Feather';
+import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
 import tw from 'twrnc';
 import {
   View,
@@ -231,7 +232,7 @@ const SearchSelectService = ({ onClose }) => {
           />
 
           <View style={[themed.childScreen, tw`w-full rounded-t-3xl pt-3`]}>
-            <View style={[themed.cardPadding, themed.card, tw`flex-1 border`]}>
+            <View style={[themed.cardPadding, tw`flex-1 `]}>
               <SearchSelectServiceItem
                 data={selectedServices}
                 onDelete={handleDelete}
@@ -244,17 +245,27 @@ const SearchSelectService = ({ onClose }) => {
             <View style={tw`pb-4 pt-2`}>
               <View style={tw`flex-row gap-3`}>
                 <TouchableOpacity
-                  style={tw`flex-1 bg-blue-300 border border-blue-200 py-3 rounded-full`}
+                  activeOpacity={0.85}
+                  style={[
+                    tw`flex-1 flex-row items-center justify-center py-3 rounded-xl bg-blue-800/20 mx-2 border border-blue-800/40`,
+                    
+                  ]}
                   onPress={() => setModalVisible(false)}
                 >
-                  <Text style={tw`text-blue-500 text-center font-medium`}>
+                  <Icons
+                    name="refresh"
+                    size={18}
+                    color="#2563EB"
+                    style={tw`mr-2`}
+                  />
+
+                  <Text style={[tw`text-blue-600 text-center font-semibold text-base`]}>
                     Select Another
                   </Text>
                 </TouchableOpacity>
-
                 {showNext && (
                   <TouchableOpacity
-                    style={tw`flex-1 bg-green-50 border border-green-400 py-3 rounded-full`}
+                    style={tw`flex-1 bg-green-800/20 border border-green-800/40 py-3 rounded-xl mr-2`}
                     onPress={() => {
                       setModalVisible(false);
                       onClose?.();

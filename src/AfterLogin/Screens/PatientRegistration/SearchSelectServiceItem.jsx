@@ -293,59 +293,32 @@ const SearchSelectServiceItem = ({
 
       return list.map(item => ({
         ServiceItemId: item?.packageServiceId ?? 0,
-        serviceItemId: item?.packageServiceId ?? 0,
         ServiceName: item?.packageServiceName ?? '',
-        serviceName: item?.packageServiceName ?? '',
         Code: item?.packageServiceCode ?? '',
-        code: item?.packageServiceCode ?? '',
         CategoryId: item?.packageServiceCategoryId ?? 0,
-        categoryId: item?.packageServiceCategoryId ?? 0,
         SubCategoryId: item?.packageServiceSubCategoryId ?? 0,
-        subCategoryId: item?.packageServiceSubCategoryId ?? 0,
         SubSubCategoryId: item?.packageServiceSubSubCategoryId ?? 0,
-        subSubCategoryId: item?.packageServiceSubSubCategoryId ?? 0,
         CorporateAlias: '',
-        corporateAlias: '',
         CorporateCode: '',
-        corporateCode: '',
         Qty: Number(item?.qty || 1),
-        qty: Number(item?.qty || 1),
         Rate: 0,
-        rate: 0,
         Amount: 0,
-        amount: 0,
         GrossAmt: 0,
-        grossAmt: 0,
         DiscPer: 0,
-        discPer: 0,
         DiscAmt: 0,
-        discAmt: 0,
         DiscountReason: '',
-        discountReason: '',
         NetAmt: 0,
-        netAmt: 0,
         DoctorId: selectedDoctor ?? 0,
-        doctorId: selectedDoctor ?? 0,
         RateListId: 0,
-        rateListId: 0,
         ValidityDays: 0,
-        validityDays: 0,
         SampleTypeId: item?.defaultSampleTypeId ? Number(item.defaultSampleTypeId) : 0,
-        sampleTypeId: item?.defaultSampleTypeId ? Number(item.defaultSampleTypeId) : 0,
         SampleType: item?.sampleTypeList ?? '',
-        sampleType: item?.sampleTypeList ?? '',
         IsNonPayable: 0,
-        isNonPayable: 0,
         IsUnderPackage: 1,
-        isUnderPackage: 1,
         PackageId: packageItem?.serviceItemId ?? 0,
-        packageId: packageItem?.serviceItemId ?? 0,
         IsUrgent: urgentValue,
-        isUrgent: urgentValue,
         Barcode: '',
-        barcode: '',
         TestRemark: '',
-        testRemark: '',
       }));
     } catch (error) {
       console.log('Package fetch error:', error?.response || error);
@@ -415,60 +388,33 @@ const SearchSelectServiceItem = ({
 
         finalServices.push({
           ServiceItemId: item.serviceItemId,
-          serviceItemId: item.serviceItemId,
           ServiceName: item.serviceName,
-          serviceName: item.serviceName,
           Code: item.code || '',
-          code: item.code || '',
           CategoryId: item.categoryId,
-          categoryId: item.categoryId,
           SubCategoryId: item.subCategoryId,
-          subCategoryId: item.subCategoryId,
           SubSubCategoryId: item.subSubCategoryId,
-          subSubCategoryId: item.subSubCategoryId,
           CorporateAlias: item.corporateAlias || '',
-          corporateAlias: item.corporateAlias || '',
           CorporateCode: item.corporateCode || '',
-          corporateCode: item.corporateCode || '',
-          Qty: qty,
-          qty,
+          Qty: qty, qty,
           Rate: rate,
-          rate,
           Amount: rate,
-          amount: rate,
           GrossAmt: gross,
-          grossAmt: gross,
           DiscPer: 0,
-          discPer: 0,
           DiscAmt: 0,
-          discAmt: 0,
           DiscountReason: '',
-          discountReason: '',
           NetAmt: gross,
-          netAmt: gross,
           DoctorId: selectedDoctor ?? 0,
-          doctorId: selectedDoctor ?? 0,
           RateListId: item.rateListId ?? 0,
-          rateListId: item.rateListId ?? 0,
           ValidityDays: item.validityDays ?? 0,
-          validityDays: item.validityDays ?? 0,
           SampleTypes: sampleTypes,
           SampleTypeId: sampleTypeId ? Number(sampleTypeId) : 0,
-          sampleTypeId: sampleTypeId ? Number(sampleTypeId) : 0,
           SampleType: sampleType,
-          sampleType,
           IsNonPayable: item.isNonPayable ?? 0,
-          isNonPayable: item.isNonPayable ?? 0,
           IsUnderPackage: 0,
-          isUnderPackage: 0,
           PackageId: 0,
-          packageId: 0,
           IsUrgent: isUrgent,
-          isUrgent,
           Barcode: existing?.Barcode ?? existing?.barcode ?? '',
-          barcode: existing?.Barcode ?? existing?.barcode ?? '',
           TestRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
-          testRemark: existing?.TestRemark ?? existing?.testRemark ?? '',
         });
 
         if (Number(item.categoryId) === 11) {
@@ -654,12 +600,11 @@ const SearchSelectServiceItem = ({
             <View
               style={[
                 themed.borderTop,
-                themed.childScreen,
-                tw`absolute bottom-0 left-0 right-0 px-3 pt-2 pb-3 border-t`,
+                tw`absolute bottom-0 left-0 right-0   border-t`,
               ]}
-            >
+             >
               <View style={tw`flex-row justify-between items-center mb-2`}>
-                <Text style={[themed.inputText, tw`font-semibold`]}>
+                <Text style={[themed.inputText]}>
                   Total Amount
                 </Text>
                 <Text style={tw`text-lg font-bold text-green-600`}>
@@ -669,8 +614,8 @@ const SearchSelectServiceItem = ({
 
               <TouchableOpacity
                 onPress={createPayload}
-                style={tw`bg-blue-500 p-3 rounded-lg`}
-              >
+                style={tw`bg-blue-800/60  p-3 rounded-lg`}
+               >
                 <Text style={tw`text-white text-center font-bold`}>
                   Add ({visibleDetailsList.length}) Tests
                 </Text>
@@ -687,7 +632,7 @@ const SearchSelectServiceItem = ({
         statusBarTranslucent
         presentationStyle="overFullScreen"
         onRequestClose={() => setRangeModalVisible(false)}
-      >
+       >
         <View style={themed.modalOverlay}>
           <Pressable
             style={tw`absolute inset-0`}
