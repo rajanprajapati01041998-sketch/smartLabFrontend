@@ -1398,8 +1398,8 @@ const RegistrationScreen = () => {
           </View> */}
 
           <View style={tw`my-3`}>
-            <View>
-              <Text style={[{ fontWeight: 'bold', marginBottom: 5 },themed.labelText]}>
+            {/* <View>
+              <Text style={[{ fontWeight: 'bold', marginBottom: 5 }, themed.labelText]}>
                 Visit type
               </Text>
 
@@ -1429,13 +1429,13 @@ const RegistrationScreen = () => {
                 </View>
 
               </RadioButton.Group>
-            </View>
+            </View>  */}
 
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
                 <View style={tw`flex-1  w-full`}>
                   <Text style={themed.inputLabel}>Field Boy</Text>
-                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={[ themed.inputBox , tw` p-3 mb-3 mt-1`]}>
+                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={[themed.inputBox, tw` p-3 mb-3 mt-1`]}>
                     <Text style={[themed.inputText]}>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
                   </TouchableOpacity>
                 </View>
@@ -1447,9 +1447,9 @@ const RegistrationScreen = () => {
                       setTempDate(collectionDateTime || new Date());
                       setShowDatePicker(true);
                     }}
-                    style={[themed.inputBox,tw` p-3  mb-3 mt-1`]}
+                    style={[themed.inputBox, tw` p-3  mb-3 mt-1`]}
                   >
-                    <Text style={[themed.inputText]}>{formatDateTime(collectionDateTime)}</Text>
+                    <Text>{formatDateTime(collectionDateTime)}</Text>
                   </TouchableOpacity>
 
                   {/* ================= DATE PICKER ================= */}
