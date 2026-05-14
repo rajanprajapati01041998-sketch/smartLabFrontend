@@ -1398,8 +1398,8 @@ const RegistrationScreen = () => {
           </View> */}
 
           <View style={tw`my-3`}>
-            {/* <View>
-              <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>
+            <View>
+              <Text style={[{ fontWeight: 'bold', marginBottom: 5 },themed.labelText]}>
                 Visit type
               </Text>
 
@@ -1415,7 +1415,7 @@ const RegistrationScreen = () => {
                     onPress={() => setVisitype('Clinic Visit')}
                   >
                     <RadioButton.Android value="Clinic Visit" />
-                    <Text>Clinic Visit</Text>
+                    <Text style={[themed.inputText]}>Clinic Visit</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1423,20 +1423,20 @@ const RegistrationScreen = () => {
                     onPress={() => setVisitype('Home Collection')}
                   >
                     <RadioButton.Android value="Home Collection" />
-                    <Text>Home Collection</Text>
+                    <Text style={[themed.inputText]}>Home Collection</Text>
                   </TouchableOpacity>
 
                 </View>
 
               </RadioButton.Group>
-            </View> */}
+            </View>
 
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
                 <View style={tw`flex-1  w-full`}>
                   <Text style={themed.inputLabel}>Field Boy</Text>
-                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={tw`border border-gray-300 p-3 rounded mb-3 mt-1`}>
-                    <Text>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
+                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={[ themed.inputBox , tw` p-3 mb-3 mt-1`]}>
+                    <Text style={[themed.inputText]}>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -1447,9 +1447,9 @@ const RegistrationScreen = () => {
                       setTempDate(collectionDateTime || new Date());
                       setShowDatePicker(true);
                     }}
-                    style={tw`border border-gray-300 p-3 rounded mb-3 mt-1`}
+                    style={[themed.inputBox,tw` p-3  mb-3 mt-1`]}
                   >
-                    <Text>{formatDateTime(collectionDateTime)}</Text>
+                    <Text style={[themed.inputText]}>{formatDateTime(collectionDateTime)}</Text>
                   </TouchableOpacity>
 
                   {/* ================= DATE PICKER ================= */}

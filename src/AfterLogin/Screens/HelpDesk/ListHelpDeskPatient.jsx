@@ -995,7 +995,7 @@ const ListHelpDeskPatient = () => {
                   return (
                     <TouchableOpacity
                       key={status.key}
-                      onPress={() => setSelectedStatus(status.key)}
+                      onPress={() => {setSelectedStatus(status.key),closeFilterModal()}}
                       activeOpacity={0.85}
                       style={[
                         tw`w-full flex-row items-center rounded-xl px-3 py-3 border`,
