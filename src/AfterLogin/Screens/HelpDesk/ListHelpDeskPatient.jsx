@@ -1106,7 +1106,11 @@ const ListHelpDeskPatient = () => {
                   return (
                     <TouchableOpacity
                       key={status.key}
+<<<<<<< HEAD
                       onPress={() => { setSelectedStatus(status.key), closeFilterModal() }}
+=======
+                      onPress={() => setSelectedStatus(status.key)}
+>>>>>>> parent of e823289 (new upadte)
                       activeOpacity={0.85}
                       style={[
                         tw`w-full flex-row items-center rounded-xl px-3 py-3 border`,
