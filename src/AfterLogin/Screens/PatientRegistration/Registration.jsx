@@ -41,7 +41,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 
 const RegistrationScreen = () => {
   const [loading, setLoading] = useState(false)
-  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode, hosId } = useAuth();
+  const { ipAddress, setServiceItem, serviceItem, selectedDoctor, corporateId, patientData, userData, loginBranchId, centerLoginBranchId, userId, addBarcode, hosId, fieldBoyData,fieldBoyId } = useAuth();
   const { showToast } = useToast()
   const { theme, colors } = useTheme();
   const themed = getThemeStyles(theme);
@@ -199,7 +199,7 @@ const RegistrationScreen = () => {
     setGender("MALE")
   }, [])
 
-
+  console.log("boy id", fieldBoyId,corporateId)
   useFocusEffect(
     useCallback(() => {
       GetReferedLabList();
@@ -505,8 +505,7 @@ const RegistrationScreen = () => {
         DoctorId: selectedDoctor || 0,
         ReferDoctorId: selectedReferDoctor?.referDoctorId || 0,
         ReferLabId: selectedReferLab?.outSourceLabId || 0,
-        FieldBoyId: selectedFieldBoy?.fieldBoyId || 0,
-
+        FieldBoyId: fieldBoyId || '',
         MedicalHistory: medicalHistory || "",
 
         CollectionDateTime: collectionDateTime
@@ -611,7 +610,7 @@ const RegistrationScreen = () => {
       const uhid = response?.data?.uhid;
 
       if (uhid) {
-        Clipboard.setString(uhid); 
+        Clipboard.setString(uhid);
         showToast(
           `Patient saved. UHID ${uhid} copied to clipboard`,
           "success"
@@ -1399,7 +1398,7 @@ const RegistrationScreen = () => {
 
           <View style={tw`my-3`}>
             <View>
-              <Text style={[{ fontWeight: 'bold', marginBottom: 5 },themed.labelText]}>
+              <Text style={[{ fontWeight: 'bold', marginBottom: 5 }, themed.labelText]}>
                 Visit type
               </Text>
 
@@ -1433,12 +1432,12 @@ const RegistrationScreen = () => {
 
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
-                <View style={tw`flex-1  w-full`}>
+                {/* <View style={tw`flex-1  w-full`}>
                   <Text style={themed.inputLabel}>Field Boy</Text>
-                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={[ themed.inputBox , tw` p-3 mb-3 mt-1`]}>
+                  <TouchableOpacity onPress={() => setFieldBoyModal(true)} style={[themed.inputBox, tw` p-3 mb-3 mt-1`]}>
                     <Text style={[themed.inputText]}>{selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Select Field Boy'}</Text>
                   </TouchableOpacity>
-                </View>
+                </View> */}
 
                 <View style={tw`flex-1 w-full`}>
                   <Text style={themed.inputLabel}>Collection Date Time</Text>
@@ -1447,7 +1446,7 @@ const RegistrationScreen = () => {
                       setTempDate(collectionDateTime || new Date());
                       setShowDatePicker(true);
                     }}
-                    style={[themed.inputBox,tw` p-3  mb-3 mt-1`]}
+                    style={[themed.inputBox, tw` p-3  mb-3 mt-1`]}
                   >
                     <Text style={[themed.inputText]}>{formatDateTime(collectionDateTime)}</Text>
                   </TouchableOpacity>
