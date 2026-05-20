@@ -42,9 +42,7 @@ const TRF_Print = () => {
             setError(false);
             setPdfPath('');
 
-            const response = await api.get(
-                `Patient/test-requisition-form?filter=${id}&mode=view`
-            );
+            const response = await api.get(`Patient/test-requisition-form?filter=${id}&mode=view` );
 
             const base64 = response?.data?.base64;
             const fileName = response?.data?.fileName || `TRF_${id}.pdf`;

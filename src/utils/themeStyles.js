@@ -58,7 +58,7 @@ export const getThemeStyles = (theme) => {
     cardPadding: tw.style('p-4'),
 
     cardCompact: tw.style('p-2'),
-   
+
     checkbox: {
       margin: 0,
       padding: 0,
@@ -92,7 +92,7 @@ export const getThemeStyles = (theme) => {
     ),
 
     addButtonText: tw.style(
-       isDark ? 'text-white' : 'text-white'
+      isDark ? 'text-white' : 'text-white'
     ),
 
     mutedText: tw.style(
@@ -432,6 +432,13 @@ export const getThemeStyles = (theme) => {
     // ✅ Search Button Text
     searchButtonText: tw.style(
       'text-white text-sm font-semibold'
+    ),
+
+    dropDownButton: tw.style(
+      'flex-row items-center justify-between px-4 py-4 rounded-2xl border shadow-sm',
+      isDark
+        ? 'bg-gray-900 border-gray-700'
+        : 'bg-white border-gray-200',
     ),
   };
 };
