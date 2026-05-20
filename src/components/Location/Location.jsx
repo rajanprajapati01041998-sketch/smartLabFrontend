@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Text,
@@ -20,10 +20,13 @@ import {
 
 import * as signalR from '@microsoft/signalr';
 import tw from 'twrnc';
-
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import axiosInstance from '../../../Authorization/AxiosInstance';
+import { API_BASE_URL } from '../../../Authorization/api';
+import { useTheme } from '../../../Authorization/ThemeContext';
+import { getThemeStyles } from '../../utils/themeStyles';
 
-const HUB_URL = 'http://192.168.31.237:5021/locationHub';
+const HUB_URL = API_BASE_URL.replace(/\/?api\/?$/, '/locationHub');
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 const DEFAULT_LOCATION = {
@@ -49,9 +52,9 @@ const haversineMeters = (a, b) => {
   const x =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) *
-      Math.cos(lat2) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 };
@@ -60,7 +63,8 @@ const AdminTrackFieldBoy = () => {
   const cameraRef = useRef(null);
   const hubRef = useRef(null);
   const trackingUserIdRef = useRef('');
-
+  const { theme } = useTheme();
+  const themed = getThemeStyles(theme);
   const [fieldBoyList, setFieldBoyList] = useState([]);
   const [fieldBoyLoading, setFieldBoyLoading] = useState(false);
   const [fieldBoyModalVisible, setFieldBoyModalVisible] = useState(false);
@@ -306,15 +310,15 @@ const AdminTrackFieldBoy = () => {
     type: 'FeatureCollection',
     features: adminLastFix
       ? [
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [longitude, latitude],
-            },
-            properties: {},
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
           },
-        ]
+          properties: {},
+        },
+      ]
       : [],
   };
 
@@ -333,7 +337,7 @@ const AdminTrackFieldBoy = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-white`}>
+    <View style={[themed.screen, tw`flex-1 `]}>
       <Map
         style={tw`flex-1`}
         mapStyle={MAP_STYLE}
@@ -373,24 +377,58 @@ const AdminTrackFieldBoy = () => {
       </Map>
 
       <View
-        style={tw`absolute top-0 left-0 right-0 z-50 bg-white pt-14 pb-4 px-3 rounded-b-3xl`}>
+        style={[themed.childScreen, tw`absolute top-0 left-0 right-0 z-50  pt-2 pb-4 px-3 rounded-b-3xl`]}>
         <TouchableOpacity
+          style={themed.dropDownButton}
           onPress={() => {
             fetchFieldBoyList();
             setFieldBoyModalVisible(true);
           }}
-          style={tw`border border-gray-300 rounded-xl px-4 py-4 bg-white`}>
-          <Text style={tw`text-black font-semibold text-base`}>
-            {selectedFieldBoy ? selectedFieldBoy.fieldBoyName : 'Choose Field Boy'}
-          </Text>
+        >
+          {/* Left Side */}
+          <View style={tw`flex-row items-center flex-1`}>
+            <View
+              style={tw.style(
+                'h-10 w-10 rounded-full items-center justify-center mr-3',
+              )}
+            >
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={themed.iconMuted}
+              />
+            </View>
+
+            <View style={tw`flex-1`}>
+              <Text style={[themed.inputText]}
+              >
+                Select Field Boy
+              </Text>
+
+              <Text
+                numberOfLines={1}
+                style={[themed.inputText]}
+              >
+                {selectedFieldBoy
+                  ? selectedFieldBoy.fieldBoyName
+                  : 'Choose Field Boy'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Right Icon */}
+          <Ionicons
+            name="chevron-down"
+            size={22}
+            color={[themed.chevronColor]}
+          />
         </TouchableOpacity>
 
-        <View style={tw`flex-row mt-4`}>
+        <View style={tw`flex-row mt-2`}>
           <TouchableOpacity
             onPress={adminRunning ? stopTracking : startTracking}
-            style={tw`flex-1 py-4 rounded-2xl ${
-              adminRunning ? 'bg-red-600' : 'bg-green-600'
-            } mr-2`}>
+            style={tw`flex-1 py-2 rounded-lg ${adminRunning ? 'bg-red-600' : 'bg-green-600'
+              } mr-2`}>
             <Text style={tw`text-white text-center font-bold text-base`}>
               {adminRunning ? 'Stop Tracking' : 'Start Tracking'}
             </Text>
@@ -398,18 +436,20 @@ const AdminTrackFieldBoy = () => {
 
           <TouchableOpacity
             onPress={clearPath}
-            style={tw`px-6 py-4 rounded-2xl bg-gray-800`}>
+            style={[themed.closeButton]}>
             <Text style={tw`text-white font-bold text-base`}>Clear</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={tw`text-center mt-4 text-gray-700 font-bold text-lg`}>
-          Socket: {socketConnected ? 'Connected ✅' : 'Disconnected ❌'}
-        </Text>
+        <View style={tw`flex-row justify-between items-center mt-3`}>
+          <Text style={tw`text-center ${socketConnected?`text-green-500`:`text-red-500`} font-bold text-lg`}>
+            Lcation: {socketConnected ? 'Connected' : 'Disconnected'}
+          </Text>
 
-        <Text style={tw`text-center mt-1 text-gray-500 text-sm`}>
-          Status: {status}
-        </Text>
+          {socketConnected&&<Text style={tw`text-center mt-1 text-gray-500 text-sm`}>
+            Status: {status}
+          </Text>}
+        </View>
 
         {adminLastFix && (
           <Text style={tw`text-center mt-1 text-gray-500 text-xs`}>
@@ -426,8 +466,8 @@ const AdminTrackFieldBoy = () => {
         <TouchableWithoutFeedback onPress={() => setFieldBoyModalVisible(false)}>
           <View style={tw`flex-1 bg-black/50 justify-end`}>
             <TouchableWithoutFeedback>
-              <View style={tw`bg-white rounded-t-3xl p-4 max-h-[80%]`}>
-                <Text style={tw`text-lg font-bold text-black mb-3`}>
+              <View style={[themed.childScreen,tw` rounded-t-3xl p-4 max-h-[50%]`]}>
+                <Text style={[themed.modalTitle,tw` mb-3`]}>
                   Select Field Boy
                 </Text>
 
@@ -436,14 +476,14 @@ const AdminTrackFieldBoy = () => {
                     value={fieldBoySearch}
                     onChangeText={setFieldBoySearch}
                     placeholder="Search field boy..."
-                    placeholderTextColor="#777"
-                    style={tw`flex-1 bg-gray-100 rounded-xl px-4 py-3 text-black`}
+                    placeholderTextColor={themed.inputPlaceholder}
+                    style={[themed.inputBox,themed.inputText,tw`flex-1 `]}
                   />
 
                   <TouchableOpacity
                     onPress={fetchFieldBoyList}
-                    style={tw`bg-blue-100 rounded-xl px-4 py-3 ml-2`}>
-                    <Text style={tw`text-blue-700 text-center font-bold`}>
+                    style={[themed.searchButton,tw`  ml-2`]}>
+                    <Text style={[themed.searchButtonText]}>
                       Refresh
                     </Text>
                   </TouchableOpacity>
@@ -466,11 +506,11 @@ const AdminTrackFieldBoy = () => {
                           style={[
                             tw`rounded-xl px-4 py-4 mb-2 border`,
                             selected
-                              ? tw`bg-blue-50 border-blue-600`
-                              : tw`bg-white border-gray-200`,
+                              ? [themed.childScreen,themed.border]
+                              : [themed.childScreen,themed.border],
                           ]}>
                           <View style={tw`flex-row justify-between items-center`}>
-                            <Text style={tw`text-black font-bold text-base`}>
+                            <Text style={[themed.inputText]}>
                               {item.fieldBoyName}
                             </Text>
 

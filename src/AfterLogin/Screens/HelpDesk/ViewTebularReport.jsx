@@ -1,166 +1,103 @@
 import React, { useCallback, useState } from 'react'
-import { View, Text, ActivityIndicator, TouchableOpacity, Platform } from 'react-native'
-import { useFocusEffect, useRoute } from '@react-navigation/native'
-import RNFetchBlob from 'react-native-blob-util'
+import { View, ActivityIndicator, Text } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import Pdf from 'react-native-pdf'
-import tw from 'twrnc'
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
+import RNFS from 'react-native-fs'
 import api from '../../../../Authorization/api'
+import { useAuth } from '../../../../Authorization/AuthContext'
 
-const TRF_Print = () => {
-  const route = useRoute()
+const ViewTebularReport = ({ route, navigation }) => {
+  const { item, isPrintHeader, loginHeader, mainHeader } = route.params || {};
+  console.log('ViewTebularReport received params:', { item: item?.PatientInvestigationId, isPrintHeader, loginHeader, mainHeader })
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [pdfPath, setPdfPath] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [pdfPath, setPdfPath] = useState(null)
+  const [errorMessage, setErrorMessage] = useState('')
+  const {userId,loginBranchId}=useAuth()
 
-  const FTId = route?.params?.item?.FTId
-
-  // ✅ SAVE BASE64 PDF TO FILE
-  const savePdfFile = async (base64Data, fileName = 'TRF.pdf') => {
-  try {
-    const cleanBase64 = String(base64Data || '').replace(
-      /^data:application\/pdf;base64,/,
-      ''
-    );
-
-    if (!cleanBase64) {
-      setError(true);
-      return;
-    }
-
-    if (!RNFetchBlob?.fs?.dirs) {
-      console.log('RNFetchBlob native module not linked');
-      setError(true);
-      return;
-    }
-
-    const safeName = fileName.replace(/[\/\\:*?"<>|]/g, '_');
-
-    const dir =
-      Platform.OS === 'ios'
-        ? RNFetchBlob.fs.dirs.DocumentDir
-        : RNFetchBlob.fs.dirs.CacheDir;
-
-    const filePath = `${dir}/${safeName}`;
-
-    await RNFetchBlob.fs.writeFile(filePath, cleanBase64, 'base64');
-
-    setPdfPath(filePath);
-  } catch (error) {
-    console.log('savePdfFile error:', error);
-    setError(true);
-  }
-};
-
-  // ✅ CALL YOUR TRF API
-  const getReport = async () => {
+  const getTebularReport = async () => {
     try {
       setLoading(true)
-      setError(false)
-      setPdfPath('')
+      setErrorMessage('')
+      setPdfPath(null)
 
-      const response = await api.get(
-        `Patient/test-requisition-form?filter=${FTId}&mode=view`
+      const response = await api.get(`DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.PatientInvestigationId}&isHeaderPNG=${isPrintHeader}&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=true`
       )
 
-      console.log('TRF RESPONSE:', response?.data)
+      const base64Pdf = response?.data?.pdfBase64
 
-      const base64Pdf = response?.data?.base64
-      const fileName = response?.data?.fileName || 'TRF.pdf'
-
-      if (!base64Pdf || typeof base64Pdf !== 'string') {
-        setError(true)
+      if (!base64Pdf) {
+        setErrorMessage('PDF base64 not found in API response')
         return
       }
 
-      await savePdfFile(base64Pdf, fileName)
-    } catch (err) {
-      console.log('TRF error:', err)
-      setError(true)
+      const filePath = `${RNFS.DocumentDirectoryPath}/DeltaReport_${item?.PatientInvestigationId}.pdf`
+
+      await RNFS.writeFile(filePath, base64Pdf, 'base64')
+
+      setPdfPath(`file://${filePath}`)
+    } catch (error) {
+      console.log('Error fetching Tebular Report:', error?.response || error)
+      setErrorMessage('Failed to load PDF')
     } finally {
       setLoading(false)
     }
   }
 
-  // ✅ AUTO LOAD ON SCREEN FOCUS
   useFocusEffect(
     useCallback(() => {
-      if (FTId) {
-        getReport()
-      }
-      return () => {}
-    }, [FTId])
-  )
+      getTebularReport()
 
-  // ================= UI =================
+      return () => {
+        console.log('ViewTebularReport screen is unfocused')
+      }
+    }, [])
+  )
 
   if (loading) {
     return (
-      <View style={tw`flex-1 items-center justify-center bg-white`}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={tw`mt-3 text-gray-600 font-medium`}>
-          Loading TRF...
-        </Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+        <Text style={{ marginTop: 10 }}>Loading report...</Text>
       </View>
     )
   }
 
-  if (error) {
+  if (errorMessage) {
     return (
-      <View style={tw`flex-1 items-center justify-center bg-white px-6`}>
-        <MaterialCommunityIcons name="file-pdf-box" size={80} color="#ef4444" />
-
-        <Text style={tw`mt-4 text-lg font-semibold text-gray-800`}>
-          Unable to load TRF
-        </Text>
-
-        <Text style={tw`mt-2 text-sm text-gray-500 text-center`}>
-          PDF is not showing properly. Please try again.
-        </Text>
-
-        <TouchableOpacity
-          onPress={getReport}
-          style={tw`mt-6 bg-blue-600 px-6 py-3 rounded-xl flex-row items-center`}
-        >
-          <MaterialCommunityIcons name="refresh" size={18} color="#fff" />
-          <Text style={tw`text-white font-semibold ml-2`}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
-
-  if (!pdfPath) {
-    return (
-      <View style={tw`flex-1 items-center justify-center bg-white`}>
-        <MaterialCommunityIcons name="file-pdf-box" size={70} color="#9ca3af" />
-        <Text style={tw`mt-3 text-gray-500`}>No PDF available</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+        <Text>{errorMessage}</Text>
       </View>
     )
   }
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      <Pdf
-        source={{ uri: `file://${pdfPath}`, cache: true }}
-        style={tw`flex-1`}
-        trustAllCerts={false}
-        enablePaging={true}
-        horizontal={false}
-        spacing={8}
-        onLoadComplete={(pages) => {
-          console.log('PDF Loaded Pages:', pages)
-        }}
-        onPageChanged={(page, pages) => {
-          console.log('Page:', page, '/', pages)
-        }}
-        onError={(err) => {
-          console.log('PDF error:', err)
-          setError(true)
-        }}
-      />
+    <View style={{ flex: 1 }}>
+      {pdfPath ? (
+        <Pdf
+          source={{ uri: pdfPath, cache: true }}
+          style={{ flex: 1, width: '100%', height: '100%' }}
+          onLoadComplete={(numberOfPages) => {
+            console.log(`PDF loaded. Pages: ${numberOfPages}`)
+          }}
+          onPageChanged={(page, numberOfPages) => {
+            console.log(`Current page: ${page}/${numberOfPages}`)
+          }}
+          onError={(error) => {
+            console.log('PDF render error:', error)
+            setErrorMessage('Unable to display PDF')
+          }}
+          onPressLink={(uri) => {
+            console.log(`Link pressed: ${uri}`)
+          }}
+        />
+      ) : (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>No PDF to display</Text>
+        </View>
+      )}
     </View>
   )
 }
 
-export default TRF_Print
+export default ViewTebularReport
