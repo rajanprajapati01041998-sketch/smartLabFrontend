@@ -7,6 +7,7 @@ import RNFetchBlob from 'react-native-blob-util'
 import tw from 'twrnc'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import api from '../../../../Authorization/api'
+import { useAuth } from '../../../../Authorization/AuthContext'
 
 const ViewLabReport = () => {
   const navigation = useNavigation()
@@ -14,28 +15,26 @@ const ViewLabReport = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [pdfPath, setPdfPath] = useState('')
+  const { userId, loginBranchId } = useAuth()
   const route = useRoute()
- 
 
-  const ptInvstId = route?.params?.patientInvestigationId 
+
+  const ptInvstId = route?.params?.patientInvestigationId
 
   const branchId = route?.params?.branchId
   console.log("FULL PARAMS:", route.params);
-  console.log("id",ptInvstId)
+  console.log("id", ptInvstId)
+
+  const selectedBranchId = route?.params?.mainHeader ? 1 : loginBranchId;
+  // console.log("selectedBranchId", selectedBranchId)
   const getReport = async () => {
     try {
       setLoading(true)
       setError(false)
-      const response = await api.get(`ReportPrint/ViewReport?ptInvstId=${ptInvstId}&isHeaderPNG=0&printBy=1&branchId=${branchId}`)
-      console.log("report response", response.data)
-
-      if (response.data?.base64Data) {
-        setReportData(response.data.base64Data)
-        // Save to file for better viewing
-        await savePDFToFile(response.data.base64Data)
-      } else {
-        setError(true)
-      }
+      const response = await api.get(`ReportPrint/DownloadCombinedReport?ptInvstId=${ptInvstId}&isHeaderPNG=${route?.params?.isPrintHeader ? 1 : 0}&printBy=${userId}&branchId=${selectedBranchId}&pdf=false`)
+      // console.log("report response", response.data)
+      setReportData(response.data.pdfBase64)
+      await savePDFToFile(response.data.pdfBase64)
     } catch (error) {
       console.log("report error", error)
       setError(true)

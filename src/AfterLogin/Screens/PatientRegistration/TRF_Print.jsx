@@ -42,7 +42,7 @@ const TRF_Print = () => {
             setError(false);
             setPdfPath('');
 
-            const response = await api.get(`Patient/test-requisition-form?filter=${id}&mode=view` );
+            const response = await api.get(`Patient/test-requisition-form?ftid=${id}&mode=view` );
 
             const base64 = response?.data?.base64;
             const fileName = response?.data?.fileName || `TRF_${id}.pdf`;
@@ -93,7 +93,7 @@ const TRF_Print = () => {
                     ? `${RNFetchBlob.fs.dirs.DownloadDir}/${safeName}`
                     : `${RNFetchBlob.fs.dirs.DocumentDir}/${safeName}`;
 
-            const url = `${api.defaults.baseURL}Patient/test-requisition-form?filter=${ftId}&mode=pdf`;
+            const url = `${api.defaults.baseURL}Patient/test-requisition-form?ftid=${ftId}&mode=pdf`;
 
             const res = await RNFetchBlob.config({
                 fileCache: true,

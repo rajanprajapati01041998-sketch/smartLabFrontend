@@ -3,26 +3,30 @@ import { View, ActivityIndicator, Text } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import Pdf from 'react-native-pdf'
 import RNFS from 'react-native-fs'
-import api from '../../../../Authorization/api'
+import api, { API_BASE_URL } from '../../../../Authorization/api'
 import { useAuth } from '../../../../Authorization/AuthContext'
 
 const ViewTebularReport = ({ route, navigation }) => {
   const { item, isPrintHeader, loginHeader, mainHeader } = route.params || {};
-  console.log('ViewTebularReport received params:', { item: item?.PatientInvestigationId, isPrintHeader, loginHeader, mainHeader })
 
   const [loading, setLoading] = useState(false)
   const [pdfPath, setPdfPath] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
-  const {userId,loginBranchId}=useAuth()
+  const { userId, loginBranchId } = useAuth()
+  console.log('ViewTebularReport received params:', { item: item?.PatientInvestigationId, isPrintHeader, loginHeader, mainHeader, userId, loginBranchId })
+  console.log('API Base URL:', loginBranchId, userId)
 
   const getTebularReport = async () => {
     try {
       setLoading(true)
       setErrorMessage('')
       setPdfPath(null)
+      const response = await api.get(
+        `DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.PatientInvestigationId}&isHeaderPNG=${isPrintHeader ? 1 : 0
+        }&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=true`,
+      );
 
-      const response = await api.get(`DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.PatientInvestigationId}&isHeaderPNG=${isPrintHeader}&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=true`
-      )
+      // console.log('API response for Tebular Report:', response?.data)
 
       const base64Pdf = response?.data?.pdfBase64
 

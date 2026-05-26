@@ -166,7 +166,7 @@ export const getThemeStyles = (theme) => {
 
     transactionLabel: tw.style(
       'text-xs',
-      isDark ? 'text-gray-400' : 'text-gray-500'
+      isDark ? 'text-gray-600' : 'text-gray-600'
     ),
 
     // Search / input
@@ -369,7 +369,7 @@ export const getThemeStyles = (theme) => {
     ),
 
     // Common colors
-    iconMuted: isDark ? '#f4f6f8' : '#ccced2',
+    iconMuted: isDark ? '#2f3132' : '#3f4041',
     chevronColor: isDark ? '#f8f9fa' : '#6B7280',
 
 

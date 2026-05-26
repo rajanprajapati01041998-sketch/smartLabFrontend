@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   Alert,
   Text,
@@ -8,26 +8,45 @@ import {
   ScrollView,
   Modal,
   TouchableWithoutFeedback,
-  Platform,
 } from 'react-native';
 
-import {
-  Map,
-  Camera,
-  GeoJSONSource,
-  Layer,
-} from '@maplibre/maplibre-react-native';
-
+import {Map, Camera, GeoJSONSource, Layer} from '@maplibre/maplibre-react-native';
+import {useRoute} from '@react-navigation/native';
 import * as signalR from '@microsoft/signalr';
 import tw from 'twrnc';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+
 import axiosInstance from '../../../Authorization/AxiosInstance';
-import { API_BASE_URL } from '../../../Authorization/api';
-import { useTheme } from '../../../Authorization/ThemeContext';
-import { getThemeStyles } from '../../utils/themeStyles';
+import {API_BASE_URL} from '../../../Authorization/api';
+import {useTheme} from '../../../Authorization/ThemeContext';
+import {getThemeStyles} from '../../utils/themeStyles';
 
 const HUB_URL = API_BASE_URL.replace(/\/?api\/?$/, '/locationHub');
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+const MAP_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: [
+        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap Contributors',
+    },
+  },
+  layers: [
+    {
+      id: 'osm-layer',
+      type: 'raster',
+      source: 'osm',
+      minzoom: 0,
+      maxzoom: 22,
+    },
+  ],
+};
 
 const DEFAULT_LOCATION = {
   latitude: 20.5937,
@@ -52,9 +71,9 @@ const haversineMeters = (a, b) => {
   const x =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) *
-    Math.cos(lat2) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
+      Math.cos(lat2) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
 
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 };
@@ -63,8 +82,13 @@ const AdminTrackFieldBoy = () => {
   const cameraRef = useRef(null);
   const hubRef = useRef(null);
   const trackingUserIdRef = useRef('');
-  const { theme } = useTheme();
+
+  const route = useRoute();
+  const fieldBoyId = route?.params?.fieldBoyId;
+
+  const {theme} = useTheme();
   const themed = getThemeStyles(theme);
+
   const [fieldBoyList, setFieldBoyList] = useState([]);
   const [fieldBoyLoading, setFieldBoyLoading] = useState(false);
   const [fieldBoyModalVisible, setFieldBoyModalVisible] = useState(false);
@@ -110,8 +134,22 @@ const AdminTrackFieldBoy = () => {
 
       setFieldBoyList(list);
 
+      if (fieldBoyId) {
+        const matchedFieldBoy = list.find(
+          item => String(item.fieldBoyId) === String(fieldBoyId),
+        );
+
+        if (matchedFieldBoy) {
+          setSelectedFieldBoy(matchedFieldBoy);
+          setTrackingUserId(String(matchedFieldBoy.fieldBoyId));
+          trackingUserIdRef.current = String(matchedFieldBoy.fieldBoyId);
+          return;
+        }
+      }
+
       if (list.length > 0 && !selectedFieldBoy) {
         const first = list[0];
+
         setSelectedFieldBoy(first);
         setTrackingUserId(String(first.fieldBoyId));
         trackingUserIdRef.current = String(first.fieldBoyId);
@@ -156,7 +194,7 @@ const AdminTrackFieldBoy = () => {
 
       const movedMeters = haversineMeters(lastFix, nextFix);
 
-      if (movedMeters < 3) {
+      if (movedMeters < 1) {
         return prev;
       }
 
@@ -170,17 +208,18 @@ const AdminTrackFieldBoy = () => {
         hubRef.current &&
         hubRef.current.state === signalR.HubConnectionState.Connected
       ) {
-        return;
+        setSocketConnected(true);
+        return true;
       }
 
-      console.log('Connecting admin websocket...');
+      setStatus('Connecting admin websocket...');
 
       const connection = new signalR.HubConnectionBuilder()
         .withUrl(HUB_URL, {
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets,
         })
-        .withAutomaticReconnect()
+        .withAutomaticReconnect([0, 2000, 5000, 10000])
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
@@ -190,14 +229,21 @@ const AdminTrackFieldBoy = () => {
         setStatus('Socket reconnecting...');
       });
 
-      connection.onreconnected(() => {
+      connection.onreconnected(async () => {
         console.log('Socket reconnected');
+
         setSocketConnected(true);
         setStatus('Socket reconnected');
+
+        try {
+          await connection.invoke('JoinAdminGroup');
+        } catch (error) {
+          console.log('JoinAdminGroup reconnect error:', error);
+        }
       });
 
       connection.onclose(error => {
-        console.log('Socket disconnected', error);
+        console.log('Socket disconnected:', error);
         setSocketConnected(false);
         setStatus('Socket disconnected');
       });
@@ -207,15 +253,14 @@ const AdminTrackFieldBoy = () => {
           console.log('Admin Received Live Location:', location);
 
           const selectedId = String(trackingUserIdRef.current || '');
-          const receivedId = String(location.fieldBoyId || '');
+          const receivedId = String(location.fieldBoyId || location.FieldBoyId || '');
 
           if (selectedId && selectedId !== receivedId) {
-            console.log('Ignored location for other field boy:', receivedId);
             return;
           }
 
-          const lat = toNumber(location.latitude);
-          const lng = toNumber(location.longitude);
+          const lat = toNumber(location.latitude || location.Latitude);
+          const lng = toNumber(location.longitude || location.Longitude);
 
           if (lat == null || lng == null) {
             return;
@@ -230,27 +275,45 @@ const AdminTrackFieldBoy = () => {
           addPathPoint(nextFix);
           moveCamera(nextFix);
 
-          setStatus('Receiving live location');
+          setStatus(`Receiving live location ${new Date().toLocaleTimeString()}`);
         } catch (error) {
           console.log('ReceiveLocation Error:', error);
         }
       });
 
+      connection.on('FieldBoyConnected', data => {
+        console.log('FieldBoyConnected:', data);
+
+        Alert.alert(
+          'Field Boy Live',
+          data?.Message || data?.message || 'Field boy started live location',
+        );
+      });
+
+      connection.on('SampleDelivered', data => {
+        console.log('SampleDelivered:', data);
+
+        Alert.alert(
+          'Sample Delivered',
+          data?.Message || data?.message || 'Sample delivered successfully',
+        );
+      });
+
       await connection.start();
+
       await connection.invoke('JoinAdminGroup');
 
-      console.log('================================');
-      console.log('Admin socket connected');
-      console.log('You are live');
-      console.log('================================');
-
       hubRef.current = connection;
+
       setSocketConnected(true);
       setStatus('Socket connected');
+
+      return true;
     } catch (error) {
       console.log('Socket connection failed:', error);
       setSocketConnected(false);
       setStatus('Socket connection failed');
+      return false;
     }
   };
 
@@ -263,10 +326,12 @@ const AdminTrackFieldBoy = () => {
     setPath([]);
     setAdminLastFix(null);
 
-    await connectSocket();
+    const connected = await connectSocket();
 
-    setAdminRunning(true);
-    setStatus('Waiting for live location...');
+    if (connected) {
+      setAdminRunning(true);
+      setStatus('Waiting for live location...');
+    }
   };
 
   const stopTracking = () => {
@@ -301,6 +366,7 @@ const AdminTrackFieldBoy = () => {
         hubRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const latitude = adminLastFix?.latitude || DEFAULT_LOCATION.latitude;
@@ -310,15 +376,15 @@ const AdminTrackFieldBoy = () => {
     type: 'FeatureCollection',
     features: adminLastFix
       ? [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [longitude, latitude],
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            properties: {},
           },
-          properties: {},
-        },
-      ]
+        ]
       : [],
   };
 
@@ -337,14 +403,22 @@ const AdminTrackFieldBoy = () => {
   };
 
   return (
-    <View style={[themed.screen, tw`flex-1 `]}>
+    <View style={[themed.screen, tw`flex-1`]}>
       <Map
         style={tw`flex-1`}
         mapStyle={MAP_STYLE}
-        logo={false}
-        attribution={false}
-        androidView={Platform.OS === 'android' ? 'texture' : undefined}>
-        <Camera ref={cameraRef} zoom={5} center={[longitude, latitude]} />
+        logoEnabled={false}
+        compassEnabled={true}
+        rotateEnabled={true}
+        zoomEnabled={true}
+        attributionEnabled={false}
+        scaleBarEnabled={false}
+        androidRenderMode="textureView">
+        <Camera
+          ref={cameraRef}
+          zoomLevel={adminLastFix ? 16 : 5}
+          centerCoordinate={[longitude, latitude]}
+        />
 
         {path.length >= 2 && (
           <GeoJSONSource id="adminPathSource" data={pathGeoJSON}>
@@ -377,21 +451,18 @@ const AdminTrackFieldBoy = () => {
       </Map>
 
       <View
-        style={[themed.childScreen, tw`absolute top-0 left-0 right-0 z-50  pt-2 pb-4 px-3 rounded-b-3xl`]}>
+        style={[
+          themed.childScreen,
+          tw`absolute top-0 left-0 right-0 z-50 pt-2 pb-4 px-3 rounded-b-3xl`,
+        ]}>
         <TouchableOpacity
           style={themed.dropDownButton}
           onPress={() => {
             fetchFieldBoyList();
             setFieldBoyModalVisible(true);
-          }}
-        >
-          {/* Left Side */}
+          }}>
           <View style={tw`flex-row items-center flex-1`}>
-            <View
-              style={tw.style(
-                'h-10 w-10 rounded-full items-center justify-center mr-3',
-              )}
-            >
+            <View style={tw`h-10 w-10 rounded-full items-center justify-center mr-3`}>
               <Ionicons
                 name="person-outline"
                 size={20}
@@ -400,55 +471,50 @@ const AdminTrackFieldBoy = () => {
             </View>
 
             <View style={tw`flex-1`}>
-              <Text style={[themed.inputText]}
-              >
-                Select Field Boy
-              </Text>
+              <Text style={themed.inputText}>Select Field Boy</Text>
 
-              <Text
-                numberOfLines={1}
-                style={[themed.inputText]}
-              >
+              <Text numberOfLines={1} style={themed.inputText}>
                 {selectedFieldBoy
-                  ? selectedFieldBoy.fieldBoyName
+                  ? `${selectedFieldBoy.fieldBoyName} (${selectedFieldBoy.fieldBoyId})`
                   : 'Choose Field Boy'}
               </Text>
             </View>
           </View>
 
-          {/* Right Icon */}
           <Ionicons
             name="chevron-down"
             size={22}
-            color={[themed.chevronColor]}
+            color={themed.chevronColor}
           />
         </TouchableOpacity>
 
         <View style={tw`flex-row mt-2`}>
           <TouchableOpacity
             onPress={adminRunning ? stopTracking : startTracking}
-            style={tw`flex-1 py-2 rounded-lg ${adminRunning ? 'bg-red-600' : 'bg-green-600'
-              } mr-2`}>
+            style={tw`flex-1 py-2 rounded-lg ${
+              adminRunning ? 'bg-red-600' : 'bg-green-600'
+            } mr-2`}>
             <Text style={tw`text-white text-center font-bold text-base`}>
               {adminRunning ? 'Stop Tracking' : 'Start Tracking'}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={clearPath}
-            style={[themed.closeButton]}>
+          <TouchableOpacity onPress={clearPath} style={themed.closeButton}>
             <Text style={tw`text-white font-bold text-base`}>Clear</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={tw`flex-row justify-between items-center mt-3`}>
-          <Text style={tw`text-center ${socketConnected?`text-green-500`:`text-red-500`} font-bold text-lg`}>
-            Lcation: {socketConnected ? 'Connected' : 'Disconnected'}
+        <View style={tw`mt-3`}>
+          <Text
+            style={tw`text-center ${
+              socketConnected ? 'text-green-500' : 'text-red-500'
+            } font-bold text-lg`}>
+            Location: {socketConnected ? 'Connected' : 'Disconnected'}
           </Text>
 
-          {socketConnected&&<Text style={tw`text-center mt-1 text-gray-500 text-sm`}>
+          <Text style={tw`text-center mt-1 text-gray-500 text-sm`}>
             Status: {status}
-          </Text>}
+          </Text>
         </View>
 
         {adminLastFix && (
@@ -466,8 +532,12 @@ const AdminTrackFieldBoy = () => {
         <TouchableWithoutFeedback onPress={() => setFieldBoyModalVisible(false)}>
           <View style={tw`flex-1 bg-black/50 justify-end`}>
             <TouchableWithoutFeedback>
-              <View style={[themed.childScreen,tw` rounded-t-3xl p-4 max-h-[50%]`]}>
-                <Text style={[themed.modalTitle,tw` mb-3`]}>
+              <View
+                style={[
+                  themed.childScreen,
+                  tw`rounded-t-3xl p-4 max-h-[50%]`,
+                ]}>
+                <Text style={[themed.modalTitle, tw`mb-3`]}>
                   Select Field Boy
                 </Text>
 
@@ -477,15 +547,13 @@ const AdminTrackFieldBoy = () => {
                     onChangeText={setFieldBoySearch}
                     placeholder="Search field boy..."
                     placeholderTextColor={themed.inputPlaceholder}
-                    style={[themed.inputBox,themed.inputText,tw`flex-1 `]}
+                    style={[themed.inputBox, themed.inputText, tw`flex-1`]}
                   />
 
                   <TouchableOpacity
                     onPress={fetchFieldBoyList}
-                    style={[themed.searchButton,tw`  ml-2`]}>
-                    <Text style={[themed.searchButtonText]}>
-                      Refresh
-                    </Text>
+                    style={[themed.searchButton, tw`ml-2`]}>
+                    <Text style={themed.searchButtonText}>Refresh</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -505,14 +573,18 @@ const AdminTrackFieldBoy = () => {
                           onPress={() => handleSelectFieldBoy(item)}
                           style={[
                             tw`rounded-xl px-4 py-4 mb-2 border`,
-                            selected
-                              ? [themed.childScreen,themed.border]
-                              : [themed.childScreen,themed.border],
+                            themed.childScreen,
+                            themed.border,
                           ]}>
                           <View style={tw`flex-row justify-between items-center`}>
-                            <Text style={[themed.inputText]}>
-                              {item.fieldBoyName}
-                            </Text>
+                            <View>
+                              <Text style={themed.inputText}>
+                                {item.fieldBoyName}
+                              </Text>
+                              <Text style={tw`text-gray-500 text-xs mt-1`}>
+                                ID: {item.fieldBoyId}
+                              </Text>
+                            </View>
 
                             {selected ? (
                               <Text style={tw`text-blue-600 font-bold`}>
@@ -525,7 +597,7 @@ const AdminTrackFieldBoy = () => {
                     })
                   ) : (
                     <Text style={tw`text-center text-red-500 py-5`}>
-                      No field boy found mast hai
+                      No field boy found
                     </Text>
                   )}
                 </ScrollView>

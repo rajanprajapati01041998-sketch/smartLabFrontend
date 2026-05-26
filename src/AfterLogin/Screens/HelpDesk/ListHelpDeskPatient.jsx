@@ -374,11 +374,12 @@ const ListHelpDeskPatient = () => {
     }
   };
 
-  const handleDownloadReport = async (id, name, reporTypeId) => {
+  const handleDownloadReport = async (id, name, reporTypeId, isPrintHeader, loginHeader, mainHeader) => {
     console.log("report Id", reporTypeId)
+    const selectedBranchId = mainHeader ? 1 : loginBranchId;
     if (reporTypeId === 2) {
       try {
-        console.log('Free text report with ID:', id, 'and name:', name, 'reporTypeId', reporTypeId);
+        // console.log('Free text report with ID:', id, 'and name:', name, 'reporTypeId', reporTypeId);
         setDownloadingId(id);
         const { config, fs } = RNFetchBlob;
         const path = `${fs.dirs.DownloadDir}/report-${id}/${name}.pdf`;
@@ -392,7 +393,7 @@ const ListHelpDeskPatient = () => {
           },
         }).fetch(
           'GET',
-          `${API_BASE_URL}ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=0&printBy=1&branchId=${loginBranchId}`
+          `${API_BASE_URL}ReportPrint/DownloadCombinedReport?ptInvstId=${id}&isHeaderPNG=${isPrintHeader ? 0 : 1}&printBy=${userId}&branchId=${selectedBranchId}`
         );
 
         showToast('File downloaded', 'success');
@@ -419,21 +420,22 @@ const ListHelpDeskPatient = () => {
       const uniqueFileName = `${cleanName}-${id}-${Date.now()}.pdf`;
       const path = `${fs.dirs.DownloadDir}/${uniqueFileName}`;
 
-      const selectedBranchId = loginHeader ? loginBranchId : 0;
+      const selectedBranchId = mainHeader ? 1 : loginBranchId;
       const clientId = mainHeader ? mainBranchId : 0;
-      const isHeaderPNG = isPrintHeader ? 1 : 0;
+      const isHeaderPNG = isPrintHeader ? 0 : 1;
+
+      console.log("selectedBranchId", selectedBranchId)
+      return;
 
       const url =
-        `${API_BASE_URL}DeltaReport/download-delta-report` +
-        `?PatientInvestigationIdList=${id}` +
-        `&isHeaderPNG=${isHeaderPNG}` +
-        `&PrintBy=${userId}` +
+        `${API_BASE_URL}ReportPrint/DownloadCombinedReport` +
+        `?ptInvstId=${id}` +
+        `&isHeaderPNG=${isHeaderPNG ? 1 : 0}` +
+        `&printBy=${userId}` +
         `&branchId=${selectedBranchId}` +
-        `&clientId=${clientId}` +
-        `&ViewReport=false`;
-
-      console.log('Download URL:', url);
-      console.log('Download path:', path);
+        `&pdf=false`;
+      // console.log('Download URL:', url);
+      // console.log('Download path:', path);
 
       const res = await config({
         fileCache: true,
@@ -648,7 +650,10 @@ const ListHelpDeskPatient = () => {
                     handleDownloadReport(
                       item?.PatientInvestigationId,
                       item?.PatientName,
-                      item?.ReportTypeId
+                      item?.ReportTypeId,
+                      isPrintHeader,
+                      loginHeader,
+                      mainHeader
                     )
                   }
                   style={[themed.card, tw`flex-1 flex-row items-center justify-center py-3 rounded-lg`]}
@@ -681,6 +686,9 @@ const ListHelpDeskPatient = () => {
                         patientName: item?.PatientName,
                         branchId: payload?.branchId,
                         item,
+                        isPrintHeader,
+                        loginHeader,
+                        mainHeader
                       });
                     }
                   }}
@@ -823,7 +831,11 @@ const ListHelpDeskPatient = () => {
 
         {data && data.length > 0 &&
           <View style={tw`flex-row items-center gap-4 mt-3`}>
-            <View style={tw`flex-row items-center gap-1 mt-3`}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setIsPrintHeader(!isPrintHeader)}
+              style={tw`flex-row items-center gap-1 mt-3`}
+            >
               <CheckBox
                 value={isPrintHeader}
                 onValueChange={setIsPrintHeader}
@@ -834,8 +846,11 @@ const ListHelpDeskPatient = () => {
                   ],
                 }}
               />
-              <Text style={themed.labelTextXs}>Header</Text>
-            </View>
+
+              <Text style={themed.labelTextXs}>
+                Header
+              </Text>
+            </TouchableOpacity>
 
             <View style={tw`flex-row items-center gap-4 mt-3`}>
               <View style={tw`flex-row items-center gap-2`}>
