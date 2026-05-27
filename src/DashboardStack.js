@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  TouchableOpacity,
-  View,
-  Text,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { TouchableOpacity, View, Text, Modal, Pressable } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import tw from 'twrnc';
@@ -74,10 +68,7 @@ const HeaderRightMenu = ({ navigation }) => {
         animationType="fade"
         onRequestClose={() => setVisible(false)}
       >
-        <Pressable
-          onPress={() => setVisible(false)}
-          style={tw`flex-1`}
-        >
+        <Pressable onPress={() => setVisible(false)} style={tw`flex-1`}>
           <View
             style={[
               tw`absolute top-12 right-3 w-44 rounded-2xl p-2 shadow-lg`,
@@ -192,11 +183,11 @@ export default function DashboardStack() {
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => openDrawer(navigation)}
-              style={{ marginLeft: 12 }}
+              style={{ marginLeft: 8 }}
             >
               <MaterialCommunityIcons
                 name="menu-open"
-                size={24}
+                size={35}
                 color={colors.text}
               />
             </TouchableOpacity>
