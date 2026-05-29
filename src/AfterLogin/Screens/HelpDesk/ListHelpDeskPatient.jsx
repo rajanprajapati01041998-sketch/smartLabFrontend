@@ -39,6 +39,7 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import CheckBox from '@react-native-community/checkbox';
 import { formatBillDateTime } from '../../../utils/dateUtils';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 
 const { width } = Dimensions.get('window');
@@ -524,9 +525,25 @@ const ListHelpDeskPatient = () => {
                   {item.PatientName || 'No Name'}
                 </Text>
 
-                <Text style={[themed.transactionLabel, tw`mt-0.5 text-xs`]}>
-                  {`${item.UHID || 'N/A'} • ${formatDateOnly(item.BillDate)}`}
-                </Text>
+                <View style={tw`flex-row items-center gap-2`}>
+                  <Text style={[themed.transactionLabel, tw`mt-0.5 text-xs`]}>
+                    {item.UHID || 'N/A'}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Clipboard.setString(item.UHID || '');
+                      // showToast?.('UHID copied successfully', 'success');
+                    }}>
+                    <Feather
+                      name="copy"
+                      size={18}
+                      color={themed.text}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* • ${formatDateOnly(item.BillDate)} */}
 
                 {item.Barcode && (
                   <View style={tw`mt-1`}>
@@ -547,6 +564,7 @@ const ListHelpDeskPatient = () => {
                 )}
               </View>
 
+
               <View
                 style={[
                   themed.globalCard,
@@ -564,6 +582,9 @@ const ListHelpDeskPatient = () => {
                 </Animated.View>
               </View>
             </View>
+          </View>
+          <View style={tw`flex flex-row justify-end`}>
+            <Text style={tw`text-end`}>{formatDateOnly(item.BillDate)}</Text>
           </View>
         </TouchableOpacity>
 

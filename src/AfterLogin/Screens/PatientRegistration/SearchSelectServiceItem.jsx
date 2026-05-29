@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   View,
   Text,
@@ -28,7 +34,9 @@ const toNumber = (v, fallback = 0) => {
 };
 
 const getDetailId = item =>
-  Number(item?.serviceItemId ?? item?.ServiceItemId ?? item?.itemId ?? item?.id ?? 0);
+  Number(
+    item?.serviceItemId ?? item?.ServiceItemId ?? item?.itemId ?? item?.id ?? 0,
+  );
 
 const getDetailName = item =>
   String(item?.serviceName ?? item?.ServiceName ?? item?.name ?? '').trim();
@@ -115,7 +123,9 @@ const SearchSelectServiceItem = ({
 
       const selectedIdSet = new Set(
         filteredData
-          .map(item => Number(item?.itemId ?? item?.serviceItemId ?? item?.id ?? 0))
+          .map(item =>
+            Number(item?.itemId ?? item?.serviceItemId ?? item?.id ?? 0),
+          )
           .filter(id => id > 0),
       );
 
@@ -148,7 +158,9 @@ const SearchSelectServiceItem = ({
             SearchGetInvestigationListDetails({
               corporateId: corporateId ?? 1,
               doctorId: selectedDoctor ?? 1,
-              serviceItemId: Number(item?.itemId ?? item?.serviceItemId ?? item?.id ?? 0),
+              serviceItemId: Number(
+                item?.itemId ?? item?.serviceItemId ?? item?.id ?? 0,
+              ),
               categoryId: item.categoryId,
               subCategoryId: item.subCategoryId,
               subSubCategoryId: item.subSubCategoryId,
@@ -175,9 +187,18 @@ const SearchSelectServiceItem = ({
               ...details,
               serviceItemId,
               serviceName: details?.serviceName || selected?.name || '',
-              categoryId: toNumber(details?.categoryId, toNumber(selected?.categoryId)),
-              subCategoryId: toNumber(details?.subCategoryId, toNumber(selected?.subCategoryId)),
-              subSubCategoryId: toNumber(details?.subSubCategoryId, toNumber(selected?.subSubCategoryId)),
+              categoryId: toNumber(
+                details?.categoryId,
+                toNumber(selected?.categoryId),
+              ),
+              subCategoryId: toNumber(
+                details?.subCategoryId,
+                toNumber(selected?.subCategoryId),
+              ),
+              subSubCategoryId: toNumber(
+                details?.subSubCategoryId,
+                toNumber(selected?.subSubCategoryId),
+              ),
               qty: 1,
               urgent: false,
               rate: toNumber(details?.rate),
@@ -253,6 +274,24 @@ const SearchSelectServiceItem = ({
     [markDirty],
   );
 
+  // Update quantity manually
+  const updateQty = useCallback(
+    (item, txt) => {
+      const id = getDetailId(item);
+      const cleaned = String(txt).replace(/[^0-9]/g, '');
+      const next = cleaned === '' ? '' : Number(cleaned);
+
+      setDetailsList(prev =>
+        prev.map(row =>
+          getDetailId(row) === id ? { ...row, qty: next } : row,
+        ),
+      );
+
+      markDirty();
+    },
+    [markDirty],
+  );
+
   const handleDeleteLocal = useCallback(
     item => {
       const deleteId = getDetailId(item);
@@ -261,9 +300,7 @@ const SearchSelectServiceItem = ({
         prev.includes(deleteId) ? prev : [...prev, deleteId],
       );
 
-      setDetailsList(prev =>
-        prev.filter(i => getDetailId(i) !== deleteId),
-      );
+      setDetailsList(prev => prev.filter(i => getDetailId(i) !== deleteId));
 
       onDelete?.(item);
       markDirty();
@@ -275,9 +312,13 @@ const SearchSelectServiceItem = ({
   );
 
   const makeKey = service => {
-    const serviceItemId = Number(service?.serviceItemId ?? service?.ServiceItemId ?? 0);
+    const serviceItemId = Number(
+      service?.serviceItemId ?? service?.ServiceItemId ?? 0,
+    );
     const packageId = Number(service?.packageId ?? service?.PackageId ?? 0);
-    const isUnderPackage = Number(service?.isUnderPackage ?? service?.IsUnderPackage ?? 0);
+    const isUnderPackage = Number(
+      service?.isUnderPackage ?? service?.IsUnderPackage ?? 0,
+    );
 
     return `${serviceItemId}_${packageId}_${isUnderPackage}`;
   };
@@ -311,7 +352,9 @@ const SearchSelectServiceItem = ({
         DoctorId: selectedDoctor ?? 0,
         RateListId: 0,
         ValidityDays: 0,
-        SampleTypeId: item?.defaultSampleTypeId ? Number(item.defaultSampleTypeId) : 0,
+        SampleTypeId: item?.defaultSampleTypeId
+          ? Number(item.defaultSampleTypeId)
+          : 0,
         SampleType: item?.sampleTypeList ?? '',
         IsNonPayable: 0,
         IsUnderPackage: 1,
@@ -358,7 +401,8 @@ const SearchSelectServiceItem = ({
 
         const defaultSampleTypeObj =
           sampleTypes.find(
-            st => Number(st?.sampleTypeId) === Number(item?.defaultSampleTypeId),
+            st =>
+              Number(st?.sampleTypeId) === Number(item?.defaultSampleTypeId),
           ) ||
           sampleTypes[0] ||
           null;
@@ -395,7 +439,8 @@ const SearchSelectServiceItem = ({
           SubSubCategoryId: item.subSubCategoryId,
           CorporateAlias: item.corporateAlias || '',
           CorporateCode: item.corporateCode || '',
-          Qty: qty, qty,
+          Qty: qty,
+          qty,
           Rate: rate,
           Amount: rate,
           GrossAmt: gross,
@@ -462,7 +507,9 @@ const SearchSelectServiceItem = ({
     const isPackage = Number(item?.categoryId) === 11;
 
     return (
-      <View style={[themed.childScreen, themed.border, tw`rounded-xl p-3 mb-3`]}>
+      <View
+        style={[themed.childScreen, themed.border, tw`rounded-xl p-3 mb-3`]}
+      >
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`flex-row items-center flex-1`}>
             <View
@@ -524,6 +571,21 @@ const SearchSelectServiceItem = ({
                 ₹ {item.rate}
               </Text>
             )}
+          </View>
+          <View style={tw`flex-col justify-between items-center`}>
+            <Text style={tw`text-[10px] text-gray-400 mr-1`}>Qty:</Text>
+            <TextInput
+              value={
+                item.qty === '' || item.qty === null || item.qty === undefined
+                  ? ''
+                  : String(item.qty)
+              }
+              onChangeText={txt => updateQty(item, txt)}
+              keyboardType="numeric"
+              style={(tw` `, [themed.border_b, themed.inputText])}
+              placeholder="1"
+              placeholderTextColor={themed.inputPlaceholder}
+            />
           </View>
 
           {item.sampleVolume ? (
@@ -602,11 +664,9 @@ const SearchSelectServiceItem = ({
                 themed.borderTop,
                 tw`absolute bottom-0 left-0 right-0   border-t`,
               ]}
-             >
+            >
               <View style={tw`flex-row justify-between items-center mb-2`}>
-                <Text style={[themed.inputText]}>
-                  Total Amount
-                </Text>
+                <Text style={[themed.inputText]}>Total Amount</Text>
                 <Text style={tw`text-lg font-bold text-green-600`}>
                   ₹ {totalAmount}
                 </Text>
@@ -615,7 +675,7 @@ const SearchSelectServiceItem = ({
               <TouchableOpacity
                 onPress={createPayload}
                 style={tw`bg-blue-800/60  p-3 rounded-lg`}
-               >
+              >
                 <Text style={tw`text-white text-center font-bold`}>
                   Add ({visibleDetailsList.length}) Tests
                 </Text>
@@ -632,7 +692,7 @@ const SearchSelectServiceItem = ({
         statusBarTranslucent
         presentationStyle="overFullScreen"
         onRequestClose={() => setRangeModalVisible(false)}
-       >
+      >
         <View style={themed.modalOverlay}>
           <Pressable
             style={tw`absolute inset-0`}
