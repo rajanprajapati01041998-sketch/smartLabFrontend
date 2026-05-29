@@ -732,7 +732,14 @@ const RegistrationScreen = () => {
 
   useEffect(() => {
     if (serviceItem?.Services) {
-      const sum = serviceItem.Services.reduce((acc, item) => acc + (item.Amount || 0), 0);
+      const sum = serviceItem.Services.reduce((acc, item) => {
+        const grossFromRow = Number(item?.GrossAmt ?? 0);
+        if (grossFromRow > 0) return acc + grossFromRow;
+
+        const qty = Number(item?.Qty ?? item?.qty ?? 1);
+        const rate = Number(item?.Rate ?? item?.rate ?? item?.Amount ?? 0);
+        return acc + rate * (qty || 1);
+      }, 0);
       setGrossAmount(sum);
 
       // Auto-fill cash only when user hasn't manually edited payments.
@@ -1033,10 +1040,10 @@ const RegistrationScreen = () => {
 
   return (
     <SafeAreaView style={themed.screen}>
-      <ScrollView style={tw`p-2 mb-15`}>
+      <ScrollView style={tw`p-2 mb-15 `}>
         <CenterInfo />
         {/* patient information */}
-        <View style={[themed.card, themed.childScreen, themed.cardPadding]}>
+        <View style={[themed.card, themed.childScreen2, themed.cardPadding]}>
           <Text style={styles.patientInfoText}>Patient Info:</Text>
           <View style={tw`flex flex-row justify-between items-center gap-1 mb-3`}>
             <View style={tw`flex flex-col gap-1 w-[25%]`}>
@@ -2393,7 +2400,7 @@ const RegistrationScreen = () => {
           transparent={true}
           animationType="slide"
           onRequestClose={() => setDiscountApprovalModal(false)}
-        >
+         >
           <TouchableWithoutFeedback onPress={() => setDiscountApprovalModal(false)}>
             <View style={[themed.modalOverlay]}>
               <TouchableWithoutFeedback onPress={() => { }}>

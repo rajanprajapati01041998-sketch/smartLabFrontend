@@ -1,10 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
@@ -40,7 +35,7 @@ function DashboardDrawerContent(props) {
   };
 
   const menuItems = [
-     {
+    {
       label: 'New Registration',
       subTitle: 'Register new patient',
       iconType: 'mi',
@@ -80,13 +75,21 @@ function DashboardDrawerContent(props) {
       color: '#ea33a1',
       onPress: () => goToTab('HelpDesk'),
     },
-     {
+    {
       label: 'Track Location',
       subTitle: 'View Live laction',
       iconType: 'mi',
       icon: 'map',
       color: '#3376ea',
-      onPress: () => goTo('Track Location')
+      onPress: () => goTo('Track Location'),
+    },
+    {
+      label: 'Test Refund',
+      subTitle: 'Test Refund',
+      iconType: 'mci',
+      icon: 'map',
+      color: '#0ba957ff',
+      onPress: () => goTo('Test Refund'),
     },
   ];
 
@@ -148,7 +151,9 @@ function DashboardDrawerContent(props) {
                 numberOfLines={1}
                 style={[tw`text-base font-bold`, { color: colors.text }]}
               >
-                {userData?.name || userData?.user?.displayName || 'Gravity User'}
+                {userData?.name ||
+                  userData?.user?.displayName ||
+                  'Gravity User'}
               </Text>
 
               <Text
@@ -180,13 +185,8 @@ function DashboardDrawerContent(props) {
               value={search}
               onChangeText={setSearch}
               placeholder="Search menu..."
-              placeholderTextColor={
-                theme === 'dark' ? '#9ca3af' : '#6b7280'
-              }
-              style={[
-                tw`flex-1 ml-2 py-0 text-sm`,
-                { color: colors.text },
-              ]}
+              placeholderTextColor={theme === 'dark' ? '#9ca3af' : '#6b7280'}
+              style={[tw`flex-1 ml-2 py-0 text-sm`, { color: colors.text }]}
             />
 
             {search.length > 0 && (
@@ -218,9 +218,7 @@ function DashboardDrawerContent(props) {
                   tw`mb-2 p-3 rounded-2xl flex-row items-center border`,
                   {
                     backgroundColor:
-                      theme === 'dark'
-                        ? 'rgba(255,255,255,0.04)'
-                        : '#ffffff',
+                      theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#ffffff',
                     borderColor: colors.border,
                   },
                 ]}
@@ -236,10 +234,7 @@ function DashboardDrawerContent(props) {
 
                 <View style={tw`ml-3 flex-1`}>
                   <Text
-                    style={[
-                      tw`text-sm font-semibold`,
-                      { color: colors.text },
-                    ]}
+                    style={[tw`text-sm font-semibold`, { color: colors.text }]}
                   >
                     {item.label}
                   </Text>
@@ -267,10 +262,7 @@ function DashboardDrawerContent(props) {
             <View style={tw`items-center justify-center py-8`}>
               <Feather name="search" size={30} color={colors.text} />
               <Text
-                style={[
-                  tw`mt-3 text-sm font-semibold`,
-                  { color: colors.text },
-                ]}
+                style={[tw`mt-3 text-sm font-semibold`, { color: colors.text }]}
               >
                 No menu found
               </Text>
@@ -280,12 +272,7 @@ function DashboardDrawerContent(props) {
       </DrawerContentScrollView>
 
       {/* Logout Bottom */}
-      <View
-        style={[
-          tw`px-3 py-4 border-t`,
-          { borderColor: colors.border },
-        ]}
-      >
+      <View style={[tw`px-3 py-4 border-t`, { borderColor: colors.border }]}>
         <TouchableOpacity
           activeOpacity={0.75}
           onPress={logout}
@@ -338,9 +325,7 @@ export default function DashboardDrawer() {
           backgroundColor: colors.background,
         },
         overlayColor:
-          theme === 'dark'
-            ? 'rgba(0,0,0,0.65)'
-            : 'rgba(0,0,0,0.45)',
+          theme === 'dark' ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.45)',
       }}
       drawerContent={props => <DashboardDrawerContent {...props} />}
     >

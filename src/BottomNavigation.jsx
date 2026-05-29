@@ -1,6 +1,9 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  BottomTabBar,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +36,8 @@ const HIDE_TABS_BY_TAB = {
     'TRF_Print',
     'LABReceipts',
     'BarcodeScanner',
-    'Track Location'
+    'Track Location',
+    'Test Refund',
   ]),
   Registration: new Set(['PatientInformation']),
   HelpDesk: new Set([
@@ -47,11 +51,11 @@ const HIDE_TABS_BY_TAB = {
     'TRF_Print',
     'LABReceipts',
     'BarcodeScanner',
-    'Track Location'
+    'Track Location',
   ]),
 };
 
-const getDeepestRouteName = (route) => {
+const getDeepestRouteName = route => {
   if (!route) return null;
   if (!route.state) {
     // When navigating into nested navigators with `navigate(parent, { screen })`,
@@ -62,7 +66,12 @@ const getDeepestRouteName = (route) => {
         state: route.params.state,
         params: route.params.params,
       };
-      return getDeepestRouteName(syntheticChild) ?? route.params.screen ?? route.name ?? null;
+      return (
+        getDeepestRouteName(syntheticChild) ??
+        route.params.screen ??
+        route.name ??
+        null
+      );
     }
 
     return getFocusedRouteNameFromRoute(route) ?? route.name ?? null;
@@ -79,9 +88,8 @@ export default function BottomTabNavigation() {
   // One bottom inset value: avoids “floating” gap when gestural Android reports 0 but we still need clearance above the gesture bar.
   const tabBarBottomInset = Math.max(
     insets.bottom,
-    Platform.OS === 'android' ? 10 : 0
+    Platform.OS === 'android' ? 10 : 0,
   );
-
 
   const horizontalInset = Math.max(insets.left, insets.right, 10);
 
@@ -106,7 +114,7 @@ export default function BottomTabNavigation() {
 
   return (
     <Tab.Navigator
-      tabBar={(props) => {
+      tabBar={props => {
         const focusedTabRoute = props.state.routes[props.state.index];
         const focusedTabName = focusedTabRoute?.name;
         const nestedRouteName = getDeepestRouteName(focusedTabRoute);
@@ -150,19 +158,10 @@ export default function BottomTabNavigation() {
         tabBarHideOnKeyboard: true,
       })}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardStack}
-      />
-      <Tab.Screen
-        name="Registration"
-        component={RegistrationStack}
-      />
+      <Tab.Screen name="Dashboard" component={DashboardStack} />
+      <Tab.Screen name="Registration" component={RegistrationStack} />
 
-      <Tab.Screen
-        name="HelpDesk"
-        component={HelpDeskStack}
-      />
+      <Tab.Screen name="HelpDesk" component={HelpDeskStack} />
     </Tab.Navigator>
   );
 }

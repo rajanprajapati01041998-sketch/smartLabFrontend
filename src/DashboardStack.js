@@ -19,6 +19,7 @@ import EditRegistration from './AfterLogin/Screens/PatientRegistration/EditRegis
 import TRF_Print from './AfterLogin/Screens/PatientRegistration/TRF_Print';
 import LABReceipts from './AfterLogin/Screens/PatientRegistration/LabReceipts';
 import Location from './components/Location/Location';
+import TestRefund from './AfterLogin/Screens/TestRefund/TestRefund.jsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -261,6 +262,11 @@ export default function DashboardStack() {
         name="Track Location"
         component={Location}
         options={{ title: 'Location' }}
+      />
+      <Stack.Screen
+        name="Test Refund"
+        component={TestRefund}
+        options={{ title: 'Test Refund' }}
       />
     </Stack.Navigator>
   );
