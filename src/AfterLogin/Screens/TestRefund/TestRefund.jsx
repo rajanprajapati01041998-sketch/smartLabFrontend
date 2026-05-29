@@ -58,7 +58,8 @@ const deriveOpdVisitDetailsFromRows = rows => {
       patientId: first.PatientId ?? first.patientId ?? 0,
       referDoctorId: first.ReferDoctorId ?? first.referDoctorId ?? 0,
       uhid: first.UHID ?? first.uhid ?? '',
-      currentAge: first.DOB ?? first.CurrentAge ?? first.currentAge ?? '',
+      DOB: first.DOB ?? first.dob ?? null,
+      currentAge: first.CurrentAge ?? first.currentAge ?? '',
       discAprrovedById:
         first.DiscAprrovedById ?? first.discAprrovedById ?? 0,
       discountReason: first.DiscountReason ?? first.discountReason ?? '',
@@ -133,6 +134,15 @@ const formatAgeFromDob = dob => {
   )}D`;
 };
 
+const coalesceNonEmptyString = (...vals) => {
+  for (const v of vals) {
+    if (v === undefined || v === null) continue;
+    const s = String(v);
+    if (s.trim() !== '') return s;
+  }
+  return '';
+};
+
 const normalizeOpdVisitDetails = (visit, { totalRefundAmount, paymentForm }) => {
   const v = visit && typeof visit === 'object' ? visit : {};
   const amount = totalRefundAmount > 0 ? totalRefundAmount : 0;
@@ -166,11 +176,10 @@ const normalizeOpdVisitDetails = (visit, { totalRefundAmount, paymentForm }) => 
       paymentForm?.refundApprovedBy ??
       0,
     ),
-    discountReason: String(
-      v.discountReason ??
-      v.DiscountReason ??
-      paymentForm?.refundReason ??
-      '',
+    discountReason: coalesceNonEmptyString(
+      v.discountReason,
+      v.DiscountReason,
+      paymentForm?.refundReason,
     ),
     roundOff: Number(v.roundOff ?? v.RoundOff ?? 0),
     netAmount: Number(amount || v.netAmount || v.TotalPaidAmount || 0),
@@ -347,6 +356,26 @@ const TestRefund = () => {
     };
   };
 
+  const goToDashboardHome = () => {
+    try {
+      // If we are inside DashboardStack, this returns to DashboardHome.
+      navigation.popToTop?.();
+    } catch (_e) {}
+
+    try {
+      // Ensure Dashboard tab is focused (in case user came from another tab).
+      const tabParent = navigation.getParent?.();
+      if (tabParent?.navigate) {
+        tabParent.navigate('Dashboard', { screen: 'DashboardHome' });
+        return;
+      }
+    } catch (_e) {}
+
+    try {
+      navigation.navigate('DashboardHome');
+    } catch (_e) {}
+  };
+
   const handleFinalRefund = async () => {
     if (refundsParent.length === 0) {
       showToast('Please select test for refund', 'warning');
@@ -379,11 +408,7 @@ const TestRefund = () => {
       const result = response?.data;
       console.log('Refund API Response:', result);
       showToast(result?.message || 'Refund saved successfully', 'success');
-      try {
-        navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
-      } catch (_e) {
-        navigation.navigate('Dashboard');
-      }
+      goToDashboardHome();
     } catch (error) {
       console.log('Refund API Error:', error);
       showToast('Server error while saving refund', 'error');
