@@ -40,13 +40,11 @@ const DashBoardPaymentDownload = ({ selectedBranches = [], fromDate, toDate }) =
     };
 
     const handleDownload = async colorPrint => {
+        console.log('Download initiated with colorPrint:', selectedBranches);
         try {
             setPrintModal(false);
 
-            if (!selectedBranches?.length) {
-                showToast('Please Select Branch', 'warning');
-                return;
-            }
+
 
             if (!fromDate || !toDate) {
                 showToast('Please Select FromDate and ToDate', 'warning');

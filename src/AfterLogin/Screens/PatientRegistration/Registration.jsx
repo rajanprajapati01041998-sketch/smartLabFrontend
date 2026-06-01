@@ -99,7 +99,7 @@ const RegistrationScreen = () => {
   const [fieldBoyModal, setFieldBoyModal] = useState(false);
   const [selectedFieldBoy, setSelectedFieldBoy] = useState(null);
   const [selectTitleModal, setSelectTitleModal] = useState(false)
-  const [selectedTitle, setSelectedTitle] = useState("MR");
+  const [selectedTitle, setSelectedTitle] = useState("Mr.");
   const [receiptAmount, setReceiptAmount] = useState(0);
   // const [selectedTitle, setSelectedTitle] = useState(null)
   const [showBillingInfo, setShowBillingInfo] = useState(false)
@@ -127,6 +127,15 @@ const RegistrationScreen = () => {
   const [discountApprovalModal, setDiscountApprovalModal] = useState(false);
   const [selectedDiscountApproval, setSelectedDiscountApproval] = useState(null);
   const [discountApprovalId, setDiscountApprovalId] = useState(0);
+
+  const getGenderFromTitle = useCallback((title, currentGender = "MALE") => {
+    const normalized = String(title || '').trim().toLowerCase();
+
+    if (['mr.', 'mr', 'master'].includes(normalized)) return 'MALE';
+    if (['mrs.', 'mrs', 'miss.', 'miss', 'ms.', 'ms', 'smt.', 'smt'].includes(normalized)) return 'FEMALE';
+
+    return currentGender;
+  }, []);
 
   const parseDOBValue = useCallback((value) => {
     if (!value) return null;
@@ -169,10 +178,10 @@ const RegistrationScreen = () => {
 
   // console.log(patientData)
   useEffect(() => {
-    setSelectedTitle(patientData?.Title || "MR.");
+    const nextTitle = patientData?.Title || "Mr.";
+    setSelectedTitle(nextTitle);
     setFirstName(patientData?.FirstName || "")
-    setGender(patientData?.Gender || "MALE")
-    setGender(patientData?.Gender || "")
+    setGender(patientData?.Gender || getGenderFromTitle(nextTitle, "MALE"))
     setBalanceAmount(patientData?.TotalBalanceOfAdvanceAmount || 0)
     setContactNumber(patientData?.ContactNumber)
     const nextDob = parseDOBValue(patientData?.DOB);
@@ -188,16 +197,11 @@ const RegistrationScreen = () => {
       setAgeMonths(patientData?.AgeMonths || "")
       setAgeYears(patientData?.AgeYears || "")
     }
-  }, [patientData, parseDOBValue])
+  }, [patientData, parseDOBValue, getGenderFromTitle])
 
   useEffect(() => {
-    if (selectedTitle === "Mr") setGender("MALE");
-    if (["Mrs", "Miss"].includes(selectedTitle)) setGender("FEMALE");
-  }, [selectedTitle]);
-
-  useEffect(() => {
-    setGender("MALE")
-  }, [])
+    setGender((current) => getGenderFromTitle(selectedTitle, current));
+  }, [selectedTitle, getGenderFromTitle]);
 
 
   useFocusEffect(
@@ -611,7 +615,7 @@ const RegistrationScreen = () => {
       const uhid = response?.data?.uhid;
 
       if (uhid) {
-        Clipboard.setString(uhid); 
+        Clipboard.setString(uhid);
         showToast(
           `Patient saved. UHID ${uhid} copied to clipboard`,
           "success"
@@ -1212,18 +1216,18 @@ const RegistrationScreen = () => {
 
           <View style={tw`mt-2`}>
             <View style={tw`flex-row items-end `}>
-              <View style={tw`flex-1 mr-2`}>
+              <View style={tw`flex-1 mr-2 w-[85%]`}>
                 <Text style={themed.inputLabel}>Referred Doctor</Text>
 
                 <TouchableOpacity
                   onPress={() => setReferDoctorModal(true)}
                   style={[
                     themed.inputBox,
-                    tw`mt-1 mb-3 flex-row justify-between items-center `
+                    tw`mt-1 mb-3 flex-row justify-between items-center  `
                   ]}
                 >
                   <Text
-                    style={[themed.inputText, tw`flex-1 mr-2`]}
+                    style={[themed.inputText, tw` mr-2`]}
                     numberOfLines={1}
                   >
                     {selectedReferDoctor ? selectedReferDoctor.name : '- Select Doctor -'}
@@ -1237,7 +1241,7 @@ const RegistrationScreen = () => {
                 onPress={() => setAddReferDoctorModal(true)}
                 style={[
                   themed.addButton,
-                  tw`mb-3  items-center justify-center `
+                  tw`mb-3  items-center justify-center w-[15%] `
                 ]}
               >
                 <Text style={styles.buttonTextAdd}>+</Text>
@@ -1955,16 +1959,23 @@ const RegistrationScreen = () => {
                         </Text>
                         <TextInput
                           value={groupBarcode}
+                          keyboardType="numeric"
+                          maxLength={20}
                           onChangeText={(txt) => {
+                            const numericText = txt.replace(/[^0-9]/g, '');
+
                             setGroupBarcodeDraft((prev) => ({
                               ...(prev || {}),
-                              [groupKey]: txt,
+                              [groupKey]: numericText,
                             }));
                           }}
                           onEndEditing={(e) => {
                             const txt = e?.nativeEvent?.text ?? '';
                             const trimmed = String(txt).trim();
-                            if (trimmed) setBarcodeForServiceIds(serviceIdsInGroup, trimmed);
+
+                            if (trimmed) {
+                              setBarcodeForServiceIds(serviceIdsInGroup, trimmed);
+                            }
                           }}
                           placeholder="Enter barcode"
                           placeholderTextColor="#9CA3AF"
@@ -2301,6 +2312,7 @@ const RegistrationScreen = () => {
             onClose={() => setSelectTitleModal(false)}
             onSelectTitle={(item) => {
               setSelectedTitle(item);
+              setGender((current) => getGenderFromTitle(item, current));
               setSelectTitleModal(false);
             }}
           />
@@ -2400,7 +2412,7 @@ const RegistrationScreen = () => {
           transparent={true}
           animationType="slide"
           onRequestClose={() => setDiscountApprovalModal(false)}
-         >
+        >
           <TouchableWithoutFeedback onPress={() => setDiscountApprovalModal(false)}>
             <View style={[themed.modalOverlay]}>
               <TouchableWithoutFeedback onPress={() => { }}>

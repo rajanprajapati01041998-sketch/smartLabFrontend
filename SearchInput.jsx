@@ -11,7 +11,11 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from './Authorization/ThemeContext';
 import { getThemeStyles } from './src/utils/themeStyles';
 
-const SearchInput = ({ onSearch, placeholder = "Search by name, UHID, or mobile..." }) => {
+const SearchInput = ({
+    onSearch,
+    placeholder = "Search by name, UHID, or mobile...",
+    autoCollapse = true,
+}) => {
     const { theme } = useTheme();
     const themed = getThemeStyles(theme);
 
@@ -54,21 +58,21 @@ const SearchInput = ({ onSearch, placeholder = "Search by name, UHID, or mobile.
     const handleSearchPress = () => {
         if (searchText.trim()) {
             onSearch(searchText.trim());
-            setIsExpanded(false);
+            if (autoCollapse) setIsExpanded(false);
         }
-        setIsExpanded(false);
+        if (autoCollapse) setIsExpanded(false);
     };
 
     const handleClear = () => {
         setSearchText('');
         onSearch('');
-        setIsExpanded(false);
+        if (autoCollapse) setIsExpanded(false);
     };
 
     const handleCancel = () => {
         setSearchText('');
         onSearch('');
-        setIsExpanded(false);
+        if (autoCollapse) setIsExpanded(false);
     };
 
     return (
@@ -89,7 +93,7 @@ const SearchInput = ({ onSearch, placeholder = "Search by name, UHID, or mobile.
                         value={searchText}
                         onChangeText={setSearchText}
                         placeholder={placeholder}
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={themed.placeholderColor}
                         autoFocus
                         returnKeyType="search"
                         onSubmitEditing={handleSearchPress}

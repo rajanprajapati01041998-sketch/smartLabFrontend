@@ -167,8 +167,10 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const recentTransactions = paymentHistoryList.slice(0, 5)
 
     const handleViewAll = () => {
-        navigation.navigate('DashboardPaymentHistoryDetails')
-    }
+        navigation.navigate('DashboardPaymentHistoryDetails', {
+            selectedBranches,
+        });
+    };
 
     if (paymentHistoryLoading && paymentHistoryList.length === 0) {
         return (
@@ -185,7 +187,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
             style={themed.filterButton}
             activeOpacity={0.7}
         >
-            <Icon name={icon}  size={18} color={themed.filterButtonIcon} />
+            <Icon name={icon} size={18} color={themed.filterButtonIcon} />
             <Text style={themed.filterButtonText}> {title}</Text>
         </TouchableOpacity>
     );
@@ -205,7 +207,7 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
                         <Icon name='download' color='white' />
                         <Text style={[themed.downloadButtonText]}>Download</Text>
                     </TouchableOpacity> */}
-                    {paymentHistoryList.length>0 &&<DashBoardPaymentDownload
+                    {paymentHistoryList.length > 0 && <DashBoardPaymentDownload
                         selectedBranches={selectedBranches}
                         fromDate={fromDate}
                         toDate={toDate}

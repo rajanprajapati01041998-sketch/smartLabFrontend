@@ -423,7 +423,7 @@ export default function App() {
               style={[
                 tw`w-full rounded-md overflow-hidden`,
                 {
-                  height: '80%',
+                  height: '90%',
                   backgroundColor: theme === 'dark' ? colors.surface : '#ffffff',
                 },
               ]}>
