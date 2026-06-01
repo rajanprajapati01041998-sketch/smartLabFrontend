@@ -9,7 +9,6 @@ import {
 import { useAuth } from './Authorization/AuthContext';
 import DashboardDrawer from './src/DashboardDrawer';
 import LoginScreen from './src/Login';
-
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -21,12 +20,15 @@ import {
   Text,
   TouchableOpacity,
   Animated,
+  Dimensions,
+  PanResponder,
+  ScrollView,
+  Pressable,
 } from 'react-native';
 
 import { ResponsiveProvider } from './src/context/ResponsiveContext';
 import { useTheme } from './Authorization/ThemeContext';
 import StartupSplash from './src/StartupSplash';
-
 import useCurrentLocation from './src/utils/locationService';
 
 import {
@@ -40,6 +42,7 @@ import { API_BASE_URL } from './Authorization/api';
 import { getAddressFromLatLng } from './src/utils/patinetService.js/location';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import GlobalSearchPatientList from './GlobalSearchPatientList';
 
 const navigationRef = createNavigationContainerRef();
 const SSE_URL = `${API_BASE_URL}Sse/admin-listen`;
@@ -71,7 +74,76 @@ export default function App() {
   const [currentFieldBoyId, setCurrentFieldBoyId] = useState(null);
   const [currentFieldBoyName, setCurrentFieldBoyName] = useState('');
 
+  const [floatingModalVisible, setFloatingModalVisible] = useState(false);
+
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const { width, height } = Dimensions.get('window');
+
+  const pan = useRef(
+    new Animated.ValueXY({
+      x: width - 85,
+      y: height - 180,
+    }),
+  ).current;
+
+  const isDragging = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3;
+      },
+
+      onPanResponderGrant: () => {
+        isDragging.current = false;
+
+        pan.setOffset({
+          x: pan.x._value,
+          y: pan.y._value,
+        });
+
+        pan.setValue({ x: 0, y: 0 });
+      },
+
+      onPanResponderMove: (event, gestureState) => {
+        isDragging.current = true;
+
+        Animated.event([null, { dx: pan.x, dy: pan.y }], {
+          useNativeDriver: false,
+        })(event, gestureState);
+      },
+
+      onPanResponderRelease: (_, gestureState) => {
+        pan.flattenOffset();
+
+        let finalX = pan.x._value;
+        let finalY = pan.y._value;
+
+        if (finalX < 10) finalX = 10;
+        if (finalY < 60) finalY = 60;
+        if (finalX > width - 75) finalX = width - 75;
+        if (finalY > height - 120) finalY = height - 120;
+
+        Animated.spring(pan, {
+          toValue: {
+            x: finalX,
+            y: finalY,
+          },
+          useNativeDriver: false,
+        }).start();
+
+        if (
+          Math.abs(gestureState.dx) < 5 &&
+          Math.abs(gestureState.dy) < 5
+        ) {
+          setFloatingModalVisible(true);
+        }
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     requestStoragePermission();
@@ -129,11 +201,11 @@ export default function App() {
           setSseType('location');
           setSseMessage(
             `${data.message || 'Location shared'}\n\n` +
-              `Field Boy Name: ${fieldBoyName || '-'}\n\n` +
-              `Field Boy ID: ${fieldBoyId || '-'}\n\n` +
-              `Address: ${address}\n\n` +
-              `Latitude: ${data.latitude || data.Latitude || '-'}\n\n` +
-              `Longitude: ${data.longitude || data.Longitude || '-'}`,
+            `Field Boy Name: ${fieldBoyName || '-'}\n\n` +
+            `Field Boy ID: ${fieldBoyId || '-'}\n\n` +
+            `Address: ${address}\n\n` +
+            `Latitude: ${data.latitude || data.Latitude || '-'}\n\n` +
+            `Longitude: ${data.longitude || data.Longitude || '-'}`,
           );
 
           setSseModalVisible(true);
@@ -149,14 +221,16 @@ export default function App() {
             data.name ||
             data.Name ||
             'Unknown Field Boy';
+
           setCurrentFieldBoyId(fieldBoyId);
           setCurrentFieldBoyName(fieldBoyName);
+
           setSseTitle('🟢 Field Boy Live');
           setSseType('live');
           setSseMessage(
             `${data.message || 'Field boy is live'}\n\n` +
-              `Field Boy Name: ${fieldBoyName || '-'}\n\n` +
-              `Field Boy ID: ${fieldBoyId || '-'}`,
+            `Field Boy Name: ${fieldBoyName || '-'}\n\n` +
+            `Field Boy ID: ${fieldBoyId || '-'}`,
           );
 
           setSseModalVisible(true);
@@ -202,11 +276,6 @@ export default function App() {
   };
 
   const handleMapNavigation = () => {
-    console.log('Navigating FieldBoy:', {
-      currentFieldBoyId,
-      currentFieldBoyName,
-    });
-
     if (!navigationRef.isReady()) return;
 
     navigationRef.navigate('MainTabs', {
@@ -298,18 +367,77 @@ export default function App() {
               text: colors.text,
               primary: colors.primary,
             },
-          }}
-        >
+          }}>
           <AppContent />
         </NavigationContainer>
+
+        {token && (
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[
+              {
+                position: 'absolute',
+                zIndex: 99999,
+                elevation: 99999,
+                transform: pan.getTranslateTransform(),
+              },
+            ]}>
+            <TouchableOpacity
+              onPress={() => setFloatingModalVisible(true)}
+              activeOpacity={0.85}
+              style={[
+                tw`w-16 h-16 rounded-full items-center justify-center shadow-lg`,
+                {
+                  backgroundColor:
+                    theme === 'dark'
+                      ? '#2564eb5e'
+                      : '#2563eb',
+                },
+              ]}>
+              <Ionicons
+                name="search"
+                size={34}
+                color={`${theme === 'dark' ? '#078ce5' : '#ffffff'}`}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        <Modal
+          visible={floatingModalVisible}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setFloatingModalVisible(false)}>
+
+          <View style={tw`flex-1 justify-center items-center bg-black/50 px-3`}>
+
+            {/* outside click close */}
+            <Pressable
+              style={tw`absolute top-0 bottom-0 left-0 right-0`}
+              onPress={() => setFloatingModalVisible(false)}
+            />
+
+            {/* modal box */}
+            <View
+              style={[
+                tw`w-full rounded-md overflow-hidden`,
+                {
+                  height: '80%',
+                  backgroundColor: theme === 'dark' ? colors.surface : '#ffffff',
+                },
+              ]}>
+              <GlobalSearchPatientList onClose={() => setFloatingModalVisible(false)} />
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           visible={sseModalVisible}
           transparent
           animationType="none"
           statusBarTranslucent
-          onRequestClose={() => setSseModalVisible(false)}
-        >
+          onRequestClose={() => setSseModalVisible(false)}>
           <View style={tw`flex-1 justify-end bg-black/50`}>
             <TouchableOpacity
               style={tw`flex-1`}
@@ -330,8 +458,7 @@ export default function App() {
                     },
                   ],
                 },
-              ]}
-            >
+              ]}>
               <LinearGradient colors={getHeaderGradient()} style={tw`h-1`} />
 
               <View style={tw`items-center pt-3 pb-1`}>
@@ -342,8 +469,7 @@ export default function App() {
                 <View style={tw`flex-row items-center mb-4`}>
                   <LinearGradient
                     colors={getHeaderGradient()}
-                    style={tw`p-2.5 rounded-full mr-3`}
-                  >
+                    style={tw`p-2.5 rounded-full mr-3`}>
                     <Ionicons name={getHeaderIcon()} size={22} color="white" />
                   </LinearGradient>
 
@@ -356,15 +482,14 @@ export default function App() {
                       {sseType === 'location'
                         ? 'Field boy is sharing location'
                         : sseType === 'live'
-                        ? 'Field boy is now online'
-                        : 'New notification received'}
+                          ? 'Field boy is now online'
+                          : 'New notification received'}
                     </Text>
                   </View>
 
                   <TouchableOpacity
                     onPress={() => setSseModalVisible(false)}
-                    style={tw`p-2 rounded-full bg-gray-100`}
-                  >
+                    style={tw`p-2 rounded-full bg-gray-100`}>
                     <Ionicons name="close" size={20} color="#6b7280" />
                   </TouchableOpacity>
                 </View>
@@ -375,26 +500,25 @@ export default function App() {
                     sseType === 'location'
                       ? tw`bg-blue-50`
                       : sseType === 'live'
-                      ? tw`bg-green-50`
-                      : tw`bg-purple-50`,
-                  ]}
-                >
+                        ? tw`bg-green-50`
+                        : tw`bg-purple-50`,
+                  ]}>
                   <View style={tw`flex-row items-start`}>
                     <Ionicons
                       name={
                         sseType === 'location'
                           ? 'location-sharp'
                           : sseType === 'live'
-                          ? 'radio-outline'
-                          : 'chatbubble-ellipses-outline'
+                            ? 'radio-outline'
+                            : 'chatbubble-ellipses-outline'
                       }
                       size={20}
                       color={
                         sseType === 'location'
                           ? '#3b82f6'
                           : sseType === 'live'
-                          ? '#10b981'
-                          : '#8b5cf6'
+                            ? '#10b981'
+                            : '#8b5cf6'
                       }
                       style={tw`mr-2 mt-0.5`}
                     />
@@ -429,8 +553,7 @@ export default function App() {
                 <View style={tw`flex-row gap-3`}>
                   <TouchableOpacity
                     onPress={() => setSseModalVisible(false)}
-                    style={tw`flex-1 bg-gray-100 py-3.5 rounded-xl`}
-                  >
+                    style={tw`flex-1 bg-gray-100 py-3.5 rounded-xl`}>
                     <Text style={tw`text-gray-700 text-center font-semibold`}>
                       Dismiss
                     </Text>
@@ -442,8 +565,7 @@ export default function App() {
                       style={[
                         tw`flex-1 py-3.5 rounded-xl flex-row items-center justify-center gap-2 shadow-md`,
                         sseType === 'live' ? tw`bg-green-600` : tw`bg-blue-600`,
-                      ]}
-                    >
+                      ]}>
                       <Ionicons
                         name="navigate-circle-outline"
                         size={20}

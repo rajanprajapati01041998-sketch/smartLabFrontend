@@ -58,8 +58,8 @@ const deriveOpdVisitDetailsFromRows = rows => {
       patientId: first.PatientId ?? first.patientId ?? 0,
       referDoctorId: first.ReferDoctorId ?? first.referDoctorId ?? 0,
       uhid: first.UHID ?? first.uhid ?? '',
-      DOB: first.DOB ?? first.dob ?? null,
-      currentAge: first.CurrentAge ?? first.currentAge ?? '',
+      // DOB: first.DOB ?? first.dob ?? null,
+      currentAge: first.DOB ?? first.DOB ?? '',
       discAprrovedById:
         first.DiscAprrovedById ?? first.discAprrovedById ?? 0,
       discountReason: first.DiscountReason ?? first.discountReason ?? '',

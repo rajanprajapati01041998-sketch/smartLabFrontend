@@ -14,6 +14,7 @@ import FilterDate from '../FilterDate'
 import { useDash } from '../../../../Authorization/DashContext'
 import { getThemeStyles } from '../../../utils/themeStyles'
 import { useTheme } from '../../../../Authorization/ThemeContext'
+import DashBoardPaymentDownload from './DashBoardPaymentDownload'
 
 const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const { loginBranchId, updateFlag } = useAuth()
@@ -30,6 +31,8 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
     const [toDate, setToDate] = useState(null);
     const { theme } = useTheme();
     const themed = getThemeStyles(theme);
+
+    // console.log("data", paymentHistoryList.length )
 
 
     useEffect(() => {
@@ -182,14 +185,8 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
             style={themed.filterButton}
             activeOpacity={0.7}
         >
-            <Icon
-                name={icon}
-                size={18}
-                color={themed.filterButtonIcon}
-            />
-            <Text style={themed.filterButtonText}>
-                {title}
-            </Text>
+            <Icon name={icon}  size={18} color={themed.filterButtonIcon} />
+            <Text style={themed.filterButtonText}> {title}</Text>
         </TouchableOpacity>
     );
 
@@ -198,10 +195,21 @@ const DashboardPaymentHistory = ({ selectedBranches, setSummaryData }) => {
             <View style={tw`rounded-lg mt-2`}>
 
                 {/* Header */}
-                <View style={tw`flex-row justify-between items-center mb-2`}>
+                <View style={[themed.border_b, tw`flex-row justify-between items-start mb-2 pb-2`]}>
                     <Text style={themed.headerTitle}>
                         Payment History
                     </Text>
+                    {/* <TouchableOpacity
+                    style={[themed.downloadButton]}
+                    >
+                        <Icon name='download' color='white' />
+                        <Text style={[themed.downloadButtonText]}>Download</Text>
+                    </TouchableOpacity> */}
+                    {paymentHistoryList.length>0 &&<DashBoardPaymentDownload
+                        selectedBranches={selectedBranches}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                    />}
 
                     {paymentHistoryList.length > 0 && (
                         <TouchableOpacity onPress={handleViewAll} style={tw`flex-row items-center`}>
