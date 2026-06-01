@@ -12,18 +12,22 @@ import { AuthProvider } from './Authorization/AuthContext';
 import { ThemeProvider } from './Authorization/ThemeContext';
 import { ToastProvider } from './Authorization/ToastContext';
 import { DashProvider } from './Authorization/DashContext';
+import { Root as PopupRootProvider } from '@sekizlipenguen/react-native-popup-confirm-toast';
+
 
 const Root = () => {
   return (
-    <AuthProvider>
-      <DashProvider>
-        <ToastProvider>
-          <ThemeProvider>
-            <App />
-          </ThemeProvider>
-        </ToastProvider>
-      </DashProvider>
-    </AuthProvider>
+    <PopupRootProvider>
+      <AuthProvider>
+        <DashProvider>
+          <ToastProvider>
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
+          </ToastProvider>
+        </DashProvider>
+      </AuthProvider>
+    </PopupRootProvider>
   );
 };
 

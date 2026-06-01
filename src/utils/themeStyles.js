@@ -149,7 +149,7 @@ export const getThemeStyles = theme => {
     ),
 
     transactionLabel: tw.style(
-      'text-xs',
+      'text-md',
       isDark ? 'text-gray-600' : 'text-gray-600',
     ),
 
@@ -411,5 +411,12 @@ export const getThemeStyles = theme => {
       'flex-row items-center justify-between px-4 py-4 rounded-2xl border shadow-sm',
       isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200',
     ),
+
+    downloadButton:tw.style(
+      " flex flex-row gap-1 bg-blue-600 items-center px-2 py-1 rounded-md"
+    ),
+     downloadButtonText:tw.style(
+            isDark ? 'text-white' : 'text-white',
+    )
   };
 };

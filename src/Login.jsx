@@ -75,6 +75,8 @@ export default function LoginScreen({ navigation }) {
     const [menuVisible, setMenuVisible] = useState(false);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
+    const [rememberedCreds, setRememberedCreds] = useState({ userName: "", userPassword: "" });
     const [isLoading, setIsLoading] = useState(false);
     const [branches, setBranches] = useState([]);
     const [filteredBranches, setFilteredBranches] = useState([]);
@@ -119,6 +121,36 @@ export default function LoginScreen({ navigation }) {
         cardOpacity.value = withTiming(1, { duration: 800 });
         logoTranslateY.value = withSpring(0, { damping: 10, stiffness: 80 });
         logoOpacity.value = withTiming(1, { duration: 1000 });
+    }, []);
+
+    useEffect(() => {
+        const loadRememberedCreds = async () => {
+            try {
+                const [savedRememberMe, savedUserName, savedUserPassword] = await Promise.all([
+                    AsyncStorage.getItem("rememberMe"),
+                    AsyncStorage.getItem("rememberedUserName"),
+                    AsyncStorage.getItem("rememberedUserPassword"),
+                ]);
+
+                const enabled = savedRememberMe === "true";
+                const creds = {
+                    userName: savedUserName || "",
+                    userPassword: savedUserPassword || "",
+                };
+
+                setRememberMe(enabled);
+                setRememberedCreds(creds);
+
+                if (enabled && creds.userName) {
+                    setUsername(creds.userName);
+                    if (creds.userPassword) setPassword(creds.userPassword);
+                }
+            } catch (e) {
+                // ignore
+            }
+        };
+
+        loadRememberedCreds();
     }, []);
 
     useEffect(() => {
@@ -175,6 +207,31 @@ export default function LoginScreen({ navigation }) {
     const colors = getThemeColors();
 
     // Replace only handleLogin with this
+
+    const onUsernameChange = (text) => {
+        setUsername(text);
+        if (text && rememberedCreds.userName && text === rememberedCreds.userName && rememberedCreds.userPassword) {
+            setPassword(rememberedCreds.userPassword);
+        }
+    };
+
+    const toggleRememberMe = async () => {
+        const next = !rememberMe;
+        setRememberMe(next);
+
+        if (!next) {
+            try {
+                await Promise.all([
+                    AsyncStorage.removeItem("rememberMe"),
+                    AsyncStorage.removeItem("rememberedUserName"),
+                    AsyncStorage.removeItem("rememberedUserPassword"),
+                ]);
+                setRememberedCreds({ userName: "", userPassword: "" });
+            } catch (e) {
+                // ignore
+            }
+        }
+    };
 
     const handleLogin = async () => {
         if (!username) {
@@ -249,9 +306,6 @@ export default function LoginScreen({ navigation }) {
             setIsLoading(false)
             return;
         }
-
-
-
         try {
             const response = await api.post(`Login/login`, formData);
             setUserId(response?.data?.user.id);
@@ -266,6 +320,26 @@ export default function LoginScreen({ navigation }) {
 
             if (token) {
                 await login(token, userInfo);
+
+                try {
+                    if (rememberMe) {
+                        await Promise.all([
+                            AsyncStorage.setItem("rememberMe", "true"),
+                            AsyncStorage.setItem("rememberedUserName", username),
+                            AsyncStorage.setItem("rememberedUserPassword", password),
+                        ]);
+                        setRememberedCreds({ userName: username, userPassword: password });
+                    } else {
+                        await Promise.all([
+                            AsyncStorage.removeItem("rememberMe"),
+                            AsyncStorage.removeItem("rememberedUserName"),
+                            AsyncStorage.removeItem("rememberedUserPassword"),
+                        ]);
+                        setRememberedCreds({ userName: "", userPassword: "" });
+                    }
+                } catch (e) {
+                    // ignore
+                }
             } else {
                 Alert.alert("Error", "Invalid response from server");
             }
@@ -524,7 +598,7 @@ export default function LoginScreen({ navigation }) {
                                                 placeholderTextColor="rgba(255, 255, 255, 0.6)"
                                                 style={tw`flex-1 py-4 text-white text-base`}
                                                 value={username}
-                                                onChangeText={setUsername}
+                                                onChangeText={onUsernameChange}
                                                 returnKeyType="next"
                                                 blurOnSubmit={false}
                                             />
@@ -558,6 +632,23 @@ export default function LoginScreen({ navigation }) {
                                                 />
                                             </TouchableOpacity>
                                         </View>
+                                    </Animated.View>
+
+                                    <Animated.View entering={FadeInDown.delay(375).springify()}>
+                                        <TouchableOpacity
+                                            onPress={toggleRememberMe}
+                                            activeOpacity={0.8}
+                                            style={tw`flex-row items-center mb-5`}
+                                        >
+                                            <MaterialIcons
+                                                name={rememberMe ? "check-box" : "check-box-outline-blank"}
+                                                size={20}
+                                                color="rgba(255, 255, 255, 0.9)"
+                                            />
+                                            <Text style={tw`text-white/90 ml-2 text-sm font-medium`}>
+                                                Remember me
+                                            </Text>
+                                        </TouchableOpacity>
                                     </Animated.View>
 
                                     {selectedBranch && (
