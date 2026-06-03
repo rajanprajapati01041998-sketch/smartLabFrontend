@@ -31,10 +31,10 @@ import { useTheme } from './Authorization/ThemeContext';
 import StartupSplash from './src/StartupSplash';
 import useCurrentLocation from './src/utils/locationService';
 
-import {
-  getBackgroundLocationEnabled,
-  getLiveLocationSession,
-} from './src/utils/backgroundLocationPrefs';
+// import {
+//   getBackgroundLocationEnabled,
+//   getLiveLocationSession,
+// } from './src/utils/backgroundLocationPrefs';
 
 import EventSource from 'react-native-sse';
 import tw from 'twrnc';

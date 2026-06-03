@@ -13,23 +13,27 @@ const ViewTebularReport = ({ route, navigation }) => {
   const [pdfPath, setPdfPath] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
   const { userId, loginBranchId } = useAuth()
-  console.log('ViewTebularReport received params:', { item: item?.PatientInvestigationId, isPrintHeader, loginHeader, mainHeader, userId, loginBranchId })
-  console.log('API Base URL:', loginBranchId, userId)
+  // console.log('ViewTebularReport received params:', { item: item?.PatientInvestigationId, isPrintHeader, loginHeader, mainHeader, userId, loginBranchId })
+  // console.log('API Base URL:', loginBranchId, userId)
 
   const getTebularReport = async () => {
+    console.log('PatientInvestigationId:', item?.PatientInvestigationId);
+    console.log('isPrintHeader:', isPrintHeader);
+    console.log('userId:', userId);
+    console.log('loginBranchId:', loginBranchId); 
     try {
       setLoading(true)
       setErrorMessage('')
       setPdfPath(null)
+      // http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=10352&isHeaderPNG=0&PrintBy=1&branchId=1&ViewReport=true
       const response = await api.get(
-        `DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.PatientInvestigationId}&isHeaderPNG=${isPrintHeader ? 1 : 0
+        `DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.
+          PatientInvestigationId}&isHeaderPNG=${isPrintHeader ? 0 : 1
         }&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=true`,
       );
 
-      // console.log('API response for Tebular Report:', response?.data)
-
+      console.log('API response for Tebular Report:', response?.data)
       const base64Pdf = response?.data?.pdfBase64
-
       if (!base64Pdf) {
         setErrorMessage('PDF base64 not found in API response')
         return
@@ -50,13 +54,22 @@ const ViewTebularReport = ({ route, navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      getTebularReport()
+      const loadReport = async () => {
+        await getTebularReport();
+      };
+
+      loadReport();
 
       return () => {
-        console.log('ViewTebularReport screen is unfocused')
-      }
-    }, [])
-  )
+        console.log('Screen Unfocused');
+      };
+    }, [
+      item?.PatientInvestigationId,
+      isPrintHeader,
+      userId,
+      loginBranchId,
+    ])
+  );
 
   if (loading) {
     return (

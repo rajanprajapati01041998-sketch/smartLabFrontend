@@ -376,10 +376,11 @@ const ListHelpDeskPatient = () => {
   };
 
   const handleDownloadReport = async (id, name, reporTypeId, isPrintHeader, loginHeader, mainHeader) => {
-    console.log("report Id", reporTypeId)
+    console.log("report Id download", reporTypeId)
     const selectedBranchId = mainHeader ? 1 : loginBranchId;
     if (reporTypeId === 2) {
       try {
+        console.log("rpt", reporTypeId)
         // console.log('Free text report with ID:', id, 'and name:', name, 'reporTypeId', reporTypeId);
         setDownloadingId(id);
         const { config, fs } = RNFetchBlob;
@@ -411,6 +412,7 @@ const ListHelpDeskPatient = () => {
   const handleDownloadTebularReport = async (id, name, reporTypeId) => {
     try {
       setDownloadingId(id);
+      console.log("report Id download 1 =", reporTypeId)
 
       const { config, fs } = RNFetchBlob;
 
@@ -425,17 +427,11 @@ const ListHelpDeskPatient = () => {
       const clientId = mainHeader ? mainBranchId : 0;
       const isHeaderPNG = isPrintHeader ? 0 : 1;
 
-      console.log("selectedBranchId", selectedBranchId)
-      return;
+  
 
       const url =
-        `${API_BASE_URL}ReportPrint/DownloadCombinedReport` +
-        `?ptInvstId=${id}` +
-        `&isHeaderPNG=${isHeaderPNG ? 1 : 0}` +
-        `&printBy=${userId}` +
-        `&branchId=${selectedBranchId}` +
-        `&pdf=false`;
-      // console.log('Download URL:', url);
+        `${API_BASE_URL}DeltaReport/download-delta-report?PatientInvestigationIdList=${id}&isHeaderPNG=${isHeaderPNG}&PrintBy=${userId}&branchId=${selectedBranchId}&ViewReport=false`;
+      console.log('Download URL:', url);
       // console.log('Download path:', path);
 
       const res = await config({
