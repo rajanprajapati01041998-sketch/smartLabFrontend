@@ -29,9 +29,11 @@ import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
 import { useDash } from '../../../../Authorization/DashContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
+import { useDispatch } from 'react-redux';
+import { increment } from '../../../Redux/features/counterSlice';
 
 const LabDashboard = () => {
-  const { userData, allBranchInfo, deviceData, loginBranchId, updateFlag , latitude,longitude } = useAuth();
+  const { userData, allBranchInfo, deviceData, loginBranchId, updateFlag, latitude, longitude } = useAuth();
   const { dashboardWallet, walletData } = useDash();
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -46,8 +48,10 @@ const LabDashboard = () => {
   const [branchModal, setBranchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectAll, setSelectAll] = useState(false);
-
   const [selectedBranches, setSelectedBranches] = useState([]);
+  const  dispatch  = useDispatch();
+
+
   useFocusEffect(
     useCallback(() => {
       const today = new Date();
@@ -55,8 +59,11 @@ const LabDashboard = () => {
       setFromDate(formattedDate);
       setToDate(formattedDate);
       dashboardWallet(loginBranchId);
+      // dispatch(increment());
+
     }, [])
   );
+
 
   const formatDateToAPI = (date) => {
     const [day, month, year] = date.split('-');
@@ -282,7 +289,7 @@ const LabDashboard = () => {
             style={themed.addButton}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('DashboardPayment')}
-           >
+          >
             <Icon name="plus-circle" size={18} color="#fff" />
             <Text style={themed.addButtonText}>
               Add Money

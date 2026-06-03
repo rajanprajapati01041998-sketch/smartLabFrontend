@@ -91,7 +91,7 @@ const Profile = () => {
   ];
 
   return (
-    <View style={themed.screen}>
+    <View style={themed.childScreen}>
       <StatusBar
         backgroundColor={themed.statusBarBg}
         barStyle={theme === 'dark' ? 'light-content' : 'dark-content'}
