@@ -33,7 +33,7 @@ import { getThemeStyles } from '../../../utils/themeStyles';
 const { width } = Dimensions.get('window');
 
 const Profile = () => {
-  const { logout, userData } = useAuth();
+  const { logout, userData, loginBranchId } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const themed = getThemeStyles(theme);
   const navigation = useNavigation();
@@ -119,7 +119,7 @@ const Profile = () => {
                 {labname || userData?.user?.name}
               </Animated.Text>
 
-              <Animated.View
+              {loginBranchId === 1 ? <Animated.View
                 entering={FadeInUp.delay(300)}
                 style={tw`flex-row items-center mt-1`}
               >
@@ -127,7 +127,7 @@ const Profile = () => {
                 <Text style={[tw`ml-1 text-sm font-medium`, { color: '#16a34a' }]}>
                   Administrator
                 </Text>
-              </Animated.View>
+              </Animated.View> : null}
             </View>
 
             <Animated.View
@@ -154,52 +154,26 @@ const Profile = () => {
           <Animated.View
             entering={FadeInDown.delay(200).springify()}
             style={[
-              styles.cardShadow,
-              themed.profileCard,
-              tw`mx-4 mt-5 p-5`,
-              {
-                borderWidth: 1,
-                elevation: 4,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-              },
-            ]}
-          >
+              themed.card,
+              tw`mx-4 mt-5 px-5 py-2 `,]} >
             {profileItems.map((item, index) => (
               <Animated.View
                 key={item.name}
                 entering={FadeInDown.delay(300 + index * 100)}
-                style={[
-                  tw`mb-2 pb-4`,
-                  index !== profileItems.length - 1 && {
-                    borderBottomWidth: 1,
-                    borderBottomColor: theme === 'dark' ? '#374151' : '#E5E7EB',
-                  },
-                ]}
-              >
-                <View style={tw`flex-row items-center`}>
-                  <View
-                    style={[
-                      tw`p-2 rounded-lg`,
-                      { backgroundColor: `${item.color}18` },
-                    ]}
-                  >
+                style={[tw` pb-1`, index !== profileItems.length - 1 && {},]}>
+                <View style={[themed.border_b,tw`flex-row `]}>
+                  <View style={[tw`p-2 rounded-lg`,]} >
                     <Icon name={item.icon} size={20} color={item.color} />
                   </View>
-
-                  <Text
-                    style={[
-                      themed.profileItemLabel,
-                      { letterSpacing: 0.5 },
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
+                  <View style={tw`flex-col items-start py-2 `}>
+                    <Text style={[themed.profileItemLabel, { letterSpacing: 0.5 },]}>
+                      {item.name}
+                    </Text>
+                    <Text style={[themed.profileItemLabel, { letterSpacing: 0.5 },]} >
+                      {item.value || 'Not specified'}
+                    </Text>
+                  </View>
                 </View>
-
-                <Text style={themed.profileItemValue}>
-                  {item.value || 'Not specified'}
-                </Text>
               </Animated.View>
             ))}
           </Animated.View>
@@ -207,7 +181,7 @@ const Profile = () => {
           {/* Login History */}
           <Animated.View
             entering={FadeInDown.delay(500).springify()}
-            style={tw`px-4 mt-4`}
+            style={tw`px-4 mt-1`}
           >
             <TouchableOpacity
               style={[
@@ -251,7 +225,7 @@ const Profile = () => {
           {/* Account Status */}
           <Animated.View
             entering={FadeInDown.delay(600).springify()}
-            style={tw`px-4 mt-4`}
+            style={tw`px-4 `}
           >
             <View
               style={[
@@ -278,7 +252,7 @@ const Profile = () => {
 
           {/* Theme Toggle */}
           <Animated.View entering={FadeInDown.delay(500).springify()}
-            style={tw`px-4 mt-4`}
+            style={tw`px-4 `}
           >
             <TouchableOpacity style={[styles.cardShadow, themed.profileCard, tw`p-4`, { borderWidth: 1, elevation: 2, },]}
               activeOpacity={0.7}
@@ -306,6 +280,33 @@ const Profile = () => {
                   trackColor={{ false: '#D1D5DB', true: '#60A5FA' }}
                   thumbColor="#FFFFFF"
                 />
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(500).springify()}
+            style={tw`px-4 `}
+          >
+            <TouchableOpacity style={[styles.cardShadow, themed.profileCard, tw`p-4`, { borderWidth: 1, elevation: 2, },]}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Setting')}
+            >
+              <View style={tw`flex-row items-center`}>
+                <Animated.View entering={ZoomIn.delay(550)} style={themed.profileIconBox}>
+                  <Icon2 name="settings" size={24} color={themed.iconColor} />
+
+                </Animated.View>
+
+                <View style={tw`flex-1`}>
+                  <Text style={[tw`text-base font-semibold`, themed.mutedText]}>
+                    Field Settings
+                  </Text>
+                  <Text style={[tw`text-xs mt-1`, themed.headerSubText]}>
+                    Customize field
+                  </Text>
+                </View>
+
+                <Icon name='navigate-next' size={36} color={themed.iconColor} />
               </View>
             </TouchableOpacity>
           </Animated.View>

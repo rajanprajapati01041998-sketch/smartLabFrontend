@@ -23,6 +23,8 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import Feather from 'react-native-vector-icons/Feather';
 import { Accordion } from 'react-native-paper/lib/typescript/components/List/List';
+import AnimatedBorder from '../../../../AnimatedBorder';
+
 
 const CenterInfo = ({ condition }) => {
   const [allBranchInfo, setAllBranchInfo] = useState([]);
@@ -534,50 +536,50 @@ const CenterInfo = ({ condition }) => {
                   Enter {selectedSearchType.label}
                 </Text>
 
-                <View style={tw`relative`}>
-                  <TextInput
-                    value={uhid}
-                    onChangeText={setUhid}
-                    placeholder={`Search ${selectedSearchType.label}`}
-                    placeholderTextColor={themed.inputPlaceholder}
-                    keyboardType={
-                      selectedSearchType.value === 'ContactNo'
-                        ? 'number-pad'
-                        : 'default'
-                    }
-                    style={[themed.inputBox, themed.inputText, tw`h-12 pr-12`]}
-                    onSubmitEditing={searchPatientMaster}
-                    returnKeyType="search"
-                  />
+                <AnimatedBorder>
+                  <View style={tw`relative`}>
+                    <TextInput
+                      value={uhid}
+                      onChangeText={setUhid}
+                      placeholder={`Search ${selectedSearchType.label}`}
+                      placeholderTextColor={themed.inputPlaceholder}
+                      keyboardType={
+                        selectedSearchType.value === 'ContactNo'
+                          ? 'number-pad'
+                          : 'default'
+                      }
+                      style={[
+                        themed.inputText,
+                        tw`h-12 pr-12`,
+                      ]}
+                    />
 
-                  {uhid?.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => setUhid('')}
-                      style={tw`absolute right-3 top-3`}>
-                      <Feather
-                        name="x-circle"
-                        size={20}
-                        color={themed.inputPlaceholder}
-                      />
-                    </TouchableOpacity>
-                  )}
-                </View>
+                    {uhid?.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setUhid('')}
+                        style={tw`absolute right-3 top-3`}>
+                        <Feather
+                          name="x-circle"
+                          size={20}
+                          color={themed.inputPlaceholder}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </AnimatedBorder>
               </View>
 
               <TouchableOpacity
                 onPress={searchPatientMaster}
-                disabled={loading || patientSearchLoading || uhid.length === 0}
-                style={tw`
-                  h-12 px-5 rounded-xl justify-center items-center
-                  ${loading || patientSearchLoading || uhid.length === 0
-                    ? 'bg-blue-400'
-                    : 'bg-blue-500'
-                  }
-                `}>
-                {loading || patientSearchLoading ? (
+                disabled={patientSearchLoading}
+                style={tw`h-14 w-22 rounded-xl bg-blue-500 justify-center items-center`}>
+
+                {patientSearchLoading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={tw`text-white font-medium`}>Search</Text>
+                  <Text style={tw`text-white font-medium`}>
+                    Search
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>

@@ -274,16 +274,38 @@ const SearchSelectServiceItem = ({
     [markDirty],
   );
 
-  // Update quantity manually
-  const updateQty = useCallback(
-    (item, txt) => {
+  // New function to increment quantity
+  const incrementQty = useCallback(
+    (item) => {
       const id = getDetailId(item);
-      const cleaned = String(txt).replace(/[^0-9]/g, '');
-      const next = cleaned === '' ? '' : Number(cleaned);
+      const currentQty = Number(item?.qty || 1);
+      const nextQty = currentQty + 1;
 
       setDetailsList(prev =>
         prev.map(row =>
-          getDetailId(row) === id ? { ...row, qty: next } : row,
+          getDetailId(row) === id ? { ...row, qty: nextQty } : row,
+        ),
+      );
+
+      markDirty();
+    },
+    [markDirty],
+  );
+
+  // New function to decrement quantity
+  const decrementQty = useCallback(
+    (item) => {
+      const id = getDetailId(item);
+      const currentQty = Number(item?.qty || 1);
+      
+      // Don't go below 1
+      if (currentQty <= 1) return;
+      
+      const nextQty = currentQty - 1;
+
+      setDetailsList(prev =>
+        prev.map(row =>
+          getDetailId(row) === id ? { ...row, qty: nextQty } : row,
         ),
       );
 
@@ -572,20 +594,33 @@ const SearchSelectServiceItem = ({
               </Text>
             )}
           </View>
-          <View style={tw`flex-col justify-between items-center`}>
-            <Text style={tw`text-[10px] text-gray-400 mr-1`}>Qty:</Text>
-            <TextInput
-              value={
-                item.qty === '' || item.qty === null || item.qty === undefined
-                  ? ''
-                  : String(item.qty)
-              }
-              onChangeText={txt => updateQty(item, txt)}
-              keyboardType="numeric"
-              style={(tw` `, [themed.border_b, themed.inputText])}
-              placeholder="1"
-              placeholderTextColor={themed.inputPlaceholder}
-            />
+
+          {/* Updated Quantity Section with Buttons */}
+          <View style={tw`flex-col items-center`}>
+            <Text style={tw`text-[10px] text-gray-400 mb-1`}>Qty:</Text>
+            <View style={tw`flex-row items-center gap-2`}>
+              {/* Decrement Button */}
+              <TouchableOpacity
+                onPress={() => decrementQty(item)}
+                style={tw`w-8 h-8 rounded-full bg-red-100 items-center justify-center`}
+                disabled={Number(item?.qty || 1) <= 1}
+              >
+                <Text style={tw`text-red-600 font-bold text-lg`}>-</Text>
+              </TouchableOpacity>
+
+              {/* Quantity Display */}
+              <Text style={[themed.inputText, tw`text-base font-bold min-w-[30px] text-center`]}>
+                {item.qty || 1}
+              </Text>
+
+              {/* Increment Button */}
+              <TouchableOpacity
+                onPress={() => incrementQty(item)}
+                style={tw`w-8 h-8 rounded-full bg-green-100 items-center justify-center`}
+              >
+                <Text style={tw`text-green-600 font-bold text-lg`}>+</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {item.sampleVolume ? (
@@ -662,7 +697,7 @@ const SearchSelectServiceItem = ({
             <View
               style={[
                 themed.borderTop,
-                tw`absolute bottom-0 left-0 right-0   border-t`,
+                tw`absolute bottom-0 left-0 right-0 border-t`,
               ]}
             >
               <View style={tw`flex-row justify-between items-center mb-2`}>
@@ -674,7 +709,7 @@ const SearchSelectServiceItem = ({
 
               <TouchableOpacity
                 onPress={createPayload}
-                style={tw`bg-blue-800/60  p-3 rounded-lg`}
+                style={tw`bg-blue-800/60 p-3 rounded-lg`}
               >
                 <Text style={tw`text-white text-center font-bold`}>
                   Add ({visibleDetailsList.length}) Tests

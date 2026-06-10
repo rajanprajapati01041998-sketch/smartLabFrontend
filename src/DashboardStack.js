@@ -20,6 +20,10 @@ import TRF_Print from './AfterLogin/Screens/PatientRegistration/TRF_Print';
 import LABReceipts from './AfterLogin/Screens/PatientRegistration/LabReceipts';
 import Location from './components/Location/Location';
 import TestRefund from './AfterLogin/Screens/TestRefund/TestRefund.jsx';
+import Home from './AfterLogin/Screens/Settings/Home';
+import ViewTestRefundReceipt from './AfterLogin/Screens/TestRefund/ViewTestRefundReceipt';
+import ReceiptReprintHome from './AfterLogin/Screens/ReceiptReprint/ReceiptReprintHome';
+import ReceiptReprintList from './AfterLogin/Screens/ReceiptReprint/ReceiptReprintList';
 
 const Stack = createNativeStackNavigator();
 
@@ -180,6 +184,7 @@ export default function DashboardStack() {
         component={LabDashboard}
         options={({ navigation }) => ({
           headerTitle: 'Dashboard',
+          headerBackVisible: false,
           headerRight: () => <HeaderRightMenu navigation={navigation} />,
           headerLeft: () => (
             <TouchableOpacity
@@ -267,6 +272,35 @@ export default function DashboardStack() {
         name="Test Refund"
         component={TestRefund}
         options={{ title: 'Test Refund' }}
+      />
+      <Stack.Screen
+        name="ViewTestRefundReceipt"
+        component={ViewTestRefundReceipt}
+        options={{ title: 'Receipts' }}
+      />
+      <Stack.Screen
+        name="Setting"
+        component={Home}
+        options={{
+          title: 'Setting',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="Receipt Reprint"
+        component={ReceiptReprintHome}
+        options={{
+          title: 'Receipt',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="ReceiptReprintList"
+        component={ReceiptReprintList}
+        options={{
+          title: 'Receipt List',
+          headerShown: true,
+        }}
       />
     </Stack.Navigator>
   );

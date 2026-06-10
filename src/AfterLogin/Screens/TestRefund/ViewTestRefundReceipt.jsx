@@ -7,69 +7,89 @@ import {
     Alert,
 } from 'react-native';
 import React, { useCallback, useState } from 'react';
-import { useFocusEffect, useRoute } from '@react-navigation/native';
-import api from '../../../../Authorization/api';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import RNFetchBlob from 'react-native-blob-util';
 import Pdf from 'react-native-pdf';
 import tw from 'twrnc';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useAuth } from '../../../../Authorization/AuthContext';
 import { useToast } from '../../../../Authorization/ToastContext';
+import api, { API_BASE_URL } from '../../../../Authorization/api';
 
-const TRF_Print = () => {
+const ViewTestRefundReceipt = () => {
+    const {userId} = useAuth()
+    const navigation = useNavigation();
     const route = useRoute();
-    const { item } = route.params || {};
+    const result = route?.params;
+    console.log("scrren view=",result)
+    const ftid = result?.item?.FTID ||result?.result.ftid;
+    const receiptId = result?.item?.receiptId ||result?.result.receiptId;
+    const printUserId = userId;
     const { showToast } = useToast()
-    console.log("trf",item)
-    const ftId = item?.FTId || item?.ftId || item?.FTID ;
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
     const [pdfPath, setPdfPath] = useState('');
     const [error, setError] = useState(false);
 
+    const goToDashboardHome = useCallback(() => {
+        try {
+            navigation.popToTop?.();
+        } catch (_e) {}
+
+        try {
+            const tabParent = navigation.getParent?.();
+            if (tabParent?.navigate) {
+                tabParent.navigate('Dashboard', { screen: 'DashboardHome' });
+                return;
+            }
+        } catch (_e) {}
+
+        try {
+            navigation.navigate('DashboardHome');
+        } catch (_e) {}
+    }, [navigation]);
+
     useFocusEffect(
         useCallback(() => {
-            console.log("inside focus=",item)
-            if (ftId) {
-                getPdf(ftId);
-            }
-            return () => { };
-        }, [ftId])
+            console.log("View receipt:",ftid)
+            getPdf();
+
+            const subscription = navigation.addListener('beforeRemove', (e) => {
+                e.preventDefault();
+                goToDashboardHome();
+            });
+
+            return () => {
+                subscription();
+            };
+        }, [ftid, navigation, goToDashboardHome])
     );
 
-    const getPdf = async (id) => {
-        console.log("trf call=",id)
+    const getPdf = async () => {
         try {
             setLoading(true);
             setError(false);
             setPdfPath('');
-            const response = await api.get(`Patient/test-requisition-form?filter=${id}&mode=view` );
-            const base64 = response?.data?.base64;
-            const fileName = response?.data?.fileName || `TRF_${id}.pdf`;
-
-            if (!base64) {
-                setError(true);
-                return;
-            }
-
+            console.log("during api call=",ftid,receiptId,printUserId)
+            const response = await api.get(`OPDRefund/receipt-details?ftid=${ftid}&receiptId=${receiptId}&printUserId=${printUserId}&pdf=false&isReceiptHeader=false`);
+            console.log("receipt response=",response)
+            const base64 = response?.data?.pdfBase64;
+            const fileName = response?.data?.fileName || `Receipt${ftid }.pdf`;
             const cleanBase64 = String(base64).replace(
                 /^data:application\/pdf;base64,/,
                 ''
             );
 
             const safeName = fileName.replace(/[\/\\:*?"<>|]/g, '_');
-
             const dir =
                 Platform.OS === 'android'
                     ? RNFetchBlob.fs.dirs.CacheDir
                     : RNFetchBlob.fs.dirs.DocumentDir;
-
             const path = `${dir}/${safeName}`;
-
             await RNFetchBlob.fs.writeFile(path, cleanBase64, 'base64');
-
             setPdfPath(path);
         } catch (err) {
-            console.log('view pdf error:', err);
+            console.log('view pdf error:', err.response.meassge);
             setError(true);
         } finally {
             setLoading(false);
@@ -78,20 +98,19 @@ const TRF_Print = () => {
 
     const downloadPdf = async () => {
         try {
-            if (!ftId) {
-                Alert.alert('Error', 'FTId not found');
+            if (!ftid) {
+                Alert.alert('Error', 'ftid not found');
                 return;
             }
-
             setDownloading(true);
-
-            const safeName = `TRF_${ftId}.pdf`;
-
+            const safeName = `Test_Refund_${ftid}.pdf`;
             const path =
                 Platform.OS === 'android'
                     ? `${RNFetchBlob.fs.dirs.DownloadDir}/${safeName}`
                     : `${RNFetchBlob.fs.dirs.DocumentDir}/${safeName}`;
-            const url = `${api.defaults.baseURL}Patient/test-requisition-form?filter=${ftId}&mode=pdf`;
+
+            const url = `${API_BASE_URL}OPDRefund/receipt-details?ftid=${ftid}&receiptId=${receiptId}&printUserId=${printUserId}&pdf=true&isReceiptHeader=false`;
+
             const res = await RNFetchBlob.config({
                 fileCache: true,
                 path,
@@ -100,7 +119,7 @@ const TRF_Print = () => {
                     notification: true, // ✅ hide top download notification
                     path,
                     title: safeName,
-                    description: 'TRF PDF downloaded',
+                    description: 'Refund_Test PDF downloaded',
                     mime: 'application/pdf',
                     mediaScannable: true,
                 },
@@ -115,32 +134,37 @@ const TRF_Print = () => {
         }
     };
 
+    
+
     if (loading) {
         return (
-            <View style={tw`flex-1 items-center justify-center bg-white`}>
-                <ActivityIndicator size="large" color="#2563eb" />
-                <Text style={tw`mt-3 text-gray-600 font-medium`}>
-                    Loading PDF...
-                </Text>
+            <View style={tw`flex-1 bg-white`}>
+                <View style={tw`flex-1 items-center justify-center`}>
+                    <ActivityIndicator size="large" color="#2563eb" />
+                    <Text style={tw`mt-3 text-gray-600 font-medium`}>
+                        Loading PDF...
+                    </Text>
+                </View>
             </View>
         );
     }
 
     if (error || !pdfPath) {
         return (
-            <View style={tw`flex-1 items-center justify-center bg-white px-6`}>
-                <MaterialCommunityIcons name="file-pdf-box" size={80} color="#ef4444" />
+            <View style={tw`flex-1 bg-white`}>
+                <View style={tw`flex-1 items-center justify-center px-6`}>
+                    <MaterialCommunityIcons name="file-pdf-box" size={80} color="#ef4444" />
+                    <Text style={tw`mt-4 text-lg font-semibold text-gray-800`}>
+                        Unable to load PDF
+                    </Text>
 
-                <Text style={tw`mt-4 text-lg font-semibold text-gray-800`}>
-                    Unable to load PDF
-                </Text>
-
-                <TouchableOpacity
-                    onPress={() => getPdf(ftId)}
-                    style={tw`mt-5 bg-blue-600 px-6 py-3 rounded-xl`}
-                >
-                    <Text style={tw`text-white font-semibold`}>Retry</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => getPdf()}
+                        style={tw`mt-5 bg-blue-600 px-6 py-3 rounded-xl`}
+                    >
+                        <Text style={tw`text-white font-semibold`}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
@@ -149,7 +173,7 @@ const TRF_Print = () => {
         <View style={tw`flex-1 bg-white`}>
             <Pdf
                 source={{ uri: `file://${pdfPath}`, cache: true }}
-                style={tw`flex-2`}
+                style={tw`flex-1`}
                 trustAllCerts={false}
                 enablePaging={true}
                 horizontal={false}
@@ -175,4 +199,4 @@ const TRF_Print = () => {
     );
 };
 
-export default TRF_Print;
+export default ViewTestRefundReceipt;

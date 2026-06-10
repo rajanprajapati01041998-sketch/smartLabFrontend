@@ -8,16 +8,19 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import tw from 'twrnc';
-
 import { useTheme } from '../Authorization/ThemeContext';
 import { useAuth } from '../Authorization/AuthContext';
 import BottomTabNavigation from './BottomNavigation';
+import AnimatedBorder from '../AnimatedBorder';
+import { getThemeStyles } from './utils/themeStyles';
+
 
 const Drawer = createDrawerNavigator();
 
 function DashboardDrawerContent(props) {
   const { colors, theme } = useTheme();
   const { logout, userData } = useAuth();
+  const themed = getThemeStyles(theme);
 
   const [search, setSearch] = useState('');
 
@@ -75,21 +78,37 @@ function DashboardDrawerContent(props) {
       color: '#ea33a1',
       onPress: () => goToTab('HelpDesk'),
     },
+     {
+      label: 'Field Setting',
+      subTitle: 'Field Setting For Registration Page',
+      iconType: 'mi',
+      icon: 'abc',
+      color: '#1cdabb',
+      onPress: () => goTo('Setting'),
+    },
     {
       label: 'Track Location',
       subTitle: 'View Live laction',
       iconType: 'mi',
-      icon: 'map',
+      icon: 'location-on',
       color: '#3376ea',
       onPress: () => goTo('Track Location'),
     },
     {
       label: 'Test Refund',
       subTitle: 'Test Refund',
-      iconType: 'mci',
-      icon: 'map',
+      iconType: 'mi',
+      icon: 'currency-exchange',
       color: '#0ba957ff',
       onPress: () => goTo('Test Refund'),
+    },
+    {
+      label: 'Receipt Reprint',
+      subTitle: 'Print Receipt',
+      iconType: 'mci',
+      icon: 'receipt',
+      color: '#FF0000',
+      onPress: () => goTo('Receipt Reprint'),
     },
   ];
 
@@ -132,7 +151,7 @@ function DashboardDrawerContent(props) {
             },
           ]}
         >
-          <View style={tw`flex-row items-center`}>
+          <View style={tw`flex-row items-center mb-1`}>
             <View
               style={[
                 tw`w-13 h-13 rounded-2xl items-center justify-center`,
@@ -169,36 +188,35 @@ function DashboardDrawerContent(props) {
           </View>
 
           {/* Search */}
-          <View
-            style={[
-              tw`mt-4 px-3 py-2.5 rounded-2xl flex-row items-center border`,
-              {
-                backgroundColor:
-                  theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#fff',
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <Feather name="search" size={18} color={colors.text} />
+          <AnimatedBorder>
+            <View style={[tw`px-3 py-2.5 rounded-2xl flex-row items-center`, themed.childScreen2]}>
+              <Feather name="search" size={18} color={themed.iconColor} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search menu..."
+                placeholderTextColor={themed.inputPlaceholder}
+                style={[themed.inputText,
+                tw`flex-1 ml-2 py-0 text-sm`,
+                ]}
+              />
 
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search menu..."
-              placeholderTextColor={theme === 'dark' ? '#9ca3af' : '#6b7280'}
-              style={[tw`flex-1 ml-2 py-0 text-sm`, { color: colors.text }]}
-            />
-
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch('')}>
-                <Feather name="x-circle" size={18} color={colors.text} />
-              </TouchableOpacity>
-            )}
-          </View>
+              {search.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearch('')}>
+                  <Feather
+                    name="x-circle"
+                    size={18}
+                    color={themed.iconColor}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </AnimatedBorder>
         </View>
 
         {/* Menu */}
-        <View style={tw`px-3 mt-3`}>
+        <View style={tw` mt-3`}>
           <Text
             style={[
               tw`px-2 mb-2 text-xs font-bold uppercase`,

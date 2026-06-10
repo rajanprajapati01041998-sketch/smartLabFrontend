@@ -38,6 +38,10 @@ const HIDE_TABS_BY_TAB = {
     'BarcodeScanner',
     'Track Location',
     'Test Refund',
+    'Setting',
+    'ViewTestRefundReceipt',
+    'Receipt Reprint',
+    'ReceiptReprintList'
   ]),
   Registration: new Set(['PatientInformation']),
   HelpDesk: new Set([

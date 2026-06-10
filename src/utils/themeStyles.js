@@ -6,10 +6,10 @@ export const getThemeStyles = theme => {
 
   return {
     // Screen
-    screen: tw.style( isDark ? 'bg-gray-900' : 'bg-gray-50'),
+    screen: tw.style(isDark ? 'bg-gray-900' : 'bg-gray-50'),
 
     childScreen: tw.style('flex-1', isDark ? 'bg-gray-800' : 'bg-white'),
-    childScreen2: tw.style( isDark ? 'bg-gray-800' : 'bg-white'),
+    childScreen2: tw.style(isDark ? 'bg-gray-800' : 'bg-white'),
 
     labelText: tw.style(
       'text-md font-bold',
@@ -39,7 +39,7 @@ export const getThemeStyles = theme => {
     ),
 
     dateText: tw.style(
-      'text-xs ml-1',
+      'text-sm ml-1',
       isDark ? 'text-gray-400' : 'text-gray-500',
     ),
 
@@ -83,6 +83,10 @@ export const getThemeStyles = theme => {
     addButton: tw.style(
       'flex-row gap-1 items-center px-3 py-2.5 rounded-lg',
       isDark ? 'bg-blue-600' : 'bg-blue-500',
+    ),
+    loginBtn: tw.style(
+      'bg-teal-700 text-white p-4 rounded-md',
+      isDark ? 'text-white' : 'text-white'
     ),
 
     addButtonText: tw.style(isDark ? 'text-white' : 'text-white'),
@@ -177,8 +181,8 @@ export const getThemeStyles = theme => {
     ),
 
     inputBox: tw.style(
-      'rounded-lg p-3 border',
-      isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200',
+      'rounded-lg p-3 border shadow-sm focus:border-blue-400  focus:ring-2 focus:ring-blue-100 transition-all duration-200',
+      isDark ? 'border border-gray-600   px-4 py-3  text-base bg-gray-800 text-gray-100 ' : 'bg-white border-gray-200'
     ),
 
     inputText: tw.style(isDark ? 'text-white' : 'text-gray-800'),
@@ -202,8 +206,8 @@ export const getThemeStyles = theme => {
         isSelected
           ? 'bg-blue-50 border-blue-200'
           : isDark
-          ? 'bg-gray-800 border-gray-700'
-          : 'bg-white border-gray-100',
+            ? 'bg-gray-800 border-gray-700'
+            : 'bg-white border-gray-100',
       ),
 
     listItemIconWrap: isSelected =>
@@ -285,7 +289,7 @@ export const getThemeStyles = theme => {
     ),
 
     profileItemLabel: tw.style(
-      'ml-3 text-sm font-medium',
+      'text-sm font-medium',
       isDark ? 'text-gray-400' : 'text-gray-500',
     ),
 
@@ -412,11 +416,13 @@ export const getThemeStyles = theme => {
       isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200',
     ),
 
-    downloadButton:tw.style(
+    downloadButton: tw.style(
       " flex flex-row gap-1 bg-blue-600 items-center px-2 py-1 rounded-md"
     ),
-     downloadButtonText:tw.style(
-            isDark ? 'text-white' : 'text-white',
+    downloadButtonText: tw.style(
+      isDark ? 'text-white' : 'text-white',
     )
+
+
   };
 };

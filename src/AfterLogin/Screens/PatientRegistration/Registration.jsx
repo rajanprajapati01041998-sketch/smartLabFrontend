@@ -37,6 +37,11 @@ import { getPatientInvestigation } from '../../../utils/patinetService.js/invest
 import { getFullLocation } from '../../../utils/patinetService.js/location';
 import SelectApproval from './SelectApproval';
 import Clipboard from '@react-native-clipboard/clipboard';
+import { getPageSetting } from '../../../utils/pageSettings';
+import SelectMaritalStatus from './SelectMaritalStatus';
+import SelectRelativeName from './SelectRelativeName';
+import { buildAddressText } from '../../../utils/addressUtils';
+
 
 
 const RegistrationScreen = () => {
@@ -58,7 +63,6 @@ const RegistrationScreen = () => {
   const [gender, setGender] = useState("MALE");
   const [maritalStatus, setMaritalStatus] = useState('');
   const [relation, setRelation] = useState('');
-  const [relativeName, setRelativeName] = useState('');
   const [contactNumber, setContactNumber] = useState(null);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -101,7 +105,7 @@ const RegistrationScreen = () => {
   const [selectTitleModal, setSelectTitleModal] = useState(false)
   const [selectedTitle, setSelectedTitle] = useState("Mr.");
   const [receiptAmount, setReceiptAmount] = useState(0);
-  // const [selectedTitle, setSelectedTitle] = useState(null)
+  const [aadharNumber, setAddharNumber] = useState('')
   const [showBillingInfo, setShowBillingInfo] = useState(false)
   const [responseSuccess, setResponseSuccess] = useState(false)
   const [selectedBank, setSelectedBank] = useState(null)
@@ -123,10 +127,18 @@ const RegistrationScreen = () => {
   const [state, setState] = useState(null);
   const [city, setCity] = useState(null);
   const [isCityModal, setIsCityModal] = useState(false);
+  const [isAddressLocked, setIsAddressLocked] = useState(false);
   const [country, setCountry] = useState("India");
+  const [pageSettings, setPageSettings] = useState(null)
   const [discountApprovalModal, setDiscountApprovalModal] = useState(false);
   const [selectedDiscountApproval, setSelectedDiscountApproval] = useState(null);
   const [discountApprovalId, setDiscountApprovalId] = useState(0);
+  const [relativeName, setRelativeName] = useState('')
+  const [maritalStatusModal, setMaritalStatusModal] = useState(false)
+  const [selectedMaritalStatus, setSelectedMaritalStatus] = useState(null)
+  const [relativeModal, setRelativeModal] = useState(false)
+  const [selectedRelativeName, setSelectedRelativeName] = useState(null)
+  const [inputRelativeName, setInputRelativeName] = useState(null)
 
   const getGenderFromTitle = useCallback((title, currentGender = "MALE") => {
     const normalized = String(title || '').trim().toLowerCase();
@@ -183,7 +195,10 @@ const RegistrationScreen = () => {
     setFirstName(patientData?.FirstName || "")
     setGender(patientData?.Gender || getGenderFromTitle(nextTitle, "MALE"))
     setBalanceAmount(patientData?.TotalBalanceOfAdvanceAmount || 0)
-    setContactNumber(patientData?.ContactNumber)
+    setContactNumber(patientData?.ContactNumber || "")
+    setEmail(patientData?.Email || "")
+    setAddress(patientData?.Address || "")
+    setAddharNumber(patientData?.AadharNumber)
     const nextDob = parseDOBValue(patientData?.DOB);
     setDob(nextDob);
     if (nextDob) {
@@ -214,6 +229,27 @@ const RegistrationScreen = () => {
     }, [])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      GetReferedLabList();
+      getInvestigationList('cbc');
+      loadPageSettings(loginBranchId);
+      return () => {
+        console.log('Registration Screen Unfocused');
+      };
+    }, [])
+  );
+
+  const loadPageSettings = async () => {
+    try {
+      const response = await getPageSetting(loginBranchId);
+      console.log("API Response:", response);
+      setPageSettings(response.data);
+    } catch (err) {
+      console.log("Error:", err);
+    }
+  };
+
   const resetForm = useCallback(() => {
     // Close any open modals
     setBarcodeModalVisible(false);
@@ -231,6 +267,10 @@ const RegistrationScreen = () => {
     setFirstName('');
     setMiddleName('');
     setLastName('');
+    setAddharNumber('')
+    setMedicalHistory('')
+    // selectedMaritalStatus('')
+    // selectedRelativeName('')
 
     // Age / DOB
     setAgeYears('');
@@ -269,6 +309,8 @@ const RegistrationScreen = () => {
     setSelectedReferLab(null);
     setSelectedFieldBoy(null);
     setSelectedTitle(null);
+    setSelectedMaritalStatus(null);
+    setSelectedRelativeName(null)
 
     // Billing
     setGrossAmount(null);
@@ -281,7 +323,6 @@ const RegistrationScreen = () => {
     setIsCashAuto(true);
     setIsOverPaid(false);
     setShowBillingInfo(false);
-
 
     // Payments
     setCash(null);
@@ -489,7 +530,7 @@ const RegistrationScreen = () => {
         FirstName: firstName,
         MiddleName: middleName,
         LastName: lastName,
-
+        AadharNumber: aadharNumber,
         AgeYears: Number(ageYears || 0),
         AgeMonths: Number(ageMonths || 0),
         AgeDays: Number(ageDays || 0),
@@ -499,9 +540,9 @@ const RegistrationScreen = () => {
           : null,
 
         Gender: gender,
-        MaritalStatus: maritalStatus,
-        Relation: relation,
-        RelativeName: relativeName,
+        Relation: selectedRelativeName?.name,
+        MaritalStatus: selectedMaritalStatus?.name,
+        RelativeName: inputRelativeName,
 
         ContactNumber: contactNumber || "",
         Address: address || "",
@@ -974,6 +1015,12 @@ const RegistrationScreen = () => {
     }
   };
 
+  const visibleFields =
+    (pageSettings?.ContactNumber ? 1 : 0) +
+    (pageSettings?.Email ? 1 : 0);
+
+  const fieldWidth = visibleFields === 2 ? 'w-[48%]' : 'w-[98%]';
+
   const handleSearchPincode = async () => {
     try {
       if (!pincode || pincode.length !== 6) {
@@ -994,10 +1041,21 @@ const RegistrationScreen = () => {
         setDistrict(first);
         setState(first);
         setCountry(first?.CountryName || "India");
+        const nextAddress = buildAddressText({
+          pincode,
+          city: first,
+          district: first,
+          state: first,
+          country: first?.CountryName || "India",
+        });
+        setAddress(nextAddress);
+        setIsAddressLocked(Boolean(nextAddress));
       } else {
         setCity(null);
         setDistrict(null);
         setState(null);
+        setAddress('');
+        setIsAddressLocked(false);
         Alert.alert("Not found", "No location found for this pincode");
       }
     } catch (error) {
@@ -1026,9 +1084,12 @@ const RegistrationScreen = () => {
       console.error('Error fetching investigation list:', error);
     }
   };
+  const formatAadhar = (text) => {
+    const digits = text.replace(/\D/g, '').slice(0, 12);
 
-
-
+    return digits
+      .replace(/(\d{4})(?=\d)/g, '$1-');
+  };
   const formatDateTime = (dateTime) => {
     if (!dateTime || !(dateTime instanceof Date)) return '- Collection Date Time -';
 
@@ -1057,7 +1118,7 @@ const RegistrationScreen = () => {
               </View>
               <TouchableOpacity
                 onPress={() => setSelectTitleModal(true)}
-                style={[themed.inputBox, themed.inputText]}
+                style={[themed.inputBox, themed.inputText, tw`py-3.5`]}
               >
                 <Text style={themed.inputText}>
                   {selectedTitle || "Mr"}
@@ -1214,6 +1275,24 @@ const RegistrationScreen = () => {
             </RadioButton.Group>
           </View>
 
+          {pageSettings?.AadharNo && (
+            <>
+              <Text style={themed.inputLabel}>
+                Aadhar Number ({12 - aadharNumber.replace(/-/g, '').length} digits left)
+              </Text>
+
+              <TextInput
+                placeholder="1234-5678-9012"
+                value={aadharNumber}
+                onChangeText={(text) => setAddharNumber(formatAadhar(text))}
+                style={[themed.inputBox, themed.inputText]}
+                placeholderTextColor={colors.placeholder}
+                keyboardType="numeric"
+                maxLength={14} // 12 digits + 2 hyphens
+              />
+            </>
+          )}
+
           <View style={tw`mt-2`}>
             <View style={tw`flex-row items-end `}>
               <View style={tw`flex-1 mr-2 w-[85%]`}>
@@ -1248,18 +1327,18 @@ const RegistrationScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* <View style={tw`w-full`}>
+            {pageSettings?.ReferLab && <View style={tw`w-full`}>
               <Text style={themed.inputLabel}>Referred Lab</Text>
 
               <TouchableOpacity
                 onPress={() => setReferLabListModal(true)}
                 style={[
-                  styles.dropDownButton,
+                  themed.inputBox,
                   tw`mt-1 mb-3 flex-row justify-between items-center`
                 ]}
               >
                 <Text
-                  style={[styles.insideDropDownText, tw`flex-1 mr-2`]}
+                  style={[themed.inputText, tw`flex-1`]}
                   numberOfLines={1}
                 >
                   {selectedReferLab ? selectedReferLab.outSourceLab : 'Select Refer Lab'}
@@ -1267,80 +1346,47 @@ const RegistrationScreen = () => {
 
                 <Icon name="chevron-down" size={18} color="gray" />
               </TouchableOpacity>
-            </View> */}
+            </View>}
           </View>
 
           <View style={tw`mt-1 flex flex-row justify-center items-center gap-2`}>
-            {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
-              <View style={tw`flex flex-row items-center`}>
-                <Text style={themed.inputLabel}>Contact No (Self)</Text>
-                <Text style={tw`text-red-500  -mt-2`}>*</Text>
-              </View>
-              <TextInput
-                value={contactNumber}
-                onChangeText={(text) => {
-                  const numeric = text.replace(/[^0-9]/g, '').slice(0, 10)
-                  setContactNumber(numeric)
-                }}
-                style={styles.inputBox}
-                placeholder='8991212131'
-                placeholderTextColor={colors.placeholder}
-                keyboardType='numeric'
-                maxLength={10}
-              />
-            </View> */}
-            {/* <View style={tw`flex flex-col py-0.5 gap-1 w-[48%]`}>
-              <Text style={themed.inputLabel}>Email</Text>
-              <TextInput
-                placeholder='test@gmail.com'
-                value={email}
-                onChangeText={(text) => setEmail(text)}
-                style={styles.inputBox}
-                placeholderTextColor={colors.placeholder}
+            {pageSettings?.ContactNumber && (
+              <View style={tw`flex flex-col py-0.5 gap-1 ${fieldWidth}`}>
+                <View style={tw`flex flex-row items-center`}>
+                  <Text style={themed.inputLabel}>Contact No (Self)</Text>
+                  <Text style={tw`text-red-500 -mt-2`}>*</Text>
+                </View>
 
-              />
-            </View> */}
+                <TextInput
+                  value={contactNumber}
+                  onChangeText={(text) => {
+                    const numeric = text.replace(/[^0-9]/g, '').slice(0, 10);
+                    setContactNumber(numeric);
+                  }}
+                  style={[themed.inputBox, themed.inputText]}
+                  placeholder="8991212131"
+                  placeholderTextColor={themed.inputPlaceholder}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+            )}
+
+            {pageSettings?.Email && (
+              <View style={tw`flex flex-col py-0.5 gap-1 ${fieldWidth}`}>
+                <Text style={themed.inputLabel}>Email</Text>
+
+                <TextInput
+                  placeholder="test@gmail.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  style={[themed.inputBox, themed.inputText]}
+                  placeholderTextColor={themed.inputPlaceholder}
+                />
+              </View>
+            )}
           </View>
 
-          {/* <View style={tw`mt-2`}>
-            <Text style={themed.inputLabel}>Address</Text>
-            <TextInput
-              placeholder="Enter address"
-              value={address}
-              onChangeText={(text) => setAddress(text)}
-              multiline={true}
-              numberOfLines={4}
-              textAlignVertical="top"
-              style={[styles.inputBox, tw`h-[80px]`]}
-              placeholderTextColor={colors.placeholder}
-
-            />
-          </View> */}
-          {/* <View style={tw`mt-2`}>
-            <Text style={themed.inputLabel}>Pincode</Text>
-            <View style={tw`flex-row items-center`}>
-
-              <TextInput
-                placeholder="Enter pincode"
-                value={pincode}
-                keyboardType="number-pad"
-                maxLength={6}
-                onChangeText={(text) => {
-                  const numericText = text.replace(/[^0-9]/g, '');
-                  if (numericText.length <= 6) {
-                    setPincode(numericText);
-                  }
-                }}
-                style={[themed.inputBox, themed.inputText, tw`flex-1 mr-2`]}
-                placeholderTextColor={themed.inputPlaceholder}
-              />
-              <TouchableOpacity
-                onPress={handleSearchPincode}
-                style={[themed.searchButton, tw`px-4 py-3`]}>
-                <Text style={themed.searchButtonText}>Search</Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
 
           {pincodeResponse?.length > 0 && (
             <View>
@@ -1393,23 +1439,10 @@ const RegistrationScreen = () => {
           )}
 
 
-          {/* <View style={tw`mt-2`}>
-            <Text style={themed.inputLabel}>Medical history</Text>
-            <TextInput
-              placeholder="history"
-              value={medicalHistory}
-              onChangeText={(text) => setMedicalHistory(text)}
-              multiline={true}
-              numberOfLines={2}
-              textAlignVertical="top"
-              style={[styles.inputBox, tw`h-[60px]`]}
-              placeholderTextColor={colors.placeholder}
 
-            />
-          </View> */}
 
-          <View style={tw`my-3`}>
-            {/* <View>
+          {pageSettings?.FieldBoy && <View style={tw`my-3`}>
+            <View>
               <Text style={[{ fontWeight: 'bold', marginBottom: 5 }, themed.labelText]}>
                 Visit type
               </Text>
@@ -1440,7 +1473,7 @@ const RegistrationScreen = () => {
                 </View>
 
               </RadioButton.Group>
-            </View>  */}
+            </View>
 
             {vistType === "Home Collection" && (
               <View style={tw`flex flex-col justify-center items-center gap-2 mt-1`}>
@@ -1583,8 +1616,190 @@ const RegistrationScreen = () => {
                 </View>
               </View>
             )}
+          </View>}
+
+          {pageSettings?.Address && <View style={tw`mt-2`}>
+            <Text style={themed.inputLabel}>Pincode</Text>
+            <View style={tw`flex-row items-center`}>
+
+              <TextInput
+                placeholder="Enter pincode"
+                value={pincode}
+                keyboardType="number-pad"
+                maxLength={6}
+                onChangeText={(text) => {
+                  const numericText = text.replace(/[^0-9]/g, '');
+                  if (numericText.length <= 6) {
+                    setPincode(numericText);
+                    setPincodeResponse([]);
+                    setCity(null);
+                    setDistrict(null);
+                    setState(null);
+                    setCountry('India');
+                    setAddress('');
+                    setIsAddressLocked(false);
+                  }
+                }}
+                style={[themed.inputBox, themed.inputText, tw`flex-1 mr-2`]}
+                placeholderTextColor={themed.inputPlaceholder}
+              />
+              <TouchableOpacity
+                onPress={handleSearchPincode}
+                style={[themed.searchButton, tw`px-4 py-3`]}>
+                <Text style={themed.searchButtonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+          </View>}
+
+          {pincodeResponse?.length > 0 && (
+            <View>
+              <Text style={[themed.labelText, tw`my-1`]}>City</Text>
+
+              <TouchableOpacity
+                onPress={() => setIsCityModal(true)}
+                style={[
+                  themed.inputBox,
+                  themed.inputText,
+                  tw`flex-row justify-between items-center`
+                ]}
+              >
+                <Text style={themed.inputText}>
+                  {city?.cityName || "Select City"}
+                </Text>
+
+                <Text style={themed.inputText}>▼</Text>
+              </TouchableOpacity>
+
+              <View style={tw`flex-row gap-2`}>
+                <View style={tw`flex-1`}>
+                  <Text style={[themed.labelText, tw`my-1`]}>District</Text>
+                  <TextInput
+                    value={district?.districtName || ""}
+                    editable={false}
+                    style={[themed.inputBox, themed.inputText]}
+                  />
+                </View>
+
+                <View style={tw`flex-1`}>
+                  <Text style={[themed.labelText, tw`my-1`]}>State</Text>
+                  <TextInput
+                    value={state?.stateName || ""}
+                    editable={false}
+                    style={[themed.inputBox, themed.inputText]}
+                  />
+                </View>
+              </View>
+
+              <View style={tw`mt-2`}>
+                <Text style={[themed.labelText, tw`my-1`]}>Country</Text>
+                <TextInput
+                  value={country || "India"}
+                  editable={false}
+                  style={[themed.inputBox, themed.inputText]}
+                />
+              </View>
+            </View>
+          )}
+          {pageSettings?.Address && <View style={tw`mt-2`}>
+            <Text style={themed.inputLabel}>Address</Text>
+            <TextInput
+              placeholder="Enter address"
+              value={address}
+              editable={!isAddressLocked}
+              onChangeText={(text) => {
+                if (!isAddressLocked) {
+                  setAddress(text);
+                }
+              }}
+              multiline={true}
+              numberOfLines={4}
+              textAlignVertical="top"
+              style={[themed.inputBox, themed.inputText, tw`h-[80px]`]}
+              placeholderTextColor={colors.placeholder}
+
+            />
+          </View>}
+
+
+          {pageSettings?.MedicalHistory && <View style={tw`mt-2`}>
+            <Text style={themed.inputLabel}>Medical history</Text>
+            <TextInput
+              placeholder="history"
+              value={medicalHistory}
+              onChangeText={(text) => setMedicalHistory(text)}
+              multiline={true}
+              numberOfLines={2}
+              textAlignVertical="top"
+              style={[themed.inputBox, tw`h-[60px]`]}
+              placeholderTextColor={colors.placeholder}
+
+            />
+          </View>}
+
+          <View style={tw`mt-1 flex-row justify-between items-center`}>
+            {pageSettings?.MaritalStatus && <View style={tw`w-[48%]`} >
+              <View style={tw`flex-row items-center`}>
+                <Text style={themed.inputLabel}>MaritalSatus</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setMaritalStatusModal(true)}
+                style={[
+                  themed.inputBox,
+                  tw`mt-1 mb-3 flex-row justify-between items-center `
+                ]}
+              >
+                <Text
+                  style={[themed.inputText, tw`flex-1 mr-2`]}
+                  numberOfLines={1}
+                >
+                  {selectedMaritalStatus ? selectedMaritalStatus.name : '- Marital Status-'}
+                </Text>
+
+                <Icon name="chevron-down" size={18} color="gray" />
+              </TouchableOpacity>
+            </View>}
+            {pageSettings?.Relation && <View style={tw`w-[48%]`}  >
+              <View style={tw`flex-row items-center`}>
+                <Text style={themed.inputLabel}>Relation</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setRelativeModal(true)}
+                style={[
+                  themed.inputBox,
+                  tw`mt-1 mb-3 flex-row justify-between items-center `
+                ]}
+              >
+                <Text
+                  style={[themed.inputText, tw`flex-1 mr-2`]}
+                  numberOfLines={1}
+                >
+                  {selectedRelativeName ? selectedRelativeName.name : '- select Relation-'}
+                </Text>
+
+                <Icon name="chevron-down" size={18} color="gray" />
+              </TouchableOpacity>
+            </View>}
           </View>
+          {selectedRelativeName?.name && <View>
+            <Text style={[themed.labelText, tw`my-1`]}>Relative Name</Text>
+            <TextInput
+              value={inputRelativeName}
+              onChangeText={(text) => {
+                // Allow only letters + space, max 50 chars
+                const filtered = text.replace(/[^a-zA-Z ]/g, '').slice(0, 50)
+                setInputRelativeName(filtered)
+              }}
+              style={[themed.inputBox, themed.inputText]}
+              autoCapitalize="words"
+              placeholder='Relative Name'
+              placeholderTextColor={themed.inputPlaceholder}
+              keyboardType='default'
+            />
+
+          </View>}
+
         </View>
+
 
         <View style={[themed.card, themed.childScreen, themed.cardPadding, tw`mt-3`]}>
           <Text style={styles.patientInfoText}>Investigation Details:</Text>
@@ -2181,6 +2396,53 @@ const RegistrationScreen = () => {
           </TouchableWithoutFeedback>
         </Modal>
 
+
+        <Modal
+          visible={maritalStatusModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setMaritalStatusModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setMaritalStatusModal(false)}>
+            <View style={[themed.modalOverlay]}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={[themed.modalContainer2, tw` rounded-t-2xl w-full h-[70%] p-4`]}>
+                  <SelectMaritalStatus
+                    onSelectMarital={(marital) => {
+                      setSelectedMaritalStatus(marital);
+                    }}
+                    onClose={() => setMaritalStatusModal(false)}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* relative modal */}
+
+        <Modal
+          visible={relativeModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setRelativeModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setRelativeModal(false)}>
+            <View style={[themed.modalOverlay]}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={[themed.modalContainer2, tw` rounded-t-2xl w-full h-[70%] p-4`]}>
+                  <SelectRelativeName
+                    onSelectRelative={(relative) => {
+                      setSelectedRelativeName(relative);
+                    }}
+                    onClose={() => setRelativeModal(false)}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
         {/* Add refer doctor modal */}
         <Modal
           visible={addreferDoctorModal}
@@ -2380,10 +2642,19 @@ const RegistrationScreen = () => {
                       <TouchableOpacity
                         key={`${item.cityCode}-${index}`}
                         onPress={() => {
+                          const nextAddress = buildAddressText({
+                            pincode,
+                            city: item,
+                            district: item,
+                            state: item,
+                            country: item?.CountryName || "India",
+                          });
                           setCity(item);
                           setDistrict(item);
                           setState(item);
-                          setCountry("India");
+                          setCountry(item?.CountryName || "India");
+                          setAddress(nextAddress);
+                          setIsAddressLocked(Boolean(nextAddress));
                           setIsCityModal(false);
                         }}
                         style={[
