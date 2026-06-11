@@ -280,7 +280,7 @@ const LabDashboard = () => {
               <Text style={themed.mutedText}>
                 Wallet Balance
               </Text>
-              <Text style={tw`${walletData?.balanceMain > 0 ? 'text-green-800' : 'text-red-500'} text-xl font-bold`}>
+              <Text style={tw`${walletData?.balanceMain > 0 ? 'text-green-500' : 'text-red-500'} text-xl font-bold`}>
                 ₹ {walletData?.balanceMain}
               </Text>
             </View>

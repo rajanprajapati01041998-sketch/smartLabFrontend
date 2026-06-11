@@ -30,8 +30,13 @@ import { useAuth } from '../Authorization/AuthContext';
 import { useTheme } from '../Authorization/ThemeContext';
 import { getThemeStyles } from './utils/themeStyles';
 import { useToast } from '../Authorization/ToastContext';
+import {
+  clearRememberedCredentials,
+  loadRememberedCredentials,
+  saveRememberedCredentials,
+} from './utils/loginStorage';
 
-const Login = () => {
+const Login = ({ navigation }) => {
   const { showToast } = useToast();
   const {
     login,
@@ -48,9 +53,43 @@ const Login = () => {
   const [branchModalVisible, setBranchModalVisible] = useState(false);
   const [branches, setBranches] = useState([]);
   const [branchSearch, setBranchSearch] = useState('');
+  const [hasSavedCredentials, setHasSavedCredentials] = useState(false);
 
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
+
+  useEffect(() => {
+    const restoreSavedCredentials = async () => {
+      const savedCredentials = await loadRememberedCredentials();
+
+      if (savedCredentials?.rememberMe) {
+        setUsername(savedCredentials.username || '');
+        setPassword(savedCredentials.password || '');
+        setRememberMe(true);
+        setHasSavedCredentials(true);
+      } else {
+        setRememberMe(false);
+        setHasSavedCredentials(false);
+      }
+    };
+
+    restoreSavedCredentials();
+  }, []);
+
+  useEffect(() => {
+    const persistCredentials = async () => {
+      if (!rememberMe) {
+        if (hasSavedCredentials) {
+          await clearRememberedCredentials();
+        }
+        return;
+      }
+
+      await saveRememberedCredentials(username, password, true);
+    };
+
+    persistCredentials();
+  }, [username, password, rememberMe, hasSavedCredentials]);
 
   // THIS IS THE MISSING PART - filteredBranches definition
   const filteredBranches = useMemo(() => {
@@ -68,6 +107,26 @@ const Login = () => {
     });
   }, [branches, branchSearch]);
 
+  const handleRememberMeToggle = async value => {
+    setRememberMe(value);
+    setHasSavedCredentials(value);
+
+    if (!value) {
+      await clearRememberedCredentials();
+      return;
+    }
+
+    await saveRememberedCredentials(username, password, true);
+  };
+
+  const handleClearSavedCredentials = async () => {
+    await clearRememberedCredentials();
+    setUsername('');
+    setPassword('');
+    setRememberMe(false);
+    setHasSavedCredentials(false);
+    showToast('Remembered credentials cleared', 'info');
+  };
 
   const getBranchList = async () => {
     try {
@@ -127,6 +186,13 @@ const Login = () => {
           showToast('Failed to save login data', 'error');
           return;
         }
+
+        if (rememberMe) {
+          await saveRememberedCredentials(username, password, true);
+        } else {
+          await clearRememberedCredentials();
+        }
+
         await AsyncStorage.setItem(
           'AllBranch',
           JSON.stringify(branches)
@@ -336,11 +402,11 @@ const Login = () => {
             {/* Remember Me Switch */}
             <View style={tw`flex-row items-center justify-between mb-6`}>
               <TouchableOpacity
-                onPress={() => setRememberMe(!rememberMe)}
+                onPress={() => handleRememberMeToggle(!rememberMe)}
                 style={tw`flex-row items-center`}>
                 <Switch
                   value={rememberMe}
-                  onValueChange={setRememberMe}
+                  onValueChange={handleRememberMeToggle}
                   trackColor={{ false: '#D1D5DB', true: '#174B3F' }}
                   thumbColor={rememberMe ? '#FFFFFF' : '#F3F4F6'}
                 />
@@ -349,14 +415,8 @@ const Login = () => {
                 </Text>
               </TouchableOpacity>
 
-              {rememberMe && userIdApp && (
-                <TouchableOpacity
-                  onPress={async () => {
-                    await saveCredentials('', '', false);
-                    setRememberMe(false);
-                    setPasswordApp('');
-                    showToast('Remembered credentials cleared', 'info');
-                  }}>
+              {hasSavedCredentials && (
+                <TouchableOpacity onPress={handleClearSavedCredentials}>
                   <Text style={tw`text-red-500 text-xs`}>
                     Clear Saved
                   </Text>
