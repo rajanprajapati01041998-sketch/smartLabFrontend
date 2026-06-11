@@ -367,8 +367,8 @@ export default function App() {
               activeOpacity={0.85}
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center shadow-lg`,
-                { backgroundColor: theme === 'dark' ? '#2564eb5e' : '#2564eb59', },]}>
-              <Ionicons name="search" size={34} color={`${theme === 'dark' ? '#078ce5' : '#ffffff'}`} />
+                { backgroundColor: theme === 'dark' ? '#2564ebc1' : '#2564ebfc', },]}>
+              <Ionicons name="search" size={34} color={`${theme === 'dark' ? '#f3f6f7' : '#ffffff'}`} />
             </TouchableOpacity>
           </Animated.View>
         )}
