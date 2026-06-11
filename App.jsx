@@ -10,22 +10,7 @@ import { useAuth } from './Authorization/AuthContext';
 import DashboardDrawer from './src/DashboardDrawer';
 import LoginScreen from './src/Login';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-
-import {
-  StatusBar,
-  PermissionsAndroid,
-  Platform,
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-  PanResponder,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-
+import { StatusBar, PermissionsAndroid, Platform, Modal, View, Text, TouchableOpacity, Animated, Dimensions, PanResponder, ScrollView, Pressable, } from 'react-native';
 import { ResponsiveProvider } from './src/context/ResponsiveContext';
 import { useTheme } from './Authorization/ThemeContext';
 import StartupSplash from './src/StartupSplash';
@@ -64,20 +49,15 @@ const AppContent = () => {
 export default function App() {
   const { isLoading, token } = useAuth();
   const { theme, colors } = useTheme();
-
   const [isStartupSplashVisible, setIsStartupSplashVisible] = useState(true);
   const [sseModalVisible, setSseModalVisible] = useState(false);
   const [sseMessage, setSseMessage] = useState('');
   const [sseTitle, setSseTitle] = useState('');
   const [sseType, setSseType] = useState('');
-
   const [currentFieldBoyId, setCurrentFieldBoyId] = useState(null);
   const [currentFieldBoyName, setCurrentFieldBoyName] = useState('');
-
   const [floatingModalVisible, setFloatingModalVisible] = useState(false);
-
   const slideAnim = useRef(new Animated.Value(0)).current;
-
   const { width, height } = Dimensions.get('window');
 
   const pan = useRef(
@@ -92,7 +72,6 @@ export default function App() {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-
       onMoveShouldSetPanResponder: (_, gestureState) => {
         return Math.abs(gestureState.dx) > 3 || Math.abs(gestureState.dy) > 3;
       },
@@ -166,6 +145,7 @@ export default function App() {
   }, [sseModalVisible, slideAnim]);
 
   useEffect(() => {
+    console.log("App:",token)
     if (!token) return;
 
     console.log('Connecting SSE...');
@@ -387,18 +367,8 @@ export default function App() {
               activeOpacity={0.85}
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center shadow-lg`,
-                {
-                  backgroundColor:
-                    theme === 'dark'
-                      ? '#2564eb5e'
-                      : '#2563eb',
-                },
-              ]}>
-              <Ionicons
-                name="search"
-                size={34}
-                color={`${theme === 'dark' ? '#078ce5' : '#ffffff'}`}
-              />
+                { backgroundColor: theme === 'dark' ? '#2564eb5e' : '#2564eb59', },]}>
+              <Ionicons name="search" size={34} color={`${theme === 'dark' ? '#078ce5' : '#ffffff'}`} />
             </TouchableOpacity>
           </Animated.View>
         )}
