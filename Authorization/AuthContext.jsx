@@ -28,9 +28,9 @@ export const AuthProvider = ({ children }) => {
   const [centerLoginBranchId, setCenterLoginBranchId] = useState(null)
   const [updateFlag, setUpdateFlag] = useState(0);
   const [addBarcode, setAddBarcode] = useState(false)
-  const [barcodeScan,setBarcodeScan] = useState(null)
-  const [latitude,setLatitude] = useState(null)
-  const [longitude,setLongitude] = useState(null)
+  const [barcodeScan, setBarcodeScan] = useState(null)
+  const [latitude, setLatitude] = useState(null)
+  const [longitude, setLongitude] = useState(null)
 
   // Initialize custom alert hook
   const { showCustomAlert, AlertComponent } = useCustomAlert();
@@ -107,19 +107,21 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (token, userInfo) => {
     try {
-      console.log("token", token)
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
       setToken(token);
-      setUserData(userInfo);
       setUser(userInfo);
+      setUserData(userInfo.user);
+      setUserId(userInfo.user?.id);
+      setLoginBranchId(userInfo.branchId);
+      setSessionId(userInfo.sessionId);
       return true;
     } catch (error) {
       console.log('Error saving auth data:', error);
       return false;
     }
   };
-console.log(corporateId)
+  console.log(corporateId)
   const logout = () => {
     showCustomAlert({
       title: "Logout Confirmation",
@@ -134,16 +136,16 @@ console.log(corporateId)
         try {
           // Show loading indicator if needed
           console.log('Logging out...');
-          
+
           // Clear AsyncStorage
           await AsyncStorage.removeItem('token');
           await AsyncStorage.removeItem('userInfo');
-          
+
           // Call logout API if sessionId exists
           if (sessionId) {
             await logoutUser(sessionId);
           }
-          
+
           // Clear all states
           setToken(null);
           setUserData({});
@@ -154,11 +156,11 @@ console.log(corporateId)
           setAllBranchInfo(null);
           setLoginBranchId(null);
           setCenterLoginBranchId(null);
-          
+
           console.log('User Logged Out Successfully');
         } catch (error) {
           console.log('Error during logout:', error);
-          
+
           // Show error alert if logout fails
           showCustomAlert({
             title: "Logout Failed",
@@ -197,9 +199,9 @@ console.log(corporateId)
           centerLoginBranchId, setCenterLoginBranchId,
           hosId, setHosId,
           addBarcode, setAddBarcode,
-          barcodeScan,setBarcodeScan,
-          latitude,setLatitude,
-          longitude,setLongitude
+          barcodeScan, setBarcodeScan,
+          latitude, setLatitude,
+          longitude, setLongitude
         }}
       >
         {children}
