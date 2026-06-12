@@ -15,12 +15,6 @@ import { ResponsiveProvider } from './src/context/ResponsiveContext';
 import { useTheme } from './Authorization/ThemeContext';
 import StartupSplash from './src/StartupSplash';
 import useCurrentLocation from './src/utils/locationService';
-
-// import {
-//   getBackgroundLocationEnabled,
-//   getLiveLocationSession,
-// } from './src/utils/backgroundLocationPrefs';
-
 import EventSource from 'react-native-sse';
 import tw from 'twrnc';
 import { API_BASE_URL } from './Authorization/api';
@@ -28,6 +22,7 @@ import { getAddressFromLatLng } from './src/utils/patinetService.js/location';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import GlobalSearchPatientList from './GlobalSearchPatientList';
+import NeoAIButton from './NeoAIButton';
 
 const navigationRef = createNavigationContainerRef();
 const SSE_URL = `${API_BASE_URL}Sse/admin-listen`;
@@ -362,14 +357,17 @@ export default function App() {
                 transform: pan.getTranslateTransform(),
               },
             ]}>
-            <TouchableOpacity
+              <NeoAIButton
+              onPress={() => setFloatingModalVisible(true)}
+              />
+            {/* <TouchableOpacity
               onPress={() => setFloatingModalVisible(true)}
               activeOpacity={0.85}
               style={[
                 tw`w-16 h-16 rounded-full items-center justify-center shadow-lg`,
                 { backgroundColor: theme === 'dark' ? '#2564ebc1' : '#2564ebfc', },]}>
               <Ionicons name="search" size={34} color={`${theme === 'dark' ? '#f3f6f7' : '#ffffff'}`} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </Animated.View>
         )}
 

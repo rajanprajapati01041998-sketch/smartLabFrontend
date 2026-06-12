@@ -596,10 +596,9 @@ const SearchSelectServiceItem = ({
           </View>
 
           {/* Updated Quantity Section with Buttons */}
-          <View style={tw`flex-col items-center`}>
+          {/* <View style={tw`flex-col items-center`}>
             <Text style={tw`text-[10px] text-gray-400 mb-1`}>Qty:</Text>
             <View style={tw`flex-row items-center gap-2`}>
-              {/* Decrement Button */}
               <TouchableOpacity
                 onPress={() => decrementQty(item)}
                 style={tw`w-8 h-8 rounded-full bg-red-100 items-center justify-center`}
@@ -608,12 +607,10 @@ const SearchSelectServiceItem = ({
                 <Text style={tw`text-red-600 font-bold text-lg`}>-</Text>
               </TouchableOpacity>
 
-              {/* Quantity Display */}
               <Text style={[themed.inputText, tw`text-base font-bold min-w-[30px] text-center`]}>
                 {item.qty || 1}
               </Text>
 
-              {/* Increment Button */}
               <TouchableOpacity
                 onPress={() => incrementQty(item)}
                 style={tw`w-8 h-8 rounded-full bg-green-100 items-center justify-center`}
@@ -621,7 +618,7 @@ const SearchSelectServiceItem = ({
                 <Text style={tw`text-green-600 font-bold text-lg`}>+</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </View> */}
 
           {item.sampleVolume ? (
             <View>
@@ -696,10 +693,10 @@ const SearchSelectServiceItem = ({
           {visibleDetailsList.length > 0 && isDirty && (
             <View
               style={[
-                themed.borderTop,
-                tw`absolute bottom-0 left-0 right-0 border-t`,
+                themed.borderTop,themed.childScreen2,
+                tw`absolute bottom-0 left-0 right-0 border-t `,
               ]}
-            >
+             >
               <View style={tw`flex-row justify-between items-center mb-2`}>
                 <Text style={[themed.inputText]}>Total Amount</Text>
                 <Text style={tw`text-lg font-bold text-green-600`}>
@@ -709,7 +706,7 @@ const SearchSelectServiceItem = ({
 
               <TouchableOpacity
                 onPress={createPayload}
-                style={tw`bg-blue-800/60 p-3 rounded-lg`}
+                style={tw`bg-blue-700 px-3 py-4 rounded-lg`}
               >
                 <Text style={tw`text-white text-center font-bold`}>
                   Add ({visibleDetailsList.length}) Tests

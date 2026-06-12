@@ -2065,11 +2065,11 @@ const RegistrationScreen = () => {
           onPress={handleSavePatient}
           style={[
             styles.saveButton,
-            tw`flex-row justify-center items-center `,
+            tw`flex-row justify-center items-center py-4 mt-10 `,
             (!serviceItem?.Services?.length) && tw`bg-gray-400 opacity-50`
           ]}
           disabled={loading || !serviceItem?.Services?.length}
-        >
+         >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (

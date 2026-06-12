@@ -201,7 +201,7 @@ export const AuthProvider = ({ children }) => {
           addBarcode, setAddBarcode,
           barcodeScan, setBarcodeScan,
           latitude, setLatitude,
-          longitude, setLongitude
+          longitude, setLongitude,
         }}
       >
         {children}

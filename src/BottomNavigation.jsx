@@ -41,7 +41,10 @@ const HIDE_TABS_BY_TAB = {
     'Setting',
     'ViewTestRefundReceipt',
     'Receipt Reprint',
-    'ReceiptReprintList'
+    'ReceiptReprintList',
+    'DashboardAllPatientList',
+    'DashboardPathologyViewList',
+    'DashboardTotalCollectionList'
   ]),
   Registration: new Set(['PatientInformation']),
   HelpDesk: new Set([

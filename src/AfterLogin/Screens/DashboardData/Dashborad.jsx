@@ -305,6 +305,7 @@ const LabDashboard = () => {
           fromDate={fromDate}
           toDate={toDate}
           branchId={selectedBranchIds}
+          dashboardBalance={walletData?.balanceMainDashboard}
         />
       </View>
 
