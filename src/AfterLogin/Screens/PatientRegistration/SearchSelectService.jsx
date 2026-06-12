@@ -124,7 +124,9 @@ const SearchSelectService = ({ onClose }) => {
 
     Keyboard.dismiss();
 
-    const exists = selectedServices.some(i => getItemId(i) === normalizedItemId);
+    const exists = selectedServices.some(
+      i => getItemId(i) === normalizedItemId,
+    );
 
     if (exists) {
       showToast('This service is already selected.', 'warning');
@@ -143,7 +145,8 @@ const SearchSelectService = ({ onClose }) => {
     setIsDirty(true);
     setSearchQuery('');
     setResults([]);
-    setModalVisible(true);
+    // IMPORTANT: Do not open modal automatically on every selection.
+    // Modal should open only when user taps the cart badge.
   };
 
   const handleDelete = item => {
@@ -166,23 +169,41 @@ const SearchSelectService = ({ onClose }) => {
         <View style={tw`w-12 h-1 bg-gray-300 self-center mb-3 rounded-full`} />
       </View>
 
-      <View style={themed.searchContainer}>
-        <View style={themed.searchBox}>
-          <Icon name="search" size={18} color={themed.iconColor} />
+      <View style={tw`px-4 pt-2`}>
+        {selectedCount > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setModalVisible(true)}
+            style={tw`flex-row items-center justify-end mb-2`}
+          >
+            <View style={tw`flex-row items-center bg-red-800/20 border border-red-800/40 px-3 py-2 rounded-xl`}
+            >
+              <Icons name="cart" size={18} color="#de3f0b" style={tw`mr-2`} />
+              <Text style={tw`text-red-600 text-xs font-semibold`}>
+                {selectedCount} selected
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
-          <TextInput
-            ref={searchInputRef}
-            placeholder="Search Investigation..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={themed.searchInput}
-            placeholderTextColor={themed.placeholderColor}
-            autoFocus
-          />
+        <View style={themed.searchContainer}>
+          <View style={themed.searchBox}>
+            <Icon name="search" size={18} color={themed.iconColor} />
+            <TextInput
+              ref={searchInputRef}
+              placeholder="Search Investigation..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={[themed.searchInput,tw`rounded-lg`]}
+              placeholderTextColor={themed.placeholderColor}
+              autoFocus
+            />
+          </View>
         </View>
       </View>
 
       {loading && <ActivityIndicator size="large" />}
+
 
       <FlatList
         data={results}
@@ -208,21 +229,15 @@ const SearchSelectService = ({ onClose }) => {
         )}
       />
 
-      {selectedCount > 0 && (
-        <View style={tw`px-4 pb-2`}>
-          <Text style={tw`text-xs text-gray-500`}>
-            {selectedCount} test{selectedCount > 1 ? 's' : ''} selected
-          </Text>
-        </View>
-      )}
+      
 
-      <View style={tw`px-4`}>
+      {/* <View style={tw`px-4`}>
         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
           <Text style={tw`text-white text-center font-semibold`}>
             Close
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {modalVisible && (
         <View style={tw`absolute inset-0 justify-end`}>
@@ -247,31 +262,25 @@ const SearchSelectService = ({ onClose }) => {
                 <TouchableOpacity
                   activeOpacity={0.85}
                   style={[
-                    tw`flex-1 flex-row items-center justify-center py-3 rounded-xl bg-blue-800/20 mx-2 border border-blue-800/40`,
+                    tw`flex-1 flex-row items-center justify-center py-3 rounded-lg bg-yellow-500 mx-4 `,
                     
                   ]}
                   onPress={() => setModalVisible(false)}
                 >
-                  <Icons
-                    name="refresh"
-                    size={18}
-                    color="#2563EB"
-                    style={tw`mr-2`}
-                  />
-
-                  <Text style={[tw`text-blue-600 text-center font-semibold text-base`]}>
+                  <Icons name="refresh" size={18} color="#c95b02" style={tw`mr-2`} />
+                  <Text style={[tw`text-[#c95b02] text-center font-semibold text-base`]}>
                     Select Another
                   </Text>
                 </TouchableOpacity>
                 {showNext && (
                   <TouchableOpacity
-                    style={tw`flex-1 bg-green-800/20 border border-green-800/40 py-3 rounded-xl mr-2`}
+                    style={tw`flex-1 bg-green-500   py-3 rounded-xl mr-2`}
                     onPress={() => {
                       setModalVisible(false);
                       onClose?.();
                     }}
                   >
-                    <Text style={tw`text-green-500 text-center font-medium`}>
+                    <Text style={tw`text-white text-center font-medium`}>
                       Next
                     </Text>
                   </TouchableOpacity>

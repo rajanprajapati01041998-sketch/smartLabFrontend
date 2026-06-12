@@ -175,7 +175,7 @@ const ReceiptReprintHome = () => {
           { backgroundColor: isSelected ? '#3b82f6' : themed.cardBackground }
         ]}
         onPress={() => handleBranchSelect(item)}
-      >
+       >
         <View style={tw`flex-1`}>
           <Text style={[
             themed.inputText,
@@ -202,7 +202,7 @@ const ReceiptReprintHome = () => {
             themed.border_b,
             tw`flex-col justify-between items-start pb-2 mb-3`,
           ]}
-        >
+         >
           <View style={tw`flex-row`}>
             <View style={tw`flex-1`}>
               <TouchableOpacity

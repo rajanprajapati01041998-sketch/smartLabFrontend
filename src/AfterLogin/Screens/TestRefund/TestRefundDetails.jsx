@@ -43,17 +43,22 @@ const TestRefundDetails = ({ data, onRefundsUpdate }) => {
   const openRefundModal = item => {
     const existing = refunds.find(r => r.FTDId === item?.FTDId);
     setSelectedTest(item);
+
+    // Auto-fill refund qty with Bill Qty by default
+    const billQty = Number(item?.Qty || 0);
+
     if (existing) {
       setRefundQty(String(existing.RefundQty));
       setRefundReason(existing.RefundReason || '');
       setRefundApprovedBy(existing.RefundApprovedBy || '');
       setRemark(existing.Remark || '');
     } else {
-      setRefundQty('');
+      setRefundQty(String(billQty));
       setRefundReason('');
       setRefundApprovedBy('');
       setRemark('');
     }
+
     setTestSelectModal(false);
     setRefundModal(true);
   };
@@ -229,34 +234,42 @@ const TestRefundDetails = ({ data, onRefundsUpdate }) => {
                         key={item?.FTDId || idx}
                         onPress={() => openRefundModal(item)}
                         style={[themed.border,
-                        tw`p-2`,
+                        tw`p-2 mb-1`,
                         idx !== data.length - 1 && themed.border_b,
                         ]}
                       >
-                        <Text style={[themed.inputText, tw`font-semibold`]}>
-                          {idx + 1}. {item?.ServiceName || '-'}
-                        </Text>
-                        <View style={tw`flex-row justify-between mt-2`}>
-                          <Text style={[themed.labelText, tw`text-xs`]}>
+                        <View style={tw`flex-row justify-between`}>
+                          <Text style={[themed.inputText, tw`font-semibold`]}>
+                            {idx + 1}. {item?.ServiceName || '-'}
+                          </Text>
+                          {refunds.some(r => r.FTDId === item?.FTDId) && (
+                            <View style={tw`flex-row items-center `}>
+                              <Entypo name="check" size={16} color="green" />
+                              <Text
+                                style={[
+                                  themed.labelText,
+                                  tw`ml-1 text-green-600`,
+                                ]}
+                              >
+                                Refunded
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+
+                        <View style={tw`flex-row justify-end mt-2`}>
+                          <Text>
+                            {`${Number(item?.Qty || 0)} x ${formatAmount(item?.Rate)}`}
+                          </Text>
+                          {/* <Text style={[themed.labelText, tw`text-xs`]}>
                             Qty: {Number(item?.Qty || 0)}
                           </Text>
                           <Text style={[themed.labelText, tw`text-xs`]}>
                             Rate: ₹ {formatAmount(item?.Rate)}
-                          </Text>
+                          </Text> */}
+
                         </View>
-                        {refunds.some(r => r.FTDId === item?.FTDId) && (
-                          <View style={tw`flex-row items-center mt-2`}>
-                            <Entypo name="check" size={16} color="green" />
-                            <Text
-                              style={[
-                                themed.labelText,
-                                tw`ml-1 text-green-600`,
-                              ]}
-                            >
-                              Refunded
-                            </Text>
-                          </View>
-                        )}
+
                       </TouchableOpacity>
                     ))}
                   </ScrollView>

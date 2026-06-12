@@ -19,6 +19,10 @@ export const getThemeStyles = theme => {
       'text-[10px] font-bold',
       isDark ? 'text-gray-400' : 'text-gray-500',
     ),
+    clientNamexs: tw.style(
+      'text-[12px] font-bold italic',
+      isDark ? 'text-gray-400' : 'text-gray-500',
+    ),
 
     statusBarBg: isDark ? '#111827' : '#FFFFFF',
 
@@ -164,7 +168,7 @@ export const getThemeStyles = theme => {
     ),
 
     searchBox: tw.style(
-      'flex-row items-center rounded-xl px-3 h-12 border',
+      'flex-row items-center rounded-lg px-3 h-14 border',
       isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
     ),
 
@@ -355,15 +359,16 @@ export const getThemeStyles = theme => {
 
     // for search input
     searchContainer: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 1,
+      paddingVertical:5,
     },
 
     searchBox: {
       flexDirection: 'row',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: isDark ? '#374151' : '#D1D5DB',
-      borderRadius: 12,
+      borderColor: isDark ? '#5f6670' : '#eaebed',
+      borderRadius: 6,
       paddingHorizontal: 12,
       backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
     },

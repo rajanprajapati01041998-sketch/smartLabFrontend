@@ -24,11 +24,16 @@ import Home from './AfterLogin/Screens/Settings/Home';
 import ViewTestRefundReceipt from './AfterLogin/Screens/TestRefund/ViewTestRefundReceipt';
 import ReceiptReprintHome from './AfterLogin/Screens/ReceiptReprint/ReceiptReprintHome';
 import ReceiptReprintList from './AfterLogin/Screens/ReceiptReprint/ReceiptReprintList';
+import DashboardAllPatientList from './AfterLogin/Screens/DashboardAllPatient/DashboardAllPatientList';
+import DashboardPathologyViewList from './AfterLogin/Screens/DashboardPathology/DashboardPathologyViewList';
+import { useAuth } from '../Authorization/AuthContext';
+import DashboardTotalCollectionList from './AfterLogin/Screens/DashboardAllPatient/DashboardTotalCollectionList';
 
 const Stack = createNativeStackNavigator();
 
 const HeaderRightMenu = ({ navigation }) => {
   const { colors, theme, setThemeMode } = useTheme();
+  const { dashboardStatusId } = useAuth()
   const [visible, setVisible] = useState(false);
 
   const changeTheme = async mode => {
@@ -301,6 +306,44 @@ export default function DashboardStack() {
           title: 'Receipt List',
           headerShown: true,
         }}
+      />
+      <Stack.Screen
+        name="DashboardAllPatientList"
+        component={DashboardAllPatientList}
+        options={{
+          title: 'Patient View Details',
+          headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="DashboardTotalCollectionList"
+        component={DashboardTotalCollectionList}
+        options={({ route }) => ({
+          title:
+            route?.params?.statusId === 1
+              ? 'Total Collection'
+              : route?.params?.statusId === 2
+                ? 'Your Collection'
+                : 'Dashboard',
+          headerShown: true,
+        })}
+      />
+      <Stack.Screen
+        name="DashboardPathologyViewList"
+        component={DashboardPathologyViewList}
+        options={({ route }) => ({
+          title:
+            route?.params?.statusId === 1
+              ? 'Patient Sample Pending'
+              : route?.params?.statusId === 2
+                ? 'Sample Collected'
+                : route?.params?.statusId === 3
+                  ? 'Reports Pending'
+                  : route?.params?.statusId === 4
+                    ? 'Reports Done'
+                    : 'Dashboard',
+          headerShown: true,
+        })}
       />
     </Stack.Navigator>
   );
