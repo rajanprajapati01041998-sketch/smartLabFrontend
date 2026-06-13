@@ -25,7 +25,7 @@ import DashboardCollection from './DashboardCollection';
 import { Checkbox } from 'react-native-paper';
 import ButtonStyles from '../../../utils/ButtonStyle';
 import api from '../../../../Authorization/api';
-import { dashboardWallet } from '../../../utils/dashboardService/dashboard';
+import { dashboardWallet, dashboardStates } from '../../../utils/dashboardService/dashboard';
 import { useDash } from '../../../../Authorization/DashContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
@@ -49,6 +49,7 @@ const LabDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectAll, setSelectAll] = useState(false);
   const [selectedBranches, setSelectedBranches] = useState([]);
+  const [roleId, setRoleId] = useState(2);
   const  dispatch  = useDispatch();
 
 
@@ -138,6 +139,8 @@ const LabDashboard = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      // Refresh wallet + dashboard cards
+      await dashboardWallet(loginBranchId);
       await dashboardRef.current?.refresh?.();
     } finally {
       setRefreshing(false);

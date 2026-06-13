@@ -1,4 +1,4 @@
-import { Dimensions, View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView } from 'react-native'
+import { Dimensions, View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView, TextInput, Image } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
@@ -21,6 +21,7 @@ const DashboardPathologyViewList = ({ route }) => {
     const [filterModal, setFilterModal] = useState(false)
     const [selectedBranches, setSelectedBranches] = useState([])
     const [patientData, setPatientData] = useState([])
+    const [branchSearch, setBranchSearch] = useState('')
     const [loading, setLoading] = useState(false)
     const [searchData, setSearchData] = useState({
         fromDate: new Date().toISOString().split('T')[0],
@@ -281,33 +282,37 @@ const DashboardPathologyViewList = ({ route }) => {
                 <View style={tw`flex-1 justify-end items-center bg-black/60`}>
                     <TouchableWithoutFeedback>
                         <View style={[themed.modalContainer, tw`w-full h-[60%] rounded-lg overflow-hidden`]}>
-                            <View style={[themed.border_b, tw`p-4 flex-row justify-between items-center`]}>
+                            <View style={[tw`p-4 flex-row justify-between items-center`]}>
                                 <Text style={[themed.modalHeaderTitle]}>Select Branches</Text>
                                 <TouchableOpacity onPress={() => setBranchModal(false)}>
                                     <MaterialIcons name="close" size={24} color={themed.iconColor} />
                                 </TouchableOpacity>
+                            </View>
+                            <View style={[themed.searchContainer, tw`mx-2`]}>
+                                <View style={themed.searchBox}>
+                                    <MaterialIcons name="search" size={20} color={themed.iconColor} />
+                                    <TextInput
+                                        value={branchSearch}
+                                        onChangeText={setBranchSearch}
+                                        placeholder="Search Branch"
+                                        placeholderTextColor={themed.inputPlaceholder}
+                                        style={themed.searchInput}
+                                    />
+                                </View>
                             </View>
 
                             <View style={tw`p-4`}>
                                 <TouchableOpacity
                                     onPress={() =>
                                         setSelectedBranches(
-                                            selectedBranches.length === allBranchInfo.length
-                                                ? []
-                                                : [...allBranchInfo]
+                                            selectedBranches.length === allBranchInfo.length ? [] : [...allBranchInfo]
                                         )
                                     }
                                     style={tw`flex-row items-center`}
                                 >
                                     <MaterialIcons
-                                        name={
-                                            selectedBranches.length === allBranchInfo.length
-                                                ? 'check-box'
-                                                : 'check-box-outline-blank'
-                                        }
-                                        size={24}
-                                        color="#2563EB"
-                                    />
+                                        name={selectedBranches.length === allBranchInfo.length ? 'check-box' : 'check-box-outline-blank'}
+                                        size={24} color="#2563EB" />
 
                                     <Text style={[themed.inputText, tw`ml-2 font-medium`]}>
                                         Select All
@@ -434,8 +439,19 @@ const DashboardPathologyViewList = ({ route }) => {
                     keyExtractor={(item, index) => item.BillNo || index.toString()}
                     renderItem={renderPatientItem}
                     ListEmptyComponent={
+
                         <View style={tw`flex-1 justify-center items-center py-10`}>
-                            <Text style={tw`text-gray-500`}>No patient data found</Text>
+                            <Image
+                                source={{
+                                    uri: 'https://cdn-icons-png.flaticon.com/128/13544/13544419.png',
+                                }}
+                                style={tw`w-18 h-18 mb-3`}
+                                resizeMode="contain"
+                            />
+
+                            <Text style={tw`text-gray-500 text-base`}>
+                                No patient data found
+                            </Text>
                         </View>
                     }
                     showsVerticalScrollIndicator={false}

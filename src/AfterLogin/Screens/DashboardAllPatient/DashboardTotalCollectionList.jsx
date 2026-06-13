@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView } from 'react-native'
+import { TextInput, View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView, RefreshControl, ActivityIndicator, Image } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
@@ -18,7 +18,9 @@ const DashboardTotalCollectionList = ({ route }) => {
     const [filterModal, setFilterModal] = useState(false)
     const [selectedBranches, setSelectedBranches] = useState([])
     const [patientData, setPatientData] = useState([])
+    const [branchSearch, setBranchSearch] = useState('')
     const [loading, setLoading] = useState(false)
+    const [refreshing, setRefreshing] = useState(false) // Add refreshing state
     const [searchData, setSearchData] = useState({
         fromDate: new Date().toISOString().split('T')[0],
         toDate: new Date().toISOString().split('T')[0]
@@ -145,6 +147,13 @@ const DashboardTotalCollectionList = ({ route }) => {
         }
     }
 
+    // Pull-to-refresh handler
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await fetchPatientData()
+        setRefreshing(false)
+    }
+
     // Handle date filter save - Ensures dates are in YYYY-MM-DD format
     const handleSearchFilter = (fromDateOrObject, toDate) => {
         let formattedFromDate = ''
@@ -205,22 +214,21 @@ const DashboardTotalCollectionList = ({ route }) => {
             {/* Header Section with Patient Info and Expand/Collapse Button */}
             <View style={tw`flex-row justify-between items-start mb-2`}>
                 <View style={tw`flex-1`}>
-                    <Text style={[themed.inputText, tw`font-semibold text-lg`]}>{item.PatientName || 'N/A'}</Text>
+                    <Text style={[themed.inputText, tw`font-semibold text-md`]}>{item.PatientName || 'N/A'}</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => handleAccordian(index)}
                     style={[
-                        tw`w-9 h-9 rounded-full items-center justify-center border`,
+                        tw`w-7 h-7 rounded-full items-center justify-center border`,
                         {
                             backgroundColor: theme === 'dark' ? '#374151' : '#FFFFFF',
                             borderColor: '#D1D5DB',
-                            elevation: 3,
                         },
                     ]}
                 >
                     <FontAwesome
                         name={expandedIndex === index ? 'chevron-up' : 'chevron-down'}
-                        size={16}
+                        size={12}
                         color={themed.iconColor}
                     />
                 </TouchableOpacity>
@@ -245,7 +253,14 @@ const DashboardTotalCollectionList = ({ route }) => {
             {/* Service Name - Always Visible */}
             <View style={tw`mb-2`}>
                 <Text style={[themed.clientNamexs]}> Service:{item.ServiceName || ''} </Text>
+                <View style={tw`items-center gap-2 flex-row justify-start mt-2`}>
+                    <Text style={[themed.inputText, tw` text-sm mb-1 font-semibold text-green-500`]}>Receipt Amount :</Text>
+                    <Text style={[themed.inputText, tw`font-semibold text-sm text-green-500`]}>{formatCurrency(item?.Amount || 0)}</Text>
+                </View>
             </View>
+            <Text style={tw`text-gray-400 text-xs`}>
+                Created by: {item.CreatedBy || 'N/A'}
+            </Text>
 
 
 
@@ -253,7 +268,7 @@ const DashboardTotalCollectionList = ({ route }) => {
             {expandedIndex === index && (
                 <View
                     style={[
-                        tw`p-3 rounded-lg border`,
+                        tw`p-3 rounded-lg border mt-1`,
                         {
                             backgroundColor: 'rgba(4, 154, 59, 0.11)', // green glass
                             borderColor: 'rgba(5, 86, 28, 0.9)',
@@ -276,31 +291,7 @@ const DashboardTotalCollectionList = ({ route }) => {
                             <Text style={[themed.labelTextXs, tw`font-medium text-sm`]}>{item.ReceiptNo || 'N/A'}</Text>
                         </View>
                     </View>
-
-
-
-
-                    {/* Amount Section */}
-                    <View style={[tw`mt-2 pt-2 border-t border-gray-100`, tw`flex-row justify-between mb-2`]}>
-                        <View style={tw`items-center flex-1`}>
-                            <Text style={[themed.inputLabel, tw` text-xs mb-1`]}>Total Amount</Text>
-                            <Text style={[themed.inputText, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalBillAmount || 0)}</Text>
-                        </View>
-                        <View style={tw`items-center flex-1`}>
-                            <Text style={[themed.inputLabel, tw` text-xs mb-1`]}>Paid Amount</Text>
-                            <Text style={[tw`text-green-600`, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalPaidAmount || 0)}</Text>
-                        </View>
-                        <View style={tw`items-center flex-1`}>
-                            <Text style={[themed.inputLabel, tw` text-xs mb-1`]}>Payable Amount</Text>
-                            <Text style={[tw`text-orange-600`, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalPatientPayableAmount || 0)}</Text>
-                        </View>
-                    </View>
-
-                    {/* Created Info */}
-                    <View style={tw`mt-2 pt-2 border-t border-gray-100`}>
-                        <Text style={tw`text-gray-400 text-xs`}>
-                            Created by: {item.CreatedBy || 'N/A'}
-                        </Text>
+                    <View style={tw`mt-2 pt-2 `}>
                         {item.DiscountReason && (
                             <Text style={tw`text-red-400 text-xs mt-1`}>
                                 Discount: {item.DiscountReason}
@@ -319,11 +310,23 @@ const DashboardTotalCollectionList = ({ route }) => {
                 <View style={tw`flex-1 justify-end items-center bg-black/60`}>
                     <TouchableWithoutFeedback>
                         <View style={[themed.modalContainer, tw`w-full h-[60%] rounded-lg overflow-hidden`]}>
-                            <View style={[themed.border_b, tw`p-4 flex-row justify-between items-center`]}>
+                            <View style={[tw`p-4 flex-row justify-between items-center`]}>
                                 <Text style={[themed.modalHeaderSubTitle, tw`text-lg font-semibold`]}>Select Branches</Text>
                                 <TouchableOpacity onPress={() => setBranchModal(false)}>
                                     <MaterialIcons name="close" size={24} color={themed.iconColor} />
                                 </TouchableOpacity>
+                            </View>
+                            <View style={[themed.searchContainer, tw`mx-2`]}>
+                                <View style={themed.searchBox}>
+                                    <MaterialIcons name="search" size={20} color={themed.iconColor} />
+                                    <TextInput
+                                        value={branchSearch}
+                                        onChangeText={setBranchSearch}
+                                        placeholder="Search Branch"
+                                        placeholderTextColor={themed.inputPlaceholder}
+                                        style={themed.searchInput}
+                                    />
+                                </View>
                             </View>
 
                             <View style={tw`p-4 `}>
@@ -336,7 +339,7 @@ const DashboardTotalCollectionList = ({ route }) => {
                                         )
                                     }
                                     style={tw`flex-row items-center`}
-                                 >
+                                >
                                     <MaterialIcons
                                         name={
                                             selectedBranches.length === allBranchInfo.length
@@ -347,7 +350,7 @@ const DashboardTotalCollectionList = ({ route }) => {
                                         color="#2563EB"
                                     />
 
-                                    <Text style={[themed.labelText,tw`ml-2`]}>
+                                    <Text style={[themed.labelText, tw`ml-2`]}>
                                         Select All
                                     </Text>
                                 </TouchableOpacity>
@@ -372,15 +375,6 @@ const DashboardTotalCollectionList = ({ route }) => {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-
-                            {/* <View style={tw`p-4 border-t border-gray-200`}>
-                                <TouchableOpacity
-                                    onPress={() => setBranchModal(false)}
-                                    style={tw`bg-blue-500 py-3 rounded-lg`}
-                                >
-                                    <Text style={tw`text-white text-center font-semibold`}>Apply ({selectedBranches.length} Selected)</Text>
-                                </TouchableOpacity>
-                            </View> */}
                         </View>
                     </TouchableWithoutFeedback>
                 </View>
@@ -459,26 +453,47 @@ const DashboardTotalCollectionList = ({ route }) => {
             {/* {!loading && patientData.length > 0 && renderSummary()} */}
 
             {/* Loading Indicator */}
-            {loading && (
+            {loading && !refreshing && (
                 <View style={tw`flex-1 justify-center items-center`}>
-                    <Text style={themed.text}>Loading...</Text>
+                    <ActivityIndicator size={18} color={themed.iconColor} />
+                    <Text style={themed.inputText}>Loading...</Text>
                 </View>
             )}
 
-            {/* Patient List */}
-            {!loading && (
+            {/* Patient List with Pull-to-Refresh */}
+            {!loading || refreshing ? (
                 <FlatList
                     data={patientData}
                     keyExtractor={(item, index) => item.BillNo || index.toString()}
                     renderItem={renderPatientItem}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#2563EB']} // Android
+                            tintColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'} // iOS
+                            title="Pull to refresh"
+                            titleColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'}
+                        />
+                    }
                     ListEmptyComponent={
                         <View style={tw`flex-1 justify-center items-center py-10`}>
-                            <Text style={tw`text-gray-500`}>No patient data found</Text>
+                            <Image
+                                source={{
+                                    uri: 'https://cdn-icons-png.flaticon.com/128/13544/13544419.png',
+                                }}
+                                style={tw`w-16 h-16 mb-3`}
+                                resizeMode="contain"
+                            />
+
+                            <Text style={tw`text-gray-500 text-base`}>
+                                No patient data found
+                            </Text>
                         </View>
                     }
                     showsVerticalScrollIndicator={false}
                 />
-            )}
+            ) : null}
 
             {/* Modals */}
             {renderBranchModal()}

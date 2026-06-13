@@ -378,7 +378,7 @@ export default function App() {
           statusBarTranslucent
           onRequestClose={() => setFloatingModalVisible(false)}>
 
-          <View style={tw`flex-1 justify-center items-center bg-black/50 px-3`}>
+          <View style={tw`flex-1 justify-end items-center bg-black/50 `}>
 
             {/* outside click close */}
             <Pressable
@@ -391,7 +391,7 @@ export default function App() {
               style={[
                 tw`w-full rounded-md overflow-hidden`,
                 {
-                  height: '90%',
+                  height: '80%',
                   backgroundColor: theme === 'dark' ? colors.surface : '#ffffff',
                 },
               ]}>

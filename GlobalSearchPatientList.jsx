@@ -221,17 +221,19 @@ const GlobalSearchPatientList = ({ onClose }) => {
                     </View>
 
                     <View style={tw`flex-row items-center gap-2`}>
-                        <View style={tw`bg-gray-100 px-2 py-1 rounded-full`}>
-                            <Text style={tw`text-xs text-gray-600`}>
+                        <View style={[themed.border, tw` px-2 py-1 rounded-full`]}>
+                            <Text style={[themed.labelTextXs]}>
                                 {item.Age || `${item.AgeYears || ''}Y`}
                             </Text>
                         </View>
 
-                        <Ionicons
-                            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                            size={20}
-                            color={themed.chevronColor}
-                        />
+                        <TouchableOpacity
+                            onPress={() => toggleExpand(item.PatientId)}
+                            style={[themed.border, tw`w-7 h-7 rounded-full items-center justify-center`,]} >
+                            <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={themed.iconColor} />
+                        </TouchableOpacity>
+
+
                     </View>
                 </View>
 
@@ -245,11 +247,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
                                         <Text style={themed.transactionLabel}>Mobile</Text>
                                     </View>
 
-                                    <Text
-                                        style={[
-                                            themed.inputText,
-                                            tw`text-sm font-semibold mt-0.5`,
-                                        ]}>
+                                    <Text style={[themed.inputText, tw`text-sm font-semibold mt-0.5`,]}>
                                         {item.ContactNumber}
                                     </Text>
                                 </View>
@@ -262,9 +260,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
                                         <Text style={themed.transactionLabel}>Email</Text>
                                     </View>
 
-                                    <Text
-                                        style={[themed.inputText, tw`text-sm mt-0.5`]}
-                                        numberOfLines={1}>
+                                    <Text style={[themed.inputText, tw`text-sm mt-0.5`]} numberOfLines={1}>
                                         {item.Email}
                                     </Text>
                                 </View>
@@ -274,11 +270,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
                         <View style={tw`flex-row flex-wrap mb-3`}>
                             <View style={tw`w-1/2 mb-2`}>
                                 <View style={tw`flex-row items-center gap-1`}>
-                                    <Ionicons
-                                        name="calendar-outline"
-                                        size={14}
-                                        color="#9ca3af"
-                                    />
+                                    <Ionicons name="calendar-outline" size={14} color="#9ca3af" />
                                     <Text style={themed.transactionLabel}>DOB</Text>
                                 </View>
 
@@ -289,11 +281,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
 
                             <View style={tw`w-1/2 mb-2`}>
                                 <View style={tw`flex-row items-center gap-1`}>
-                                    <Ionicons
-                                        name="person-outline"
-                                        size={14}
-                                        color="#9ca3af"
-                                    />
+                                    <Ionicons name="person-outline" size={14} color="#9ca3af" />
                                     <Text style={themed.transactionLabel}>Gender</Text>
                                 </View>
 
@@ -306,11 +294,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
                         {item.Address && (
                             <View style={tw`mb-3`}>
                                 <View style={tw`flex-row items-center gap-1`}>
-                                    <Ionicons
-                                        name="location-outline"
-                                        size={14}
-                                        color="#9ca3af"
-                                    />
+                                    <Ionicons name="location-outline" size={14} color="#9ca3af" />
                                     <Text style={themed.transactionLabel}>Address</Text>
                                 </View>
 
@@ -391,7 +375,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
             <View style={[tw`px-4 py-3 border-gray-100`, themed.borderBottom]}>
                 <View style={tw`flex-row items-center justify-between`}>
                     <View>
-                        <Text style={[themed.inputText, tw`text-xl font-bold`]}>
+                        <Text style={[themed.inputText, tw`text-md font-bold`]}>
                             Patient Directory
                         </Text>
 
@@ -406,16 +390,12 @@ const GlobalSearchPatientList = ({ onClose }) => {
                         onPress={onClose}
                         activeOpacity={0.8}
                         style={[
-                            tw`h-10 w-10 rounded-full items-center justify-center`,
+                            tw`h-8 w-8 rounded-full items-center justify-center`,
                             {
                                 backgroundColor: theme === 'dark' ? '#374151' : '#F3F4F6',
                             },
                         ]}>
-                        <Ionicons
-                            name="close"
-                            size={20}
-                            color={theme === 'dark' ? '#FFFFFF' : '#6B7280'}
-                        />
+                        <Ionicons name="close" size={20} color={theme === 'dark' ? '#FFFFFF' : '#6B7280'} />
                     </TouchableOpacity>
                 </View>
             </View>

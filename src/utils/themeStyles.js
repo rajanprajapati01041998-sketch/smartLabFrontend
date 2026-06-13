@@ -158,7 +158,7 @@ export const getThemeStyles = theme => {
 
     transactionLabel: tw.style(
       'text-md',
-      isDark ? 'text-gray-600' : 'text-gray-600',
+      isDark ? 'text-gray-200' : 'text-gray-600',
     ),
 
     // Search / input

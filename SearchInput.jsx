@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import tw from 'twrnc';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useTheme} from './Authorization/ThemeContext';
-import {getThemeStyles} from './src/utils/themeStyles';
+import { useTheme } from './Authorization/ThemeContext';
+import { getThemeStyles } from './src/utils/themeStyles';
 import AnimatedBorder from './AnimatedBorder';
 
 const SearchInput = ({
@@ -17,9 +17,8 @@ const SearchInput = ({
   placeholder = 'Search by name, UHID, or mobile...',
   autoCollapse = true,
 }) => {
-  const {theme} = useTheme();
+  const { theme } = useTheme();
   const themed = getThemeStyles(theme);
-
   const [isExpanded, setIsExpanded] = useState(true);
   const [searchText, setSearchText] = useState('');
 
@@ -73,17 +72,9 @@ const SearchInput = ({
             },
           ]}>
           <AnimatedBorder>
-            <View
-              style={[
-                themed.childScreen2,
-                tw`flex-row items-center rounded-xl overflow-hidden`,
-              ]}>
+            <View style={[themed.childScreen2, tw`flex-row items-center rounded-xl overflow-hidden`,]}>
               <View style={tw`px-3`}>
-                <Icon
-                  name="search-outline"
-                  size={20}
-                  color="#9ca3af"
-                />
+                <Icon name="search-outline" size={20} color="#9ca3af" />
               </View>
 
               <TextInput
@@ -94,30 +85,16 @@ const SearchInput = ({
                 autoFocus
                 returnKeyType="search"
                 onSubmitEditing={handleSearchPress}
-                style={[
-                  themed.inputText,
-                  tw`flex-1 py-3 text-base`,
-                ]}
+                style={[themed.inputText, tw`flex-1 py-2 text-base`,]}
               />
 
               {searchText.length > 0 && (
-                <TouchableOpacity
-                  onPress={handleClear}
-                  style={tw`px-3`}>
-                  <Icon
-                    name="close-circle"
-                    size={18}
-                    color="#9ca3af"
-                  />
+                <TouchableOpacity onPress={handleClear} style={tw`px-3`}>
+                  <Icon name="close-circle" size={18} color="#9ca3af" />
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity
-                onPress={handleSearchPress}
-                style={[
-                  themed.searchButton,
-                  tw`mr-2 p-2`,
-                ]}>
+              <TouchableOpacity onPress={handleSearchPress} style={[themed.searchButton, tw`mr-2 p-2`,]}>
                 <Text style={themed.searchButtonText}>
                   Search
                 </Text>

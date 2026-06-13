@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView, ActivityIndicator, TextInput } from 'react-native'
-import React, { useState, useEffect, useMemo } from 'react'
+import { View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView, ActivityIndicator, TextInput, RefreshControl } from 'react-native'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
@@ -19,14 +19,13 @@ const DashboardAllPatientList = ({ route }) => {
   const [selectedBranches, setSelectedBranches] = useState([])
   const [patientData, setPatientData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [branchSearch, setBranchSearch] = useState('')
   const [searchData, setSearchData] = useState({
     fromDate: new Date().toISOString().split('T')[0],
     toDate: new Date().toISOString().split('T')[0]
   })
   const [expandedIndex, setExpandedIndex] = useState(null);
-
-
 
   // Select All / Unselect All
   const handleSelectAll = () => {
@@ -68,8 +67,6 @@ const DashboardAllPatientList = ({ route }) => {
 
   // Check if all branches are selected
   const isAllSelected = (allBranchInfo || []).length > 0 && selectedBranches.length === (allBranchInfo || []).length;
-
-
 
   const formatToYYYYMMDD = (date) => {
     if (!date) return ''
@@ -117,14 +114,20 @@ const DashboardAllPatientList = ({ route }) => {
   }
 
   // Fetch patient data from API
-  const fetchPatientData = async () => {
+  const fetchPatientData = async (isRefresh = false) => {
     const branchIds = getBranchIdString()
     if (!branchIds) {
       console.log('No branches selected')
+      if (isRefresh) setRefreshing(false)
       return
     }
 
-    setLoading(true)
+    if (isRefresh) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
+
     try {
       const response = await api.get(`Patient/dashboard-patient-view`, {
         params: {
@@ -145,7 +148,11 @@ const DashboardAllPatientList = ({ route }) => {
       console.error('Error fetching patient data:', error)
       setPatientData([])
     } finally {
-      setLoading(false)
+      if (isRefresh) {
+        setRefreshing(false)
+      } else {
+        setLoading(false)
+      }
     }
   }
 
@@ -171,6 +178,15 @@ const DashboardAllPatientList = ({ route }) => {
     })
     setFilterModal(false)
   }
+
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(() => {
+    if (selectedBranches.length > 0) {
+      fetchPatientData(true)
+    } else {
+      setRefreshing(false)
+    }
+  }, [selectedBranches, searchData.fromDate, searchData.toDate])
 
   // Fetch data when selected branches or dates change
   useEffect(() => {
@@ -205,12 +221,12 @@ const DashboardAllPatientList = ({ route }) => {
     <View style={[themed.border_b, tw`p-4 mb-2 rounded-lg`, themed.card]}>
       <View style={tw`flex-row justify-between items-start mb-2`}>
         <View style={tw`flex-1`}>
-          <Text style={[themed.inputText, tw`font-semibold text-lg`]}>{item.PatientName || 'N/A'}</Text>
+          <Text style={[themed.inputText, tw`font-semibold text-md`]}>{item.PatientName || 'N/A'}</Text>
         </View>
         <TouchableOpacity
           onPress={() => handleAccordian(index)}
           style={[
-            tw`w-9 h-9 rounded-full items-center justify-center border`,
+            tw`w-7 h-7 rounded-full items-center justify-center border`,
             {
               backgroundColor: theme === 'dark' ? '#374151' : '#FFFFFF',
               borderColor: '#D1D5DB',
@@ -220,7 +236,7 @@ const DashboardAllPatientList = ({ route }) => {
         >
           <FontAwesome
             name={expandedIndex === index ? 'chevron-up' : 'chevron-down'}
-            size={16}
+            size={14}
             color={themed.iconColor}
           />
         </TouchableOpacity>
@@ -271,16 +287,20 @@ const DashboardAllPatientList = ({ route }) => {
 
           <View style={[tw`mt-2 pt-2 border-t border-gray-100`, tw`flex-row justify-between mb-2`]}>
             <View style={tw`items-center flex-1`}>
-              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Total Amount</Text>
-              <Text style={[themed.inputText, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalBillAmount)}</Text>
+              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Gross</Text>
+              <Text style={[themed.inputText, tw`font-semibold text-sm`]}>{formatCurrency(item?.TotalBillAmount)}</Text>
             </View>
             <View style={tw`items-center flex-1`}>
-              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Paid Amount</Text>
-              <Text style={[tw`text-green-600`, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalPaidAmount)}</Text>
+              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Disc</Text>
+              <Text style={[themed.inputText, tw`font-semibold text-sm`]}>{formatCurrency(item?.TotalDiscountAmountOnBill)}</Text>
             </View>
             <View style={tw`items-center flex-1`}>
-              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Payable Amount</Text>
-              <Text style={[tw`text-orange-600`, tw`font-semibold text-sm`]}>{formatCurrency(item.TotalPatientPayableAmount)}</Text>
+              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Net</Text>
+              <Text style={[tw`text-green-600`, tw`font-semibold text-sm`]}>{formatCurrency(item?.TotalPaidAmount)}</Text>
+            </View>
+            <View style={tw`items-center flex-1`}>
+              <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Collected</Text>
+              <Text style={[tw`text-orange-600`, tw`font-semibold text-sm`]}>{formatCurrency(item?.TotalPatientPayableAmount)}</Text>
             </View>
           </View>
 
@@ -317,43 +337,28 @@ const DashboardAllPatientList = ({ route }) => {
             >
               {/* Header */}
               <View
-                style={[
-                  themed.border_b,
-                  tw`p-4 flex-row justify-between items-center`,
-                ]}
-              >
-                <Text
-                  style={[
-                    themed.modalHeaderTitle,
-                    tw`text-xl font-bold`,
-                  ]}
-                >
+                style={[tw`p-4 flex-row justify-between items-center`,]}>
+                <Text style={[themed.modalHeaderTitle, tw`text-xl font-bold`,]} >
                   Select Branches
                 </Text>
 
                 <TouchableOpacity
                   onPress={() => setBranchModal(false)}
                 >
-                  <MaterialIcons
-                    name="close"
-                    size={24}
-                    color={themed.iconColor}
-                  />
+                  <MaterialIcons name="close" size={24} color={themed.iconColor} />
                 </TouchableOpacity>
               </View>
 
               {/* Search */}
-              <View style={tw`px-4 py-3`}>
-                <View
-                  style={tw`flex-row items-center bg-gray-100 rounded-xl px-3`}
-                >
-                  <MaterialIcons name="search" size={20} color="#9CA3AF" />
-
+              <View style={[themed.searchContainer,tw`mx-2`]}>
+                <View style={themed.searchBox}>
+                  <MaterialIcons name="search" size={20} color={themed.iconColor} />
                   <TextInput
                     value={branchSearch}
                     onChangeText={setBranchSearch}
                     placeholder="Search Branch"
-                    style={[themed.searchInput, tw` py-3 ml-2`]}
+                    placeholderTextColor={themed.inputPlaceholder}
+                    style={themed.searchInput}
                   />
                 </View>
               </View>
@@ -361,7 +366,7 @@ const DashboardAllPatientList = ({ route }) => {
               {/* Select All Checkbox */}
               <TouchableOpacity
                 onPress={handleSelectAll}
-                style={tw`p-4 flex-row items-center `}
+                style={tw`p-4 flex-row items-center`}
               >
                 <View
                   style={[
@@ -377,7 +382,7 @@ const DashboardAllPatientList = ({ route }) => {
                   )}
                 </View>
 
-                <Text style={[themed.labelText, tw`font-bold text-base`,]} >
+                <Text style={[themed.labelText, tw`font-bold text-base`]}>
                   Select All
                 </Text>
               </TouchableOpacity>
@@ -398,7 +403,7 @@ const DashboardAllPatientList = ({ route }) => {
                         toggleBranchSelection(branch)
                       }
                       style={[themed.border,
-                      tw`p-4 flex-row `,
+                      tw`p-4 flex-row`,
                       isSelected && {
                         backgroundColor:
                           'rgba(59,130,246,0.08)',
@@ -416,7 +421,7 @@ const DashboardAllPatientList = ({ route }) => {
                         ]}
                       >
                         {isSelected && (
-                          <MaterialIcons name="check" size={16}   color="white" />
+                          <MaterialIcons name="check" size={16} color="white" />
                         )}
                       </View>
 
@@ -441,8 +446,6 @@ const DashboardAllPatientList = ({ route }) => {
                   );
                 })}
               </ScrollView>
-
-              {/* Footer */}
 
             </View>
           </TouchableWithoutFeedback>
@@ -522,12 +525,22 @@ const DashboardAllPatientList = ({ route }) => {
         </View>
       )}
 
-      {/* Patient List */}
+      {/* Patient List with Pull-to-Refresh */}
       {!loading && (
         <FlatList
           data={patientData}
           keyExtractor={(item, index) => item.BillNo || index.toString()}
           renderItem={renderPatientItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#3b82f6']}
+              tintColor="#3b82f6"
+              title="Pull to refresh"
+              titleColor="#6b7280"
+            />
+          }
           ListEmptyComponent={
             <View style={tw`flex-1 justify-center items-center py-10`}>
               <MaterialIcons name="folder-open" size={48} color="#D1D5DB" />
