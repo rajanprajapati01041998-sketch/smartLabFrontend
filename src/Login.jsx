@@ -440,10 +440,7 @@ const Login = ({ navigation }) => {
 
             <View style={tw`items-center mt-10`}>
               <Text style={tw`text-gray-500`}>
-                Gravity Web Technologies
-              </Text>
-              <Text style={tw`text-gray-400 text-xs mt-1`}>
-                Version 1.0.0
+                Gravity Web Technologies Pvt.Ltd.
               </Text>
             </View>
           </View>

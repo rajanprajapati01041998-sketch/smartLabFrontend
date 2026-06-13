@@ -20,7 +20,10 @@ const DashboardTotalCollectionList = ({ route }) => {
     const [patientData, setPatientData] = useState([])
     const [branchSearch, setBranchSearch] = useState('')
     const [loading, setLoading] = useState(false)
-    const [refreshing, setRefreshing] = useState(false) // Add refreshing state
+    const [refreshing, setRefreshing] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false) // For bottom loading
+    const [hasMoreData, setHasMoreData] = useState(true) // Track if more data exists
+    const [currentPage, setCurrentPage] = useState(1) // Track current page
     const [searchData, setSearchData] = useState({
         fromDate: new Date().toISOString().split('T')[0],
         toDate: new Date().toISOString().split('T')[0]
@@ -111,15 +114,27 @@ const DashboardTotalCollectionList = ({ route }) => {
         return selectedBranches.map(b => b.branchId).join(',')
     }
 
-    // Fetch patient data from API
-    const fetchPatientData = async () => {
+    // Reset pagination when filters change
+    const resetPagination = () => {
+        setCurrentPage(1)
+        setHasMoreData(true)
+        setPatientData([])
+    }
+
+    // Fetch patient data from API with pagination
+    const fetchPatientData = async (page = 1, isLoadMore = false) => {
         const branchIds = getBranchIdString()
         if (!branchIds) {
             console.log('No branches selected')
             return
         }
 
-        setLoading(true)
+        if (isLoadMore) {
+            setLoadingMore(true)
+        } else {
+            setLoading(true)
+        }
+
         try {
             const response = await api.get(`Patient/dashboard-collection-view`, {
                 params: {
@@ -128,29 +143,59 @@ const DashboardTotalCollectionList = ({ route }) => {
                     TypeId: 1,
                     UserId: userId,
                     FromDate: searchData.fromDate,
-                    ToDate: searchData.toDate
+                    ToDate: searchData.toDate,
+                    PageNumber: page,
+                    PageSize: 20 // Adjust page size as needed
                 }
             })
             console.log("list", response)
 
             // Extract data from nested response structure
             if (response.data && response.data.success) {
-                setPatientData(response.data.data || [])
+                const newData = response.data.data || []
+                const totalCount = response.data.totalCount || 0
+                const currentDataCount = isLoadMore ? patientData.length + newData.length : newData.length
+
+                // Check if there's more data to load
+                setHasMoreData(currentDataCount < totalCount)
+
+                if (isLoadMore) {
+                    setPatientData(prevData => [...prevData, ...newData])
+                } else {
+                    setPatientData(newData)
+                }
             } else {
-                setPatientData([])
+                if (!isLoadMore) setPatientData([])
+                setHasMoreData(false)
             }
         } catch (error) {
             console.error('Error fetching patient data:', error)
-            setPatientData([])
+            if (!isLoadMore) setPatientData([])
+            setHasMoreData(false)
         } finally {
-            setLoading(false)
+            if (isLoadMore) {
+                setLoadingMore(false)
+            } else {
+                setLoading(false)
+            }
+        }
+    }
+
+    // Load more data when reaching bottom
+    const loadMoreData = () => {
+        if (!loadingMore && hasMoreData && !loading && !refreshing) {
+            const nextPage = currentPage + 1
+            setCurrentPage(nextPage)
+            fetchPatientData(nextPage, true)
         }
     }
 
     // Pull-to-refresh handler
     const onRefresh = async () => {
         setRefreshing(true)
-        await fetchPatientData()
+        resetPagination()
+        setCurrentPage(1)
+        await fetchPatientData(1, false)
         setRefreshing(false)
     }
 
@@ -177,13 +222,15 @@ const DashboardTotalCollectionList = ({ route }) => {
             fromDate: formattedFromDate,
             toDate: formattedToDate
         })
+        resetPagination() // Reset pagination when date changes
         setFilterModal(false)
     }
 
     // Fetch data when selected branches or dates change
     useEffect(() => {
         if (selectedBranches.length > 0) {
-            fetchPatientData()
+            resetPagination()
+            fetchPatientData(1, false)
         }
     }, [selectedBranches, searchData.fromDate, searchData.toDate])
 
@@ -206,6 +253,17 @@ const DashboardTotalCollectionList = ({ route }) => {
 
     const handleAccordian = (index) => {
         setExpandedIndex(expandedIndex === index ? null : index);
+    };
+
+    // Render footer for bottom loading indicator
+    const renderFooter = () => {
+        if (!loadingMore) return null;
+        return (
+            <View style={tw`py-4 justify-center items-center`}>
+                <ActivityIndicator size="small" color={themed.iconColor} />
+                <Text style={[themed.inputText, tw`text-xs mt-2`]}>Loading more...</Text>
+            </View>
+        );
     };
 
     // Render patient item based on actual API response structure
@@ -449,9 +507,6 @@ const DashboardTotalCollectionList = ({ route }) => {
                 </View>
             </View>
 
-            {/* Summary Section */}
-            {/* {!loading && patientData.length > 0 && renderSummary()} */}
-
             {/* Loading Indicator */}
             {loading && !refreshing && (
                 <View style={tw`flex-1 justify-center items-center`}>
@@ -460,11 +515,11 @@ const DashboardTotalCollectionList = ({ route }) => {
                 </View>
             )}
 
-            {/* Patient List with Pull-to-Refresh */}
+            {/* Patient List with Pull-to-Refresh and Pull-to-Bottom Load */}
             {!loading || refreshing ? (
                 <FlatList
                     data={patientData}
-                    keyExtractor={(item, index) => item.BillNo || index.toString()}
+                    keyExtractor={(item, index) => `${item.BillNo || index}-${index}`}
                     renderItem={renderPatientItem}
                     refreshControl={
                         <RefreshControl
@@ -476,18 +531,19 @@ const DashboardTotalCollectionList = ({ route }) => {
                             titleColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'}
                         />
                     }
+                    onEndReached={loadMoreData}
+                    onEndReachedThreshold={0.3} // Trigger when 30% from bottom
+                    ListFooterComponent={renderFooter}
                     ListEmptyComponent={
                         <View style={tw`flex-1 justify-center items-center py-10`}>
-                            <Image
-                                source={{
-                                    uri: 'https://cdn-icons-png.flaticon.com/128/13544/13544419.png',
-                                }}
-                                style={tw`w-16 h-16 mb-3`}
-                                resizeMode="contain"
+                            <Icon
+                                name="database-search-outline"
+                                size={70}
+                                color={themed.iconColor}
                             />
 
                             <Text style={tw`text-gray-500 text-base`}>
-                                No patient data found
+                                No data found
                             </Text>
                         </View>
                     }
