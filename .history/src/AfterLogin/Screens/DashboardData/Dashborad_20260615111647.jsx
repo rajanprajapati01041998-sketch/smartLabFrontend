@@ -139,8 +139,8 @@ const LabDashboard = () => {
 
   const selectedBranchIds =
     selectedBranches.length > 0
-      ? selectedBranches.map((b) => b.BranchId).join(',')
-      : allBranchInfo?.map((b) => b.BranchId).join(',');
+      ? selectedBranches.map((b) => b.branchId).join(',')
+      : allBranchInfo?.map((b) => b.branchId).join(',');
 
   const clearAllBranches = () => {
     setSelectedBranches([]);
@@ -185,9 +185,9 @@ const LabDashboard = () => {
               activeOpacity={0.7}
             >
               <Text style={themed.headerTitle}>
-                {allBranchInfo[0]?.BranchName}
+                {/* {userData?.user?.name || userData?.name} */}
+                {allBranchInfo}
               </Text>
-              
               <MaterialIcons
                 name="arrow-drop-down"
                 size={24}
@@ -208,7 +208,11 @@ const LabDashboard = () => {
               onPress={() => setFilterModal(true)}
               style={themed.filterButton}
             >
-              <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon}/>
+              <MaterialIcons
+                name="calendar-month"
+                size={18}
+                color={themed.filterButtonIcon}
+              />
               <Text style={themed.filterButtonText}>
                 Filter
               </Text>
@@ -228,6 +232,7 @@ const LabDashboard = () => {
 
             <View style={tw`flex-row items-center px-3 py-2`}>
               <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

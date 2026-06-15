@@ -16,33 +16,31 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../../../Authorization/api';
 import { useAuth } from '../../../../Authorization/AuthContext';
 import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import Feather from 'react-native-vector-icons/Feather';
-import { Accordion } from 'react-native-paper/lib/typescript/components/List/List';
 import AnimatedBorder from '../../../../AnimatedBorder';
-
+import { getAllBranchList } from '../../../utils/getBranchList';
 
 const CenterInfo = ({ condition }) => {
-  const [allBranchInfo, setAllBranchInfo] = useState([]);
+  const [allBranchInfoPage, setAllBranchInfoPage] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [ratePannel, setRatePannel] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [uhid, setUhid] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showCenterInfo, setShowCenterInfo] = useState(false);
+  const [showCenterInfo, setShowCenterInfo] = useState(true); // Changed to true for better UX
   const [branchDetails, setBranchDetails] = useState(null);
   const [branchSearch, setBranchSearch] = useState('');
   const [selectedId, setSelectedId] = useState('1');
   const [patientSearchModal, setPatientSearchModal] = useState(false);
   const [patientSearchList, setPatientSearchList] = useState([]);
   const [patientSearchLoading, setPatientSearchLoading] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(null)
-  const [accordian, setAccordian] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(null);
+  const [accordian, setAccordian] = useState(false);
   const [lastPress, setLastPress] = useState(0);
 
   const { theme } = useTheme();
@@ -64,7 +62,8 @@ const CenterInfo = ({ condition }) => {
     loginBranchId,
     centerLoginBranchId,
     setAddBarcode,
-    userId
+    userId,
+    setAllBranchInfo
   } = useAuth();
 
   const currentBranchId = selectedItem?.BranchId || loginBranchId;
@@ -72,19 +71,18 @@ const CenterInfo = ({ condition }) => {
   useFocusEffect(
     useCallback(() => {
       getBranchInfo();
-    }, []),
+    }, [])
   );
 
   useEffect(() => {
-    const BranchId =
-      selectedItem?.BranchId || loginBranchId || centerLoginBranchId;
+    const BranchId = selectedItem?.BranchId || loginBranchId || centerLoginBranchId;
 
     if (BranchId) {
       getBranchDetails(BranchId);
       getrateListPanel(BranchId);
       setCenterLoginBranchId(BranchId);
     }
-  }, [selectedItem, loginBranchId]);
+  }, [selectedItem, loginBranchId, centerLoginBranchId, setCenterLoginBranchId]);
 
   useEffect(() => {
     setUhid('');
@@ -93,33 +91,41 @@ const CenterInfo = ({ condition }) => {
     setPatientSearchModal(false);
   }, [selectedId]);
 
+  // Fixed: Added safety check for allBranchInfoPage
   const filteredBranchList = useMemo(() => {
-    if (!branchSearch?.trim()) return allBranchInfo;
+    if (!allBranchInfoPage || !Array.isArray(allBranchInfoPage)) return [];
+    if (!branchSearch?.trim()) return allBranchInfoPage;
 
     const searchValue = branchSearch.trim().toLowerCase();
 
-    return allBranchInfo.filter(item => {
+    return allBranchInfoPage.filter(item => {
       const branchName = item?.branchName?.toLowerCase() || '';
       const branchCode = String(item?.branchCode || '').toLowerCase();
 
-      return (
-        branchName.includes(searchValue) || branchCode.includes(searchValue)
-      );
+      return branchName.includes(searchValue) || branchCode.includes(searchValue);
     });
-  }, [allBranchInfo, branchSearch]);
+  }, [allBranchInfoPage, branchSearch]);
 
   const getBranchInfo = async () => {
     try {
-      const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
-      console.log("branch list=", response.data)
-      const data = await AsyncStorage.getItem('AllBranch');
-      setAllBranchInfo(response.data.data);
-      const defaultBranch =
-        response?.data?.data.find(item => item.BranchId === loginBranchId) ||
-        response?.data?.data[0];
-      setSelectedItem(defaultBranch);
+      const response = await getAllBranchList(loginBranchId, userId);
+      console.log("branch list=", response.data);
+      
+      // Fixed: Ensure we're setting the data correctly
+      if (response?.data) {
+        setAllBranchInfo(response.data);
+        const branchData = response.data?.data || [];
+        setAllBranchInfoPage(branchData);
+        
+        const defaultBranch = branchData.find(item => item.BranchId === loginBranchId) ||
+          branchData[0];
+        setSelectedItem(defaultBranch);
+      } else {
+        setAllBranchInfoPage([]);
+      }
     } catch (error) {
       console.log('Error reading branches', error);
+      setAllBranchInfoPage([]);
     }
   };
 
@@ -127,16 +133,15 @@ const CenterInfo = ({ condition }) => {
     try {
       if (!loginBranchId) return;
 
-      const response = await api.get(
-        `Branch/branch-details?BranchId=${BranchId}`,
-      );
+      const response = await api.get(`Branch/branch-details?BranchId=${BranchId}`);
 
-      setAddBarcode(response.data?.data?.[0]?.isPrePrintedBarcode);
+      if (response?.data?.data?.[0]?.isPrePrintedBarcode !== undefined) {
+        setAddBarcode(response.data.data[0].isPrePrintedBarcode);
+      }
 
-      const details =
-        response?.data?.data && Array.isArray(response.data.data)
-          ? response.data.data[0]
-          : response?.data?.data || null;
+      const details = response?.data?.data && Array.isArray(response.data.data)
+        ? response.data.data[0]
+        : response?.data?.data || null;
 
       setBranchDetails(details);
     } catch (error) {
@@ -149,8 +154,10 @@ const CenterInfo = ({ condition }) => {
     try {
       if (!loginBranchId) return;
       const response = await api.get(`Rate/rate-list/${BranchId}`);
-      setCorporateId(response.data?.[0]?.CorporateId);
-      setRatePannel(response.data);
+      if (response?.data?.[0]?.CorporateId) {
+        setCorporateId(response.data[0].CorporateId);
+      }
+      setRatePannel(response?.data || null);
     } catch (error) {
       console.log('getrateListPanel', error);
       setRatePannel(null);
@@ -167,9 +174,7 @@ const CenterInfo = ({ condition }) => {
       setLoading(true);
 
       const response = await api.get(
-        `Patient/get-by-uhid?uhid=${encodeURIComponent(
-          selectedUhid,
-        )}&BranchId=${currentBranchId}`,
+        `Patient/get-by-uhid?uhid=${encodeURIComponent(selectedUhid)}&BranchId=${currentBranchId}`
       );
 
       const patient = response?.data?.data;
@@ -207,9 +212,7 @@ const CenterInfo = ({ condition }) => {
       setPatientSearchModal(false);
 
       const response = await api.get(
-        `Patient/search-patient-master?searchText=${encodeURIComponent(
-          uhid.trim(),
-        )}&BranchId=${currentBranchId}`,
+        `Patient/search-patient-master?searchText=${encodeURIComponent(uhid.trim())}&BranchId=${currentBranchId}`
       );
 
       const list = response?.data?.data || [];
@@ -271,27 +274,30 @@ const CenterInfo = ({ condition }) => {
   };
 
   const handleAccordian = (index) => {
-    setCurrentIndex(index)
-    setAccordian(!accordian)
-  }
+    // Fixed: Close accordion if clicking the same item, open new one if different
+    if (currentIndex === index && accordian) {
+      setAccordian(false);
+      setCurrentIndex(null);
+    } else {
+      setCurrentIndex(index);
+      setAccordian(true);
+    }
+  };
 
   const handleCardPress = (item, index) => {
     const now = Date.now();
+    const timeDiff = now - lastPress;
 
-    if (now - lastPress < 300) {
-      // Double click
+    if (timeDiff < 300 && timeDiff > 0) {
+      // Double click - select patient
       handleSelectPatient(item);
     } else {
-      // Single click
+      // Single click - toggle accordion
       handleAccordian(index);
     }
 
     setLastPress(now);
   };
-  const handleAccordiansClose = () => {
-    setCurrentIndex(null)
-    setAccordian(false)
-  }
 
   const renderBranchItem = ({ item }) => {
     const isSelected = selectedItem?.BranchId === item?.BranchId;
@@ -322,18 +328,18 @@ const CenterInfo = ({ condition }) => {
   };
 
   const renderPatientItem = ({ item, index }) => {
+    const isExpanded = accordian && currentIndex === index;
+    
     return (
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => handleSelectPatient(item)}
+        onPress={() => handleCardPress(item, index)}
         style={[
           themed.globalCard,
           themed.border,
           tw`border rounded-2xl p-4 mb-3`,
         ]}>
-        <TouchableOpacity
-          onPress={() => handleCardPress(item, index)}
-          style={tw`flex-row justify-between items-start `}>
+        <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`flex-1 pr-3`}>
             <Text
               numberOfLines={1}
@@ -357,52 +363,54 @@ const CenterInfo = ({ condition }) => {
               {item?.RegistrationDate || 'N/A'}
             </Text>
           </View>
-        </TouchableOpacity>
-        {accordian && currentIndex == index && <View>
-          <View style={[themed.border, tw`border-t my-3`]} />
-          <View style={tw`flex-row justify-between`}>
-            <View style={tw`flex-1 items-center flex-row gap-2`}>
-              <FontAwesome name='mobile' size={20} color={themed.iconColor} />
-              <Text style={[themed.inputText, tw`font-semibold`]}>
-                {item?.ContactNumber || ''}
-              </Text>
+        </View>
+        
+        {isExpanded && (
+          <View>
+            <View style={[themed.border, tw`border-t my-3`]} />
+            <View style={tw`flex-row justify-between`}>
+              <View style={tw`flex-1 items-center flex-row gap-2`}>
+                <FontAwesome name="mobile" size={20} color={themed.iconColor} />
+                <Text style={[themed.inputText, tw`font-semibold`]}>
+                  {item?.ContactNumber || ''}
+                </Text>
+              </View>
+
+              <View style={tw`flex-1 items-center flex-row gap-2`}>
+                <FontAwesome name="calendar" size={16} color={themed.iconColor} />
+                <Text style={[themed.inputText, tw`font-semibold`]}>
+                  {item?.Age || 'N/A'}
+                </Text>
+              </View>
             </View>
 
-            <View style={tw`flex-1 items-center flex-row gap-2`}>
-              <FontAwesome name='calendar' size={16} color={themed.iconColor} />
-              <Text style={[themed.inputText, tw`font-semibold `]}>
-                {item?.Age || 'N/A'}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              tw`mt-3 p-3 rounded-xl`,
-              {
-                backgroundColor:
-                  theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f8fafc',
-              },
-            ]}>
-            <Text style={[themed.labelText, tw`text-[11px] uppercase`]}>
-              Center
-            </Text>
-            <Text style={[themed.inputText, tw`font-medium mt-1`]}>
-              {item?.BranchName || 'N/A'}
-            </Text>
-          </View>
-
-          {!!item?.Address && (
-            <View style={tw`mt-3`}>
+            <View
+              style={[
+                tw`mt-3 p-3 rounded-xl`,
+                {
+                  backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#f8fafc',
+                },
+              ]}>
               <Text style={[themed.labelText, tw`text-[11px] uppercase`]}>
-                Address
+                Center
               </Text>
-              <Text style={[themed.inputText, tw`mt-1 text-sm`]}>
-                {item?.Address}
+              <Text style={[themed.inputText, tw`font-medium mt-1`]}>
+                {item?.BranchName || 'N/A'}
               </Text>
             </View>
-          )}
-        </View>}
+
+            {!!item?.Address && (
+              <View style={tw`mt-3`}>
+                <Text style={[themed.labelText, tw`text-[11px] uppercase`]}>
+                  Address
+                </Text>
+                <Text style={[themed.inputText, tw`mt-1 text-sm`]}>
+                  {item?.Address}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -417,7 +425,7 @@ const CenterInfo = ({ condition }) => {
 
         <Entypo
           style={[tw`rounded-full p-1`, themed.modalCloseButton]}
-          name={showCenterInfo ? 'chevron-down' : 'chevron-up'}
+          name={showCenterInfo ? 'chevron-up' : 'chevron-down'}
           size={20}
           color={themed.chevronColor}
         />
@@ -439,11 +447,7 @@ const CenterInfo = ({ condition }) => {
                   {selectedItem?.BranchName || 'Select Center'}
                 </Text>
 
-                <Icon
-                  name="chevron-down"
-                  size={18}
-                  color={themed.chevronColor}
-                />
+                <Icon name="chevron-down" size={18} color={themed.chevronColor} />
               </TouchableOpacity>
             </View>
 
@@ -478,8 +482,8 @@ const CenterInfo = ({ condition }) => {
                         borderColor: active
                           ? '#3376ea'
                           : theme === 'dark'
-                            ? '#475569'
-                            : '#d1d5db',
+                          ? '#475569'
+                          : '#d1d5db',
                         backgroundColor: active
                           ? theme === 'dark'
                             ? 'rgba(51,118,234,0.18)'
@@ -494,13 +498,11 @@ const CenterInfo = ({ condition }) => {
                           borderColor: active
                             ? '#3376ea'
                             : theme === 'dark'
-                              ? '#cbd5e1'
-                              : '#6b7280',
+                            ? '#cbd5e1'
+                            : '#6b7280',
                         },
                       ]}>
-                      {active && (
-                        <View style={tw`w-2 h-2 rounded-full bg-blue-600`} />
-                      )}
+                      {active && <View style={tw`w-2 h-2 rounded-full bg-blue-600`} />}
                     </View>
 
                     <Text
@@ -510,8 +512,8 @@ const CenterInfo = ({ condition }) => {
                           color: active
                             ? '#3376ea'
                             : theme === 'dark'
-                              ? '#e5e7eb'
-                              : '#111827',
+                            ? '#e5e7eb'
+                            : '#111827',
                         },
                       ]}>
                       {item.label}
@@ -537,25 +539,16 @@ const CenterInfo = ({ condition }) => {
                       placeholder={`Search ${selectedSearchType.label}`}
                       placeholderTextColor={themed.inputPlaceholder}
                       keyboardType={
-                        selectedSearchType.value === 'ContactNo'
-                          ? 'number-pad'
-                          : 'default'
+                        selectedSearchType.value === 'ContactNo' ? 'number-pad' : 'default'
                       }
-                      style={[
-                        themed.inputText,
-                        tw`h-12 pr-12`,
-                      ]}
+                      style={[themed.inputText, tw`h-12 pr-12`]}
                     />
 
                     {uhid?.length > 0 && (
                       <TouchableOpacity
                         onPress={() => setUhid('')}
                         style={tw`absolute right-3 top-3`}>
-                        <Feather
-                          name="x-circle"
-                          size={20}
-                          color={themed.inputPlaceholder}
-                        />
+                        <Feather name="x-circle" size={20} color={themed.inputPlaceholder} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -566,13 +559,10 @@ const CenterInfo = ({ condition }) => {
                 onPress={searchPatientMaster}
                 disabled={patientSearchLoading}
                 style={tw`h-14 w-22 rounded-xl bg-blue-500 justify-center items-center`}>
-
                 {patientSearchLoading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={tw`text-white font-medium`}>
-                    Search
-                  </Text>
+                  <Text style={tw`text-white font-medium`}>Search</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -587,6 +577,7 @@ const CenterInfo = ({ condition }) => {
         </>
       )}
 
+      {/* Branch Selection Modal */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -601,7 +592,7 @@ const CenterInfo = ({ condition }) => {
             setBranchSearch('');
           }}>
           <View style={tw`flex-1 bg-black/50 justify-end`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
               <View
                 style={[
                   themed.childScreen,
@@ -618,11 +609,7 @@ const CenterInfo = ({ condition }) => {
                       setIsModalVisible(false);
                       setBranchSearch('');
                     }}>
-                    <MaterialIcons
-                      name="close"
-                      size={24}
-                      color={themed.chevronColor}
-                    />
+                    <MaterialIcons name="close" size={24} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
 
@@ -644,11 +631,7 @@ const CenterInfo = ({ condition }) => {
 
                   {branchSearch ? (
                     <TouchableOpacity onPress={() => setBranchSearch('')}>
-                      <MaterialIcons
-                        name="close"
-                        size={20}
-                        color={themed.chevronColor}
-                      />
+                      <MaterialIcons name="close" size={20} color={themed.chevronColor} />
                     </TouchableOpacity>
                   ) : null}
                 </View>
@@ -673,6 +656,7 @@ const CenterInfo = ({ condition }) => {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* Patient Search Modal */}
       <Modal
         visible={patientSearchModal}
         transparent
@@ -680,7 +664,7 @@ const CenterInfo = ({ condition }) => {
         onRequestClose={() => setPatientSearchModal(false)}>
         <TouchableWithoutFeedback onPress={() => setPatientSearchModal(false)}>
           <View style={tw`flex-1 bg-black/50 justify-end`}>
-            <TouchableWithoutFeedback onPress={() => { }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
               <View
                 style={[
                   themed.childScreen,
@@ -693,11 +677,7 @@ const CenterInfo = ({ condition }) => {
                   </Text>
 
                   <TouchableOpacity onPress={() => setPatientSearchModal(false)}>
-                    <MaterialIcons
-                      name="close"
-                      size={24}
-                      color={themed.chevronColor}
-                    />
+                    <MaterialIcons name="close" size={24} color={themed.chevronColor} />
                   </TouchableOpacity>
                 </View>
 

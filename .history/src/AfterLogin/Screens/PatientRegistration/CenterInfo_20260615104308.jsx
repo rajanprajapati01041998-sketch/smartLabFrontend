@@ -117,7 +117,23 @@ const CenterInfo = ({ condition }) => {
       const defaultBranch =
         response?.data?.data.find(item => item.BranchId === loginBranchId) ||
         response?.data?.data[0];
+
       setSelectedItem(defaultBranch);
+
+
+      // if (data) {
+      //   const parsedData = JSON.parse(data);
+      //   console.log("storage:", parsedData)
+      //   setAllBranchInfo(parsedData);
+
+      //   if (parsedData.length > 0) {
+      //     const defaultBranch =
+      //       parsedData.find(item => item.BranchId === loginBranchId) ||
+      //       parsedData[0];
+
+      //     setSelectedItem(defaultBranch);
+      //   }
+      // }
     } catch (error) {
       console.log('Error reading branches', error);
     }

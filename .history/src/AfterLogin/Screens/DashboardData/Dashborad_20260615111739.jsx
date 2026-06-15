@@ -31,11 +31,11 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import { useDispatch } from 'react-redux';
 import { increment } from '../../../Redux/features/counterSlice';
-  import { getAllBranchList } from '../../../utils/getBranchList';
+import { getAllBranchList } from '../../../utils/getBranchList';
 
 
 const LabDashboard = () => {
-  const { userData, deviceData, loginBranchId, updateFlag, latitude, longitude,userId } = useAuth();
+  const { userData, deviceData, loginBranchId, updateFlag, latitude, longitude, userId } = useAuth();
   const { dashboardWallet, walletData } = useDash();
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -46,7 +46,7 @@ const LabDashboard = () => {
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [allBranchInfo,setAllBranchInfo] = useState([])
+  const [allBranchInfo, setAllBranchInfo] = useState([])
   const [branchModal, setBranchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectAll, setSelectAll] = useState(false);
@@ -68,11 +68,11 @@ const LabDashboard = () => {
 
   const getAllBranchListCAllApi = async () => {
     try {
-      const response = await(getAllBranchList(loginBranchId,userId))
-      console.log("all branch list:",response)
+      const response = await (getAllBranchList(loginBranchId, userId))
+      console.log("all branch list:", response)
       setAllBranchInfo(response?.data?.data)
     } catch (error) {
-      console.loh("branch list error:",error)
+      console.loh("branch list error:", error)
     }
   }
 
@@ -139,8 +139,8 @@ const LabDashboard = () => {
 
   const selectedBranchIds =
     selectedBranches.length > 0
-      ? selectedBranches.map((b) => b.BranchId).join(',')
-      : allBranchInfo?.map((b) => b.BranchId).join(',');
+      ? selectedBranches.map((b) => b.branchId).join(',')
+      : allBranchInfo?.map((b) => b.branchId).join(',');
 
   const clearAllBranches = () => {
     setSelectedBranches([]);
@@ -184,10 +184,12 @@ const LabDashboard = () => {
               style={tw`flex-row items-center mb-1`}
               activeOpacity={0.7}
             >
-              <Text style={themed.headerTitle}>
-                {allBranchInfo[0]?.BranchName}
-              </Text>
-              
+
+              {/* {userData?.user?.name || userData?.name} */}
+              {allBranchInfo.map(BranchName)=>{
+                <Text style={themed.headerTitle}>   </Text>
+              }}
+
               <MaterialIcons
                 name="arrow-drop-down"
                 size={24}
@@ -208,7 +210,11 @@ const LabDashboard = () => {
               onPress={() => setFilterModal(true)}
               style={themed.filterButton}
             >
-              <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon}/>
+              <MaterialIcons
+                name="calendar-month"
+                size={18}
+                color={themed.filterButtonIcon}
+              />
               <Text style={themed.filterButtonText}>
                 Filter
               </Text>
@@ -228,6 +234,7 @@ const LabDashboard = () => {
 
             <View style={tw`flex-row items-center px-3 py-2`}>
               <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

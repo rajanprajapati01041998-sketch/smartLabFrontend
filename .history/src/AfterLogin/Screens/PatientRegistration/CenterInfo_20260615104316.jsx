@@ -117,7 +117,11 @@ const CenterInfo = ({ condition }) => {
       const defaultBranch =
         response?.data?.data.find(item => item.BranchId === loginBranchId) ||
         response?.data?.data[0];
+
       setSelectedItem(defaultBranch);
+
+
+     
     } catch (error) {
       console.log('Error reading branches', error);
     }

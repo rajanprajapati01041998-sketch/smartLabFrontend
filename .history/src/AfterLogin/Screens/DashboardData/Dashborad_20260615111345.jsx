@@ -69,7 +69,7 @@ const LabDashboard = () => {
   const getAllBranchListCAllApi = async () => {
     try {
       const response = await(getAllBranchList(loginBranchId,userId))
-      console.log("all branch list:",response)
+      cons
       setAllBranchInfo(response?.data?.data)
     } catch (error) {
       console.loh("branch list error:",error)
@@ -106,7 +106,7 @@ const LabDashboard = () => {
   const filteredBranches = useMemo(() => {
     return (
       allBranchInfo?.filter((branch) =>
-        branch.BranchName?.toLowerCase().includes(searchQuery.toLowerCase())
+        branch.branchName?.toLowerCase().includes(searchQuery.toLowerCase())
       ) || []
     );
   }, [allBranchInfo, searchQuery]);
@@ -139,8 +139,8 @@ const LabDashboard = () => {
 
   const selectedBranchIds =
     selectedBranches.length > 0
-      ? selectedBranches.map((b) => b.BranchId).join(',')
-      : allBranchInfo?.map((b) => b.BranchId).join(',');
+      ? selectedBranches.map((b) => b.branchId).join(',')
+      : allBranchInfo?.map((b) => b.branchId).join(',');
 
   const clearAllBranches = () => {
     setSelectedBranches([]);
@@ -185,9 +185,8 @@ const LabDashboard = () => {
               activeOpacity={0.7}
             >
               <Text style={themed.headerTitle}>
-                {allBranchInfo[0]?.BranchName}
+                {userData?.user?.name || userData?.name}
               </Text>
-              
               <MaterialIcons
                 name="arrow-drop-down"
                 size={24}
@@ -208,7 +207,11 @@ const LabDashboard = () => {
               onPress={() => setFilterModal(true)}
               style={themed.filterButton}
             >
-              <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon}/>
+              <MaterialIcons
+                name="calendar-month"
+                size={18}
+                color={themed.filterButtonIcon}
+              />
               <Text style={themed.filterButtonText}>
                 Filter
               </Text>
@@ -228,6 +231,7 @@ const LabDashboard = () => {
 
             <View style={tw`flex-row items-center px-3 py-2`}>
               <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -465,7 +469,7 @@ const LabDashboard = () => {
 
                           {/* NAME */}
                           <Text style={[themed.listItemText, tw`flex-1 ml-2`]}>
-                            {item.BranchName}
+                            {item.branchName}
                           </Text>
                         </View>
 

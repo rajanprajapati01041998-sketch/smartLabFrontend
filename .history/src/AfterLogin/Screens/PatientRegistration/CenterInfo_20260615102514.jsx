@@ -64,10 +64,9 @@ const CenterInfo = ({ condition }) => {
     loginBranchId,
     centerLoginBranchId,
     setAddBarcode,
-    userId
   } = useAuth();
 
-  const currentBranchId = selectedItem?.BranchId || loginBranchId;
+  const currentBranchId = selectedItem?.branchId || loginBranchId;
 
   useFocusEffect(
     useCallback(() => {
@@ -76,13 +75,13 @@ const CenterInfo = ({ condition }) => {
   );
 
   useEffect(() => {
-    const BranchId =
-      selectedItem?.BranchId || loginBranchId || centerLoginBranchId;
+    const branchId =
+      selectedItem?.branchId || loginBranchId || centerLoginBranchId;
 
-    if (BranchId) {
-      getBranchDetails(BranchId);
-      getrateListPanel(BranchId);
-      setCenterLoginBranchId(BranchId);
+    if (branchId) {
+      getBranchDetails(branchId);
+      getrateListPanel(branchId);
+      setCenterLoginBranchId(branchId);
     }
   }, [selectedItem, loginBranchId]);
 
@@ -110,25 +109,32 @@ const CenterInfo = ({ condition }) => {
 
   const getBranchInfo = async () => {
     try {
-      const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
-      console.log("branch list=", response.data)
+      const response = await api.get(`Branch/branch-user-list?branchId{1&userId=1`)
       const data = await AsyncStorage.getItem('AllBranch');
-      setAllBranchInfo(response.data.data);
-      const defaultBranch =
-        response?.data?.data.find(item => item.BranchId === loginBranchId) ||
-        response?.data?.data[0];
-      setSelectedItem(defaultBranch);
+
+      if (data) {
+        const parsedData = JSON.parse(data);
+        setAllBranchInfo(parsedData);
+
+        if (parsedData.length > 0) {
+          const defaultBranch =
+            parsedData.find(item => item.branchId === loginBranchId) ||
+            parsedData[0];
+
+          setSelectedItem(defaultBranch);
+        }
+      }
     } catch (error) {
       console.log('Error reading branches', error);
     }
   };
 
-  const getBranchDetails = async BranchId => {
+  const getBranchDetails = async branchId => {
     try {
-      if (!loginBranchId) return;
+      if (!branchId) return;
 
       const response = await api.get(
-        `Branch/branch-details?BranchId=${BranchId}`,
+        `Branch/branch-details?branchId=${branchId}`,
       );
 
       setAddBarcode(response.data?.data?.[0]?.isPrePrintedBarcode);
@@ -145,10 +151,12 @@ const CenterInfo = ({ condition }) => {
     }
   };
 
-  const getrateListPanel = async BranchId => {
+  const getrateListPanel = async branchId => {
     try {
-      if (!loginBranchId) return;
-      const response = await api.get(`Rate/rate-list/${BranchId}`);
+      if (!branchId) return;
+
+      const response = await api.get(`Rate/rate-list/${branchId}`);
+
       setCorporateId(response.data?.[0]?.CorporateId);
       setRatePannel(response.data);
     } catch (error) {
@@ -169,7 +177,7 @@ const CenterInfo = ({ condition }) => {
       const response = await api.get(
         `Patient/get-by-uhid?uhid=${encodeURIComponent(
           selectedUhid,
-        )}&BranchId=${currentBranchId}`,
+        )}&branchId=${currentBranchId}`,
       );
 
       const patient = response?.data?.data;
@@ -209,7 +217,7 @@ const CenterInfo = ({ condition }) => {
       const response = await api.get(
         `Patient/search-patient-master?searchText=${encodeURIComponent(
           uhid.trim(),
-        )}&BranchId=${currentBranchId}`,
+        )}&branchId=${currentBranchId}`,
       );
 
       const list = response?.data?.data || [];
@@ -294,7 +302,7 @@ const CenterInfo = ({ condition }) => {
   }
 
   const renderBranchItem = ({ item }) => {
-    const isSelected = selectedItem?.BranchId === item?.BranchId;
+    const isSelected = selectedItem?.branchId === item?.branchId;
 
     return (
       <TouchableOpacity
@@ -309,7 +317,7 @@ const CenterInfo = ({ condition }) => {
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`flex-1 pr-3`}>
             <Text style={[themed.inputText, tw`font-medium`]}>
-              {item?.BranchName}
+              {item?.branchName}
             </Text>
           </View>
 
@@ -436,7 +444,7 @@ const CenterInfo = ({ condition }) => {
                   tw`flex-row justify-between items-center mt-1`,
                 ]}>
                 <Text style={themed.inputText} numberOfLines={1}>
-                  {selectedItem?.BranchName || 'Select Center'}
+                  {selectedItem?.branchName || 'Select Center'}
                 </Text>
 
                 <Icon
@@ -655,7 +663,7 @@ const CenterInfo = ({ condition }) => {
 
                 <FlatList
                   data={filteredBranchList}
-                  keyExtractor={(item, index) => String(item?.BranchId || index)}
+                  keyExtractor={(item, index) => String(item?.branchId || index)}
                   renderItem={renderBranchItem}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}

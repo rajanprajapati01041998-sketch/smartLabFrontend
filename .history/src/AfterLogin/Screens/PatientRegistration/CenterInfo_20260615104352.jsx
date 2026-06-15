@@ -110,7 +110,8 @@ const CenterInfo = ({ condition }) => {
 
   const getBranchInfo = async () => {
     try {
-      const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      // const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      const response = a
       console.log("branch list=", response.data)
       const data = await AsyncStorage.getItem('AllBranch');
       setAllBranchInfo(response.data.data);

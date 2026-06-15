@@ -228,6 +228,7 @@ const LabDashboard = () => {
 
             <View style={tw`flex-row items-center px-3 py-2`}>
               <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
+
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

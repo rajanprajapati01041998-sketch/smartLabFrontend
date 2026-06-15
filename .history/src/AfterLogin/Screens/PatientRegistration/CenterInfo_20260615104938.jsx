@@ -24,10 +24,11 @@ import { getThemeStyles } from '../../../utils/themeStyles';
 import Feather from 'react-native-vector-icons/Feather';
 import { Accordion } from 'react-native-paper/lib/typescript/components/List/List';
 import AnimatedBorder from '../../../../AnimatedBorder';
+import { getAllBranchList } from '../../../utils/getBranchList';
 
 
 const CenterInfo = ({ condition }) => {
-  const [allBranchInfo, setAllBranchInfo] = useState([]);
+  const [allBranchInfoPage, setAllBranchInfoPage] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [ratePannel, setRatePannel] = useState(null);
@@ -64,7 +65,7 @@ const CenterInfo = ({ condition }) => {
     loginBranchId,
     centerLoginBranchId,
     setAddBarcode,
-    userId
+    userId,
   } = useAuth();
 
   const currentBranchId = selectedItem?.BranchId || loginBranchId;
@@ -110,10 +111,11 @@ const CenterInfo = ({ condition }) => {
 
   const getBranchInfo = async () => {
     try {
-      const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      // const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      const response = await getAllBranchList(loginBranchId,userId)
       console.log("branch list=", response.data)
       const data = await AsyncStorage.getItem('AllBranch');
-      setAllBranchInfo(response.data.data);
+      setAllBranchInfoPage(response.data.data);
       const defaultBranch =
         response?.data?.data.find(item => item.BranchId === loginBranchId) ||
         response?.data?.data[0];

@@ -117,7 +117,23 @@ const CenterInfo = ({ condition }) => {
       const defaultBranch =
         response?.data?.data.find(item => item.BranchId === loginBranchId) ||
         response?.data?.data[0];
+
       setSelectedItem(defaultBranch);
+
+
+      // if (data) {
+      //   const parsedData = JSON.parse(data);
+      //   console.log("storage:", parsedData)
+      //   setAllBranchInfo(parsedData);
+
+      //   if (parsedData.length > 0) {
+      //     const defaultBranch =
+      //       parsedData.find(item => item.BranchId === loginBranchId) ||
+      //       parsedData[0];
+
+      //     setSelectedItem(defaultBranch);
+      //   }
+      // }
     } catch (error) {
       console.log('Error reading branches', error);
     }
@@ -125,7 +141,7 @@ const CenterInfo = ({ condition }) => {
 
   const getBranchDetails = async BranchId => {
     try {
-      if (!loginBranchId) return;
+      if (!BranchId) return;
 
       const response = await api.get(
         `Branch/branch-details?BranchId=${BranchId}`,
@@ -147,8 +163,10 @@ const CenterInfo = ({ condition }) => {
 
   const getrateListPanel = async BranchId => {
     try {
-      if (!loginBranchId) return;
+      if (!BranchId) return;
+
       const response = await api.get(`Rate/rate-list/${BranchId}`);
+
       setCorporateId(response.data?.[0]?.CorporateId);
       setRatePannel(response.data);
     } catch (error) {

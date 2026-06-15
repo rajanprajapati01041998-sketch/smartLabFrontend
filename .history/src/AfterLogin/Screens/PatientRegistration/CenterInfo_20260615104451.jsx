@@ -24,6 +24,7 @@ import { getThemeStyles } from '../../../utils/themeStyles';
 import Feather from 'react-native-vector-icons/Feather';
 import { Accordion } from 'react-native-paper/lib/typescript/components/List/List';
 import AnimatedBorder from '../../../../AnimatedBorder';
+import { getAllBranchList } from '../../../utils/getBRanchList';
 
 
 const CenterInfo = ({ condition }) => {
@@ -110,7 +111,8 @@ const CenterInfo = ({ condition }) => {
 
   const getBranchInfo = async () => {
     try {
-      const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      // const response = await api.get(`Branch/branch-user-list?BranchId=${loginBranchId}&userId=${userId}`)
+      const response = await api.get(getAllBranchList(loginBranchId,userId))
       console.log("branch list=", response.data)
       const data = await AsyncStorage.getItem('AllBranch');
       setAllBranchInfo(response.data.data);
