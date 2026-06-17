@@ -140,7 +140,7 @@ export default function App() {
   }, [sseModalVisible, slideAnim]);
 
   useEffect(() => {
-    console.log("App:",token)
+    // console.log("App:",token)
     if (!token) return;
 
     console.log('Connecting SSE...');
@@ -307,8 +307,8 @@ export default function App() {
             try {
               if (!token) return;
 
-              const bgEnabled = await getBackgroundLocationEnabled();
-              const session = await getLiveLocationSession();
+              // const bgEnabled = await getBackgroundLocationEnabled();
+              // const session = await getLiveLocationSession();
 
               if (session?.active && session?.sampleId != null) {
                 navigationRef.navigate('MainTabs', {

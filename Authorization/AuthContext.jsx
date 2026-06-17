@@ -31,6 +31,8 @@ export const AuthProvider = ({ children }) => {
   const [barcodeScan, setBarcodeScan] = useState(null)
   const [latitude, setLatitude] = useState(null)
   const [longitude, setLongitude] = useState(null)
+  const [fromDateAuth,setFromDateAuth] = useState(null)
+  const [toDateAuth,setToDateAuth] = useState(null)
 
   // Initialize custom alert hook
   const { showCustomAlert, AlertComponent } = useCustomAlert();
@@ -202,6 +204,8 @@ export const AuthProvider = ({ children }) => {
           barcodeScan, setBarcodeScan,
           latitude, setLatitude,
           longitude, setLongitude,
+          fromDateAuth,setFromDateAuth,
+          toDateAuth,setToDateAuth
         }}
       >
         {children}

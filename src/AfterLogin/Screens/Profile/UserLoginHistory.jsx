@@ -1,678 +1,347 @@
-import {
-    View,
-    Text,
-    FlatList,
-    ActivityIndicator,
-    Animated,
-    Alert,
-    TouchableOpacity,
-    RefreshControl,
-} from 'react-native'
-import React, {
-    useState,
-    useRef,
-    useCallback,
-} from 'react'
-import tw from 'twrnc'
-import { useAuth } from '../../../../Authorization/AuthContext'
-import {
-    useFocusEffect,
-    useNavigation,
-} from '@react-navigation/native'
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, Dimensions } from 'react-native'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import api from '../../../../Authorization/api'
-import { useTheme } from '../../../../Authorization/ThemeContext'
-
-import Ionicons from 'react-native-vector-icons/Ionicons'
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5'
-
-import LinearGradient from 'react-native-linear-gradient'
-
+import { useAuth } from '../../../../Authorization/AuthContext'
+import tw from 'twrnc'
 import { getAddressFromLatLng } from '../../../utils/patinetService.js/location'
+import { useTheme } from '../../../../Authorization/ThemeContext'
 import { getThemeStyles } from '../../../utils/themeStyles'
 
-const UserLoginHistory = () => {
-    const { userData } = useAuth()
+const { width } = Dimensions.get('window')
 
+const UserLoginHistory = () => {
+    const { userId } = useAuth()
+    const [pageNumber, setPageNumber] = useState(1)
+    const [pageSize] = useState(20)
+    const [loginHistory, setLoginHistory] = useState([])
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
-    const [loginHistory, setLoginHistory] = useState([])
-
-    const [addresses, setAddresses] = useState({})
-    const [loadingAddress, setLoadingAddress] =
-        useState({})
-
-    const navigation = useNavigation()
-
-    const { theme } = useTheme()
+    const [totalRecords, setTotalRecords] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
+    const theme = useTheme()
     const themed = getThemeStyles(theme)
 
-    const fadeAnim = useRef(
-        new Animated.Value(0),
-    ).current
-
-    const slideAnim = useRef(
-        new Animated.Value(50),
-    ).current
-
-    const headerFadeAnim = useRef(
-        new Animated.Value(0),
-    ).current
-
-    const [itemAnimations, setItemAnimations] =
-        useState({})
-
-    const getLoggedInUserId = () => {
-        return (
-            userData?.user?.id ||
-            userData?.id ||
-            null
-        )
-    }
-
-    const getAddressFromCoordinates =
-        async (
-            latitude,
-            longitude,
-            sessionId,
-        ) => {
-            if (!latitude || !longitude)
-                return null
-
-            setLoadingAddress(prev => ({
-                ...prev,
-                [sessionId]: true,
-            }))
-
-            try {
-                const address =
-                    await getAddressFromLatLng(
-                        latitude,
-                        longitude,
-                    )
-
-                setAddresses(prev => ({
-                    ...prev,
-                    [sessionId]: address,
-                }))
-
-                return address
-            } catch (error) {
-                console.log(
-                    'Address fetch error:',
-                    error,
-                )
-                return null
-            } finally {
-                setLoadingAddress(prev => ({
-                    ...prev,
-                    [sessionId]: false,
-                }))
-            }
-        }
-
-    const getUserLoginHistory = async (
-        id,
-        isRefresh = false,
-    ) => {
+    const getAllLocation = async (refresh = false) => {
         try {
-            if (!isRefresh) setLoading(true)
+            if (refresh) {
+                setRefreshing(true);
+                setPageNumber(1);
+            } else {
+                setLoading(true);
+            }
 
             const response = await api.get(
-                `Login/login-history/${id}`,
-            )
+                `Login/login-history/${userId}?pageNumber=${pageNumber}&pageSize=${pageSize}`
+            );
 
-            if (response?.data) {
-                setLoginHistory(response.data)
+            if (response?.data?.data) {
 
-                response.data.forEach(
-                    async item => {
-                        if (
-                            item.latitudeApp &&
-                            item.longitudeApp
-                        ) {
-                            await getAddressFromCoordinates(
+                const historyWithAddress = await Promise.all(
+                    response.data.data.map(async (item) => {
+                        let address = 'Location not available';
+
+                        if (item.latitudeApp && item.longitudeApp) {
+                            address = await getAddressFromLatLng(
                                 item.latitudeApp,
-                                item.longitudeApp,
-                                item.sessionId,
-                            )
+                                item.longitudeApp
+                            );
                         }
-                    },
-                )
 
-                const animations = {}
+                        return {
+                            ...item,
+                            address,
+                        };
+                    })
+                );
 
-                response.data.forEach(
-                    (_, index) => {
-                        animations[index] = {
-                            fade:
-                                new Animated.Value(
-                                    0,
-                                ),
-                            slide:
-                                new Animated.Value(
-                                    30,
-                                ),
-                        }
-                    },
-                )
+                if (refresh || pageNumber === 1) {
+                    setLoginHistory(historyWithAddress);
+                } else {
+                    setLoginHistory(prev => [
+                        ...prev,
+                        ...historyWithAddress,
+                    ]);
+                }
 
-                setItemAnimations(animations)
-
-                Object.keys(
-                    animations,
-                ).forEach((key, index) => {
-                    Animated.parallel([
-                        Animated.timing(
-                            animations[key].fade,
-                            {
-                                toValue: 1,
-                                duration: 400,
-                                delay:
-                                    index * 80,
-                                useNativeDriver: true,
-                            },
-                        ),
-
-                        Animated.spring(
-                            animations[key]
-                                .slide,
-                            {
-                                toValue: 0,
-                                damping: 15,
-                                stiffness: 100,
-                                delay:
-                                    index * 80,
-                                useNativeDriver: true,
-                            },
-                        ),
-                    ]).start()
-                })
-
-                Animated.parallel([
-                    Animated.timing(
-                        fadeAnim,
-                        {
-                            toValue: 1,
-                            duration: 500,
-                            useNativeDriver: true,
-                        },
-                    ),
-
-                    Animated.timing(
-                        slideAnim,
-                        {
-                            toValue: 0,
-                            duration: 500,
-                            useNativeDriver: true,
-                        },
-                    ),
-
-                    Animated.timing(
-                        headerFadeAnim,
-                        {
-                            toValue: 1,
-                            duration: 600,
-                            useNativeDriver: true,
-                        },
-                    ),
-                ]).start()
+                setTotalRecords(response.data.totalRecords || 0);
+                setTotalPages(response.data.totalPages || 0);
             }
         } catch (error) {
-            console.log(
-                'history error',
-                error?.response,
-            )
-
-            Alert.alert(
-                'Error',
-                'Failed to load login history',
-            )
+            console.log('history error', error);
         } finally {
-            setLoading(false)
-
-            if (isRefresh)
-                setRefreshing(false)
+            setLoading(false);
+            setRefreshing(false);
         }
-    }
+    };
 
-    useFocusEffect(
-        useCallback(() => {
-            const id = getLoggedInUserId()
-
-            if (id) {
-                getUserLoginHistory(id)
-            } else {
-                navigation.navigate(
-                    'Dashboard',
-                )
-            }
-
-            return () => { }
-        }, [userData]),
-    )
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true)
-
-        const id = getLoggedInUserId()
-
-        if (id) {
-            getUserLoginHistory(id, true)
-        } else {
-            setRefreshing(false)
+    useEffect(() => {
+        if (userId) {
+            getAllLocation()
         }
-    }, [userData])
+    }, [userId, getAllLocation])
 
-    const formatDate = dateString => {
+    const formatDate = useCallback((dateString) => {
+        if (!dateString) return 'N/A'
         const date = new Date(dateString)
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        })
+    }, [])
 
+    const getDeviceIcon = useCallback((device) => {
+        const deviceLower = device?.toLowerCase() || ''
+        if (deviceLower.includes('iphone') || deviceLower.includes('ios')) return '📱'
+        if (deviceLower.includes('android')) return '🤖'
+        if (deviceLower.includes('windows')) return '💻'
+        if (deviceLower.includes('mac')) return '🍎'
+        if (deviceLower.includes('linux')) return '🐧'
+        return '📟'
+    }, [])
+
+    const getBrowserIcon = useCallback((browser) => {
+        const browserLower = browser?.toLowerCase() || ''
+        if (browserLower.includes('chrome')) return '🌐'
+        if (browserLower.includes('firefox')) return '🦊'
+        if (browserLower.includes('safari')) return '🧭'
+        if (browserLower.includes('edge')) return '🌊'
+        if (browserLower.includes('opera')) return '🎭'
+        return '🌍'
+    }, [])
+
+    const getStatusColor = useCallback((item) => {
+        const logoutAt = item?.logoutAt
+        if (!logoutAt) return 'bg-green-100 border-green-300'
+        const logoutDate = new Date(logoutAt)
         const now = new Date()
+        const diffHours = (now - logoutDate) / (1000 * 60 * 60)
+        if (diffHours > 24) return 'bg-gray-100 border-gray-300'
+        if (diffHours > 1) return 'bg-yellow-100 border-yellow-300'
+        return 'bg-blue-100 border-blue-300'
+    }, [])
 
-        const diffMs = now - date
+    const getStatusText = useCallback((item) => {
+        const logoutAt = item?.logoutAt
+        if (!logoutAt) return { text: 'Active', color: 'text-green-700' }
+        const logoutDate = new Date(logoutAt)
+        const now = new Date()
+        const diffHours = (now - logoutDate) / (1000 * 60 * 60)
+        if (diffHours > 24) return { text: 'Expired', color: 'text-gray-700' }
+        if (diffHours > 1) return { text: 'Inactive', color: 'text-yellow-700' }
+        return { text: 'Recent', color: 'text-blue-700' }
+    }, [])
 
-        const diffMins = Math.floor(
-            diffMs / 60000,
-        )
+    const renderItem = useCallback(({ item, index }) => {
+        const status = getStatusText(item)
+        const statusColor = getStatusColor(item)
+        const deviceIcon = getDeviceIcon(item.device)
+        const browserIcon = getBrowserIcon(item.browser)
 
-        const diffHours = Math.floor(
-            diffMs / 3600000,
-        )
-
-        const diffDays = Math.floor(
-            diffMs / 86400000,
-        )
-
-        let timeAgo = ''
-
-        if (diffMins < 60) {
-            timeAgo = `${diffMins} minute${diffMins !== 1 ? 's' : ''
-                } ago`
-        } else if (diffHours < 24) {
-            timeAgo = `${diffHours} hour${diffHours !== 1 ? 's' : ''
-                } ago`
-        } else if (diffDays < 7) {
-            timeAgo = `${diffDays} day${diffDays !== 1 ? 's' : ''
-                } ago`
-        } else {
-            timeAgo =
-                date.toLocaleDateString(
-                    'en-US',
-                    {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                    },
-                )
-        }
-
-        return {
-            formatted:
-                date.toLocaleString(
-                    'en-US',
-                    {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                    },
-                ),
-
-            timeAgo,
-        }
-    }
-
-    const getDeviceIcon = (
-        browser,
-        device,
-    ) => {
-        const deviceLower = (
-            device || ''
-        ).toLowerCase()
-
-        const browserLower = (
-            browser || ''
-        ).toLowerCase()
-
-        if (
-            deviceLower.includes(
-                'iphone',
-            ) ||
-            deviceLower.includes('ipad')
-        )
-            return 'logo-apple'
-
-        if (
-            deviceLower.includes(
-                'android',
-            )
-        )
-            return 'logo-android'
-
-        if (
-            browserLower.includes(
-                'chrome',
-            )
-        )
-            return 'logo-chrome'
-
-        return 'laptop-outline'
-    }
-
-    const getDeviceColor = device => {
-        const deviceLower = (
-            device || ''
-        ).toLowerCase()
-
-        if (
-            deviceLower.includes(
-                'iphone',
-            )
-        )
-            return '#34C759'
-
-        if (
-            deviceLower.includes(
-                'android',
-            )
-        )
-            return '#3DDC84'
-
-        return '#3B82F6'
-    }
-
-    const RenderItemContent = ({
-        item,
-        index,
-        isCurrent,
-        dateInfo,
-        deviceIcon,
-        deviceColor,
-        hasLocation,
-        sessionAddress,
-        isLoadingAddress,
-    }) => (
-        <View style={themed.border}>
-            {isCurrent && (
-                <LinearGradient
-                    colors={[
-                        '#10B981',
-                        '#059669',
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={tw`absolute top-0 right-0 px-3 py-1 rounded-bl-xl z-10`}
-                >
-                    <View
-                        style={tw`flex-row items-center`}
-                    >
-                        <Ionicons
-                            name="flash"
-                            size={12}
-                            color="white"
-                        />
-
-                        <Text
-                            style={tw`text-white text-xs font-bold ml-1`}
-                        >
-                            CURRENT
+        return (
+            <View
+                style={[themed.childScreen2, themed.border, tw`mx-4 my-2  overflow-hidden`]}
+            >
+                {/* Header with status */}
+                <View style={tw`px-5 py-3 flex-row justify-between items-center border-b border-gray-100`}>
+                    <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-lg mr-2`}>🔐</Text>
+                        <Text style={tw`text-sm font-semibold text-gray-700`}>
+                            Session #{loginHistory.length - index}
                         </Text>
                     </View>
-                </LinearGradient>
-            )}
-
-            <View style={tw`p-4`}>
-                <View
-                    style={tw`flex-row items-start justify-between mb-3`}
-                >
-                    <View
-                        style={tw`flex-row items-center flex-1`}
-                    >
-                        <View
-                            style={[
-                                tw`w-8 h-8 rounded-full items-center justify-center mr-3`,
-                                {
-                                    backgroundColor: `${deviceColor}15`,
-                                },
-                            ]}
-                        >
-                            <Ionicons name={deviceIcon} size={18} color={deviceColor} />
-                        </View>
-
-                        <View
-                            style={tw`flex-1`}
-                        >
-                            <Text
-                                style={[
-                                    themed.inputText,
-                                    tw`font-bold text-base`,
-                                ]}
-                            >
-                                {item.device ||
-                                    'Unknown Device'}
-                            </Text>
-
-                            <Text
-                                style={[
-                                    themed.inputText,
-                                    tw`text-xs`,
-                                ]}
-                            >
-                                {item.browser ||
-                                    'Unknown Browser'}
-                            </Text>
-                        </View>
+                    <View style={[tw`px-3 py-1 rounded-full border`, statusColor]}>
+                        <Text style={[tw`text-xs font-medium`, status.color]}>
+                            {status.text}
+                        </Text>
                     </View>
                 </View>
 
-                <View style={tw`mb-3`}>
-                    <Text style={[themed.inputText, tw`text-sm`,]} >
-                        OS:{' '}  {item.os || 'Unknown'}
-                    </Text>
+                {/* Device & Browser Info */}
+                <View style={tw`px-5 py-3 flex-row items-center border-b border-gray-50`}>
+                    <View style={tw`flex-row items-center flex-1 mr-4`}>
+                        <Text style={tw`text-lg mr-2`}>{deviceIcon}</Text>
+                        <Text style={tw`text-sm text-gray-700`} numberOfLines={1}>
+                            {item.device || 'Unknown Device'}
+                        </Text>
+                    </View>
+                    <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-base mr-1.5`}>{browserIcon}</Text>
+                        <Text style={tw`text-sm text-gray-600`} numberOfLines={1}>
+                            {item.browser || 'N/A'}
+                        </Text>
+                    </View>
+                </View>
 
-                    <Text style={[themed.inputText, tw`text-sm mt-1`,]} >
-                        IP:{' '}  {item.ipAddress || 'Unknown'}
-                    </Text>
+                {/* OS & IP */}
+                <View style={tw`px-5 py-2 flex-row justify-between border-b border-gray-50`}>
+                    <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-sm text-gray-400 mr-2`}>💿</Text>
+                        <Text style={tw`text-sm text-gray-600`}>
+                            {item.os || 'N/A'}
+                        </Text>
+                    </View>
+                    <View style={tw`flex-row items-center`}>
+                        <Text style={tw`text-sm text-gray-400 mr-2`}>🌐</Text>
+                        <Text style={tw`text-sm text-gray-600 font-mono`}>
+                            {item.ipAddress || 'N/A'}
+                        </Text>
+                    </View>
+                </View>
 
-                    {hasLocation && (
-                        <View style={tw`mt-3`} >
+                {/* Location */}
+                {item.latitudeApp && item.longitudeApp && (
+                    <View style={tw`py-1.5 border-b border-gray-50 px-8`}>
+                        <View style={tw`flex-row items-start`}>
+                            <Text style={tw`text-sm text-gray-800 flex-1 italic`}>
+                                {item.address}
+                            </Text>
+                        </View>
+                    </View>
+                )}
 
-                            <View
-                                style={tw`mt-1`}
-                            >
-                                {isLoadingAddress ? (
-                                    <View
-                                        style={tw`flex-row items-center`}
-                                    >
-                                        <ActivityIndicator
-                                            size="small"
-                                            color="#3b82f6"
-                                        />
-
-                                        <Text
-                                            style={tw`text-xs text-gray-400 ml-2`}
-                                        >
-                                            Fetching
-                                            address...
-                                        </Text>
-                                    </View>
-                                ) : (
-                                    <Text
-                                        style={[
-                                            themed.inputText,
-                                            tw`text-xs text-gray-500`,
-                                        ]}
-                                    >
-                                        {sessionAddress ||
-                                            'Address not available'}
-                                    </Text>
-                                )}
-                            </View>
+                {/* Timestamps */}
+                <View style={tw`px-5 py-3 flex-row justify-between bg-gray-50/50`}>
+                    <View style={tw`flex-1 mr-4`}>
+                        <Text style={tw`text-xs text-gray-400 uppercase tracking-wider mb-0.5`}>
+                            Login
+                        </Text>
+                        <Text style={tw`text-xs text-gray-700 font-medium`}>
+                            {formatDate(item.loginAt)}
+                        </Text>
+                    </View>
+                    {item.logoutAt && (
+                        <View style={tw`flex-1`}>
+                            <Text style={tw`text-xs text-gray-400 uppercase tracking-wider mb-0.5`}>
+                                Logout
+                            </Text>
+                            <Text style={tw`text-xs text-gray-700 font-medium`}>
+                                {formatDate(item.logoutAt)}
+                            </Text>
                         </View>
                     )}
                 </View>
+            </View>
+        )
+    }, [formatDate, getBrowserIcon, getDeviceIcon, getStatusColor, getStatusText, loginHistory.length])
 
-                <View
-                    style={tw`flex-row justify-end items-end mt-2 pt-2 border-t border-gray-100`}
-                >
+    const loadMore = useCallback(() => {
+        if (!loading && !refreshing && pageNumber < totalPages) {
+            setPageNumber(prev => prev + 1)
+        }
+    }, [loading, refreshing, pageNumber, totalPages])
 
+    const onRefresh = useCallback(() => {
+        if (userId) {
+            getAllLocation(true)
+        }
+    }, [userId, getAllLocation])
 
-                    <View style={tw`items-end`} >
-                        <View style={tw`  py-1.5 rounded-lg`}   >
-                            <Text style={[themed.mutedText]}>{dateInfo.formatted} </Text>
-                        </View>
+    const keyExtractor = useCallback((item, index) =>
+        `${item.sessionId}-${index}-${item.loginAt || ''}`, [])
 
-                        {!isCurrent && (
-                            <Text style={tw`text-xs text-gray-400 mt-1`} > {dateInfo.timeAgo}</Text>
-                        )}
-                    </View>
+    // Memoized header component
+    const headerComponent = useMemo(() => (
+        <View style={[themed.childScreen2, themed.border_b, tw` px-5 py-5 `]}>
+            <View style={tw`flex-row justify-between items-center `}>
+                <Text style={[themed.headerTitle, tw`text-xl font-bold text-gray-800`]}>
+                    Login Activity
+                </Text>
+                <View style={tw`bg-blue-500 rounded-full w-8 h-8 items-center justify-center`}>
+                    <Text style={tw`text-white text-xs font-bold`}>
+                        {totalRecords}
+                    </Text>
+                </View>
+            </View>
+            <View style={tw`flex-row justify-between items-center`}>
+                <Text style={tw`text-xs text-gray-500`}>
+                    {totalRecords} total sessions
+                </Text>
+                <View style={tw`bg-gray-100 px-3 py-1 rounded-lg`}>
+                    <Text style={tw`text-xs font-medium text-gray-600`}>
+                        Page {pageNumber} / {totalPages || 1}
+                    </Text>
                 </View>
             </View>
         </View>
-    )
+    ), [totalRecords, totalPages, pageNumber])
 
-    const renderItem = ({
-        item,
-        index,
-    }) => {
-        const dateInfo = formatDate(
-            item.loginAt,
-        )
-
-        const isCurrent = index === 0
-
-        const deviceIcon =
-            getDeviceIcon(
-                item.browser,
-                item.device,
-            )
-
-        const deviceColor =
-            getDeviceColor(item.device)
-
-        const hasLocation =
-            item.latitudeApp &&
-            item.longitudeApp
-
-        const sessionAddress =
-            addresses[item.sessionId]
-
-        const isLoadingAddress =
-            loadingAddress[
-            item.sessionId
-            ]
-
-        const animations =
-            itemAnimations[index]
-
-        if (!animations) {
-            return null
-        }
-
+    // Loading State
+    if (loading && loginHistory.length === 0) {
         return (
-            <Animated.View
-                style={[
-                    themed.childScreen,
-                    tw`mx-4 my-2 rounded-xl overflow-hidden`,
-                    {
-                        opacity:
-                            animations.fade,
-                        transform: [
-                            {
-                                translateX:
-                                    animations.slide,
-                            },
-                        ],
-                    },
-                ]}
-            >
-                <RenderItemContent
-                    item={item} index={index}
-                    isCurrent={isCurrent}
-                    dateInfo={
-                        dateInfo
-                    }
-                    deviceIcon={
-                        deviceIcon
-                    }
-                    deviceColor={
-                        deviceColor
-                    }
-                    hasLocation={
-                        hasLocation
-                    }
-                    sessionAddress={
-                        sessionAddress
-                    }
-                    isLoadingAddress={
-                        isLoadingAddress
-                    }
-                />
-            </Animated.View>
-        )
-    }
-
-    if (
-        loading &&
-        loginHistory.length === 0
-    ) {
-        return (
-            <View
-                style={[
-                    themed.childScreen,
-                    tw`flex-1 justify-center items-center`,
-                ]}
-            >
-                <ActivityIndicator
-                    size="large"
-                    color="#3b82f6"
-                />
-
-                <Text
-                    style={tw`mt-4 text-gray-600`}
-                >
-                    Loading login
-                    history...
+            <View style={[themed.childScreen2, tw`flex-1 justify-center items-center `]}>
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text style={tw`mt-4 text-gray-600 text-base font-medium`}>
+                    Loading session history...
                 </Text>
+                <View style={tw`mt-2 flex-row items-center`}>
+                    <View style={tw`w-2 h-2 bg-blue-400 rounded-full mr-1`} />
+                    <View style={tw`w-2 h-2 bg-blue-400 rounded-full mr-1 opacity-60`} />
+                    <View style={tw`w-2 h-2 bg-blue-400 rounded-full opacity-30`} />
+                </View>
             </View>
         )
     }
 
     return (
-        <View
-            style={[
-                themed.childScreen,
-                tw`flex-1 `,
-            ]}
-        >
+        <View style={[themed.childScreen2, tw`flex-1`]}>
+            {headerComponent}
             <FlatList
                 data={loginHistory}
-                keyExtractor={(
-                    item,
-                    index,
-                ) =>
-                    `${item.sessionId}-${index}`
-                }
                 renderItem={renderItem}
-                showsVerticalScrollIndicator={
-                    false
-                }
-                contentContainerStyle={tw`pb-8`}
+                keyExtractor={keyExtractor}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
                 refreshControl={
                     <RefreshControl
-                        refreshing={
-                            refreshing
-                        }
-                        onRefresh={
-                            onRefresh
-                        }
-                        colors={[
-                            '#3b82f6',
-                        ]}
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#3B82F6']}
+                        tintColor="#3B82F6"
+                        progressBackgroundColor="#FFFFFF"
                     />
                 }
+                ListFooterComponent={
+                    loading && loginHistory.length > 0 ? (
+                        <View style={tw`py-6 items-center`}>
+                            <ActivityIndicator size="small" color="#3B82F6" />
+                            <Text style={tw`text-gray-400 text-xs mt-2`}>
+                                Loading more sessions...
+                            </Text>
+                        </View>
+                    ) : pageNumber >= totalPages && loginHistory.length > 0 ? (
+                        <View style={tw`py-8 items-center`}>
+                            <View style={tw`w-12 h-0.5 bg-gray-200 rounded-full mb-3`} />
+                            <Text style={tw`text-gray-300 text-sm font-medium tracking-widest`}>
+                                END OF HISTORY
+                            </Text>
+                            <Text style={tw`text-gray-400 text-xs mt-1`}>
+                                {totalRecords} total sessions
+                            </Text>
+                        </View>
+                    ) : null
+                }
+                ListEmptyComponent={
+                    <View style={tw`py-20 items-center`}>
+                        <View style={tw`w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-4`}>
+                            <Text style={tw`text-4xl`}>📋</Text>
+                        </View>
+                        <Text style={tw`text-gray-400 text-base font-medium`}>
+                            No login history found
+                        </Text>
+                        <Text style={tw`text-gray-300 text-sm mt-1`}>
+                            Your sessions will appear here
+                        </Text>
+                    </View>
+                }
+                contentContainerStyle={tw`pb-6 pt-1`}
+                showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                windowSize={21}
             />
         </View>
     )

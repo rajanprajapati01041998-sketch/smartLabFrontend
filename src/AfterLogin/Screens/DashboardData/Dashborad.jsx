@@ -35,7 +35,7 @@ import { increment } from '../../../Redux/features/counterSlice';
 
 
 const LabDashboard = () => {
-  const { userData, deviceData, loginBranchId, updateFlag, latitude, longitude,userId } = useAuth();
+  const { userData, deviceData, loginBranchId, updateFlag, latitude, longitude,userId,setFromDateAuth,setToDateAuth } = useAuth();
   const { dashboardWallet, walletData } = useDash();
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -61,6 +61,8 @@ const LabDashboard = () => {
       const formattedDate = today.toISOString().split('T')[0];
       setFromDate(formattedDate);
       setToDate(formattedDate);
+      setToDateAuth(formattedDate)
+      setFromDateAuth(formattedDate)
       dashboardWallet(loginBranchId);
       getAllBranchListCAllApi()
     }, [])
@@ -88,7 +90,8 @@ const LabDashboard = () => {
 
     setFromDate(formattedFrom);
     setToDate(formattedTo);
-
+    setFromDateAuth(formattedFrom)
+    setToDate(formattedTo)
     setFilterModal(false);
   };
 

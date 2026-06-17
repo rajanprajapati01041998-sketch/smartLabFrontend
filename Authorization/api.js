@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// const URL = 'http://192.168.1.39:5021/api/';
+// const URL = 'http://192.168.31.237:5021/api/';
 const URL = 'http://103.217.247.236/LabApp/api/'
 
 const api = axios.create({

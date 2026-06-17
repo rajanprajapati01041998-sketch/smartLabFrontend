@@ -18,7 +18,7 @@ const ReferLab = ({ onSelectDoctor, onClose }) => {
             setLoading(true);
             const response = await referLabList();
 
-            console.log('Refer Lab List:', response);
+            // console.log('Refer Lab List:', response);
 
             setReferLabs(response.data);
 

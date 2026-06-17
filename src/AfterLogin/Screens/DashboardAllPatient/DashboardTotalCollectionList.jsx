@@ -11,7 +11,7 @@ import tw from 'twrnc'
 import api from '../../../../Authorization/api'
 
 const DashboardTotalCollectionList = ({ route }) => {
-    const { loginBranchId, allBranchInfo, userId } = useAuth()
+    const { loginBranchId, allBranchInfo, userId, fromDateAuth, toDateAuth } = useAuth()
     const { theme } = useTheme()
     const themed = getThemeStyles(theme)
     const [branchModal, setBranchModal] = useState(false)
@@ -21,37 +21,38 @@ const DashboardTotalCollectionList = ({ route }) => {
     const [branchSearch, setBranchSearch] = useState('')
     const [loading, setLoading] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
-    const [loadingMore, setLoadingMore] = useState(false) // For bottom loading
-    const [hasMoreData, setHasMoreData] = useState(true) // Track if more data exists
-    const [currentPage, setCurrentPage] = useState(1) // Track current page
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [hasMoreData, setHasMoreData] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+
+    // State for date filtering - initialize with auth dates
     const [searchData, setSearchData] = useState({
-        fromDate: new Date().toISOString().split('T')[0],
-        toDate: new Date().toISOString().split('T')[0]
+        fromDate: fromDateAuth || new Date().toISOString().split('T')[0],
+        toDate: toDateAuth || new Date().toISOString().split('T')[0]
     })
+
+    // Track if custom dates are being used
+    const [isCustomDate, setIsCustomDate] = useState(false)
     const [expandedIndex, setExpandedIndex] = useState(null);
 
     // Function to format date to YYYY-MM-DD
     const formatToYYYYMMDD = (date) => {
         if (!date) return ''
 
-        // If already in YYYY-MM-DD format and valid, return as is
         if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
             return date
         }
 
-        // Handle DD-MM-YYYY format
         if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
             const [day, month, year] = date.split('-')
             return `${year}-${month}-${day}`
         }
 
-        // Handle DD/MM/YYYY format
         if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
             const [day, month, year] = date.split('/')
             return `${year}-${month}-${day}`
         }
 
-        // Handle Date object
         if (date instanceof Date) {
             const year = date.getFullYear()
             const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -59,7 +60,6 @@ const DashboardTotalCollectionList = ({ route }) => {
             return `${year}-${month}-${day}`
         }
 
-        // Try to parse as date string
         try {
             const parsedDate = new Date(date)
             if (!isNaN(parsedDate.getTime())) {
@@ -72,17 +72,6 @@ const DashboardTotalCollectionList = ({ route }) => {
             console.error('Date parsing error:', e)
         }
 
-        return date // Return original if all parsing fails
-    }
-
-    // Function to format display date (optional - if you want different display format)
-    const formatDisplayDate = (date) => {
-        if (!date) return 'N/A'
-        // For display, you can use DD-MM-YYYY if needed
-        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            const [year, month, day] = date.split('-')
-            return `${day}-${month}-${year}`
-        }
         return date
     }
 
@@ -98,20 +87,25 @@ const DashboardTotalCollectionList = ({ route }) => {
         })
     }
 
-    // Select all branches
-    const selectAllBranches = () => {
-        setSelectedBranches([...allBranchInfo])
-    }
-
-    // Clear all selections
-    const clearAllBranches = () => {
-        setSelectedBranches([])
-    }
-
     // Get branch IDs string for API
     const getBranchIdString = () => {
         if (selectedBranches.length === 0) return ''
         return selectedBranches.map(b => b.branchId).join(',')
+    }
+
+    // Get the actual dates to use for API call
+    const getApiDates = () => {
+        if (isCustomDate) {
+            return {
+                fromDate: searchData.fromDate,
+                toDate: searchData.toDate
+            }
+        } else {
+            return {
+                fromDate: fromDateAuth || searchData.fromDate,
+                toDate: toDateAuth || searchData.toDate
+            }
+        }
     }
 
     // Reset pagination when filters change
@@ -136,27 +130,27 @@ const DashboardTotalCollectionList = ({ route }) => {
         }
 
         try {
+            const { fromDate, toDate } = getApiDates()
+
             const response = await api.get(`Patient/dashboard-collection-view`, {
                 params: {
                     StatusId: route?.params.statusId,
                     ClientIdList: branchIds,
                     TypeId: 1,
                     UserId: userId,
-                    FromDate: searchData.fromDate,
-                    ToDate: searchData.toDate,
+                    FromDate: fromDate,
+                    ToDate: toDate,
                     PageNumber: page,
-                    PageSize: 20 // Adjust page size as needed
+                    PageSize: 20
                 }
             })
             console.log("list", response)
 
-            // Extract data from nested response structure
             if (response.data && response.data.success) {
                 const newData = response.data.data || []
                 const totalCount = response.data.totalCount || 0
                 const currentDataCount = isLoadMore ? patientData.length + newData.length : newData.length
 
-                // Check if there's more data to load
                 setHasMoreData(currentDataCount < totalCount)
 
                 if (isLoadMore) {
@@ -199,31 +193,40 @@ const DashboardTotalCollectionList = ({ route }) => {
         setRefreshing(false)
     }
 
-    // Handle date filter save - Ensures dates are in YYYY-MM-DD format
+    // Handle date filter save - sets custom dates
     const handleSearchFilter = (fromDateOrObject, toDate) => {
         let formattedFromDate = ''
         let formattedToDate = ''
 
-        // Check if the first parameter is an object (with fromDate/toDate properties)
         if (fromDateOrObject && typeof fromDateOrObject === 'object') {
             formattedFromDate = formatToYYYYMMDD(fromDateOrObject.fromDate || searchData.fromDate)
             formattedToDate = formatToYYYYMMDD(fromDateOrObject.toDate || searchData.toDate)
         } else if (fromDateOrObject && toDate) {
-            // Handle separate parameters
             formattedFromDate = formatToYYYYMMDD(fromDateOrObject)
             formattedToDate = formatToYYYYMMDD(toDate)
         } else if (fromDateOrObject && typeof fromDateOrObject === 'string') {
-            // Handle single parameter (maybe both dates in one string)
             formattedFromDate = formatToYYYYMMDD(fromDateOrObject)
             formattedToDate = formatToYYYYMMDD(fromDateOrObject)
         }
 
+        // Set custom dates and mark as custom
         setSearchData({
             fromDate: formattedFromDate,
             toDate: formattedToDate
         })
-        resetPagination() // Reset pagination when date changes
+        setIsCustomDate(true)
+        resetPagination()
         setFilterModal(false)
+    }
+
+    // Reset to auth dates
+    const resetToAuthDates = () => {
+        setSearchData({
+            fromDate: fromDateAuth || new Date().toISOString().split('T')[0],
+            toDate: toDateAuth || new Date().toISOString().split('T')[0]
+        })
+        setIsCustomDate(false)
+        resetPagination()
     }
 
     // Fetch data when selected branches or dates change
@@ -232,7 +235,17 @@ const DashboardTotalCollectionList = ({ route }) => {
             resetPagination()
             fetchPatientData(1, false)
         }
-    }, [selectedBranches, searchData.fromDate, searchData.toDate])
+    }, [selectedBranches, searchData.fromDate, searchData.toDate, isCustomDate]) // Added isCustomDate to dependencies
+
+    // Effect to update local dates when auth dates change (only if not using custom dates)
+    useEffect(() => {
+        if (!isCustomDate && fromDateAuth && toDateAuth) {
+            setSearchData({
+                fromDate: fromDateAuth,
+                toDate: toDateAuth
+            })
+        }
+    }, [fromDateAuth, toDateAuth, isCustomDate])
 
     // Auto-select all branches on component mount
     useEffect(() => {
@@ -254,6 +267,14 @@ const DashboardTotalCollectionList = ({ route }) => {
     const handleAccordian = (index) => {
         setExpandedIndex(expandedIndex === index ? null : index);
     };
+
+    // Helper to display current date range
+    const getDisplayDateRange = () => {
+        if (isCustomDate) {
+            return `${searchData.fromDate} → ${searchData.toDate} `
+        }
+        return `${fromDateAuth || searchData.fromDate} → ${toDateAuth || searchData.toDate}`
+    }
 
     // Render footer for bottom loading indicator
     const renderFooter = () => {
@@ -320,15 +341,13 @@ const DashboardTotalCollectionList = ({ route }) => {
                 Created by: {item.CreatedBy || 'N/A'}
             </Text>
 
-
-
             {/* Expandable Content */}
             {expandedIndex === index && (
                 <View
                     style={[
                         tw`p-3 rounded-lg border mt-1`,
                         {
-                            backgroundColor: 'rgba(4, 154, 59, 0.11)', // green glass
+                            backgroundColor: 'rgba(4, 154, 59, 0.11)',
                             borderColor: 'rgba(5, 86, 28, 0.9)',
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 4 },
@@ -337,7 +356,6 @@ const DashboardTotalCollectionList = ({ route }) => {
                         },
                     ]}
                 >
-                    {/* Divider */}
                     {/* Bill and Receipt Info */}
                     <View style={tw`flex-row justify-between mb-3`}>
                         <View>
@@ -440,7 +458,7 @@ const DashboardTotalCollectionList = ({ route }) => {
         </Modal>
     )
 
-    // Render date filter modal - Pass formatted initial dates
+    // Render date filter modal
     const renderFilterModal = () => (
         <Modal visible={filterModal} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={() => setFilterModal(false)}>
@@ -460,14 +478,11 @@ const DashboardTotalCollectionList = ({ route }) => {
         </Modal>
     )
 
-
-
-
     return (
         <View style={[themed.childScreen2, tw`flex-1 p-4 `]}>
             {/* Filter Section */}
             <View style={[themed.border_b, tw`flex-col justify-between items-start pb-3 mb-3`]}>
-                <View style={tw`flex-row`}>
+                <View style={tw`flex-row w-full`}>
                     <View style={tw`flex-1`}>
                         <TouchableOpacity
                             style={[
@@ -497,13 +512,38 @@ const DashboardTotalCollectionList = ({ route }) => {
                         <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon} />
                         <Text style={[themed.filterButtonText, tw`ml-1`]}>Date</Text>
                     </TouchableOpacity>
+
+                    {/* Reset button - only show when using custom dates */}
+                    {isCustomDate && (
+                        <TouchableOpacity
+                            style={[themed.filterButton, tw`ml-2 px-3 py-2 rounded-lg flex-row items-center`]}
+                            onPress={resetToAuthDates}
+                        >
+                            <MaterialIcons name="refresh" size={18} color={themed.filterButtonIcon} />
+                            <Text style={[themed.filterButtonText, tw`ml-1`]}>Reset</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 <View style={tw`flex-row mt-2 justify-start items-center`}>
                     <Icon name="calendar" size={14} color="#9ca3af" />
                     <Text style={[themed.dateText, tw`ml-1`]}>
-                        {searchData.fromDate} → {searchData.toDate}
+                        {getDisplayDateRange()}
                     </Text>
+                    {isCustomDate && (
+                       <View style={tw`ml-2 bg-blue-600/40 px-2 py-0.5 rounded-full border border-blue-600`}>
+                            <Text style={tw`text-blue-400 text-xs`}>Custom</Text>
+                        </View>
+                    )}
+
+                    <View
+                        style={tw`ml-2 bg-green-600/40 min-w-[24px] h-6 px-1 rounded-full items-center justify-center`}
+                    >
+                        <Text style={tw`text-green-400 text-[10px] font-bold`}>
+                            {patientData.length}
+                        </Text>
+                    </View>
+
                 </View>
             </View>
 
@@ -525,14 +565,14 @@ const DashboardTotalCollectionList = ({ route }) => {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#2563EB']} // Android
-                            tintColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'} // iOS
+                            colors={['#2563EB']}
+                            tintColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'}
                             title="Pull to refresh"
                             titleColor={theme === 'dark' ? '#FFFFFF' : '#2563EB'}
                         />
                     }
                     onEndReached={loadMoreData}
-                    onEndReachedThreshold={0.3} // Trigger when 30% from bottom
+                    onEndReachedThreshold={0.3}
                     ListFooterComponent={renderFooter}
                     ListEmptyComponent={
                         <View style={tw`flex-1 justify-center items-center py-10`}>
@@ -541,7 +581,6 @@ const DashboardTotalCollectionList = ({ route }) => {
                                 size={70}
                                 color={themed.iconColor}
                             />
-
                             <Text style={tw`text-gray-500 text-base`}>
                                 No data found
                             </Text>

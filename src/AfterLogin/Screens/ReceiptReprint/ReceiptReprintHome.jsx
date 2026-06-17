@@ -54,7 +54,7 @@ const ReceiptReprintHome = () => {
     toDate: getCurrentDate(),
   });
 
-  console.log("branch info:", allBranchInfo);
+  // console.log("branch info:", allBranchInfo);
 
   // Initialize with current branch
   React.useEffect(() => {

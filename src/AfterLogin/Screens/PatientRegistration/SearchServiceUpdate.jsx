@@ -263,7 +263,7 @@ const SearchServiceUpdate = ({ onClose, onSaveTests, initialSelectedTests }) => 
   };
 
   const handleViewRange = (item) => {
-    console.log("view", item)
+    // console.log("view", item)
     setSelectedServiceItemId(item?.serviceItemId)
     setSelectedServiceItemName(item?.serviceName)
     setRangeModalVisible(true)

@@ -32,7 +32,7 @@ const ReferDoctor = ({ onSelectDoctor, onClose }) => {
     try {
       setLoading(true);
       const response = await referDoctorList();
-      console.log('Refer Doctor List:', response);
+      // console.log('Refer Doctor List:', response);
       setReferDoctors(response?.data || []);
     } catch (error) {
       console.error('Error fetching refer doctor list:', error);
