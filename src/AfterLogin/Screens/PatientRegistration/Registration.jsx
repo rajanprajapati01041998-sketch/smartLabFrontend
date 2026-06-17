@@ -1030,7 +1030,7 @@ const RegistrationScreen = () => {
 
       const response = await getFullLocation(pincode);
 
-      console.log("location", response?.data);
+      // console.log("location", response?.data);
 
       const locations = response?.data || [];
       setPincodeResponse(locations);
@@ -1069,17 +1069,17 @@ const RegistrationScreen = () => {
   const GetReferedLabList = async () => {
     try {
       const response = await referLabList();
-      console.log('Refer Lab List:', response);
+      // console.log('Refer Lab List:', response);
     } catch (error) {
       console.error('Error fetching refer lab list:', error);
     }
   };
 
   const getInvestigationList = async (query) => {
-    console.log('Fetching investigation list for query:', query);
+    // console.log('Fetching investigation list for query:', query);
     try {
       const response = await searchInvestigation(query);
-      console.log('Investigation List:', response);
+      // console.log('Investigation List:', response);
     } catch (error) {
       console.error('Error fetching investigation list:', error);
     }

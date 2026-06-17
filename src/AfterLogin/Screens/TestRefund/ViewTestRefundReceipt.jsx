@@ -31,38 +31,38 @@ const ViewTestRefundReceipt = () => {
     const [pdfPath, setPdfPath] = useState('');
     const [error, setError] = useState(false);
 
-    const goToDashboardHome = useCallback(() => {
-        try {
-            navigation.popToTop?.();
-        } catch (_e) {}
+    // const goToDashboardHome = useCallback(() => {
+    //     try {
+    //         navigation.popToTop?.();
+    //     } catch (_e) {}
 
-        try {
-            const tabParent = navigation.getParent?.();
-            if (tabParent?.navigate) {
-                tabParent.navigate('Dashboard', { screen: 'DashboardHome' });
-                return;
-            }
-        } catch (_e) {}
+    //     try {
+    //         const tabParent = navigation.getParent?.();
+    //         if (tabParent?.navigate) {
+    //             tabParent.navigate('Dashboard', { screen: 'DashboardHome' });
+    //             return;
+    //         }
+    //     } catch (_e) {}
 
-        try {
-            navigation.navigate('DashboardHome');
-        } catch (_e) {}
-    }, [navigation]);
+    //     try {
+    //         navigation.navigate('DashboardHome');
+    //     } catch (_e) {}
+    // }, [navigation]);
 
     useFocusEffect(
         useCallback(() => {
             console.log("View receipt:",ftid)
             getPdf();
 
-            const subscription = navigation.addListener('beforeRemove', (e) => {
-                e.preventDefault();
-                goToDashboardHome();
-            });
+            // const subscription = navigation.addListener('beforeRemove', (e) => {
+            //     e.preventDefault();
+            //     // goToDashboardHome();
+            // });
 
             return () => {
-                subscription();
+                // subscription();
             };
-        }, [ftid, navigation, goToDashboardHome])
+        }, [ftid])
     );
 
     const getPdf = async () => {

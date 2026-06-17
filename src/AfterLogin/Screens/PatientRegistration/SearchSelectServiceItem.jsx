@@ -706,9 +706,9 @@ const SearchSelectServiceItem = ({
 
               <TouchableOpacity
                 onPress={createPayload}
-                style={tw`bg-blue-700 px-3 py-4 rounded-lg`}
+                style={tw`bg-blue-800/40 px-3 py-4 border border-blue-600/40 rounded-lg`}
               >
-                <Text style={tw`text-white text-center font-bold`}>
+                <Text style={tw`text-blue-500 text-center font-bold`}>
                   Add ({visibleDetailsList.length}) Tests
                 </Text>
               </TouchableOpacity>

@@ -69,7 +69,7 @@ const LabDashboard = () => {
   const getAllBranchListCAllApi = async () => {
     try {
       const response = await(getAllBranchList(loginBranchId,userId))
-      console.log("all branch list:",response)
+      // console.log("all branch list:",response)
       setAllBranchInfo(response?.data.data)
     } catch (error) {
       console.loh("branch list error:",error)

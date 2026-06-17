@@ -35,12 +35,13 @@ import {
   loadRememberedCredentials,
   saveRememberedCredentials,
 } from './utils/loginStorage';
+import LoginMap from './LoginMap';
 
 const Login = ({ navigation }) => {
   const { showToast } = useToast();
   const {
     login,
-    setAllBranchInfo,deviceData,latitude,longitude
+    setAllBranchInfo, deviceData, latitude, longitude
   } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -139,7 +140,7 @@ const Login = ({ navigation }) => {
         os: Platform.OS === "android" ? "Android" : "iOS",
       };
       console.log("formData", formData);
-
+      setLoading(true)
       const response = await api.post(`Login/branch-list`, formData);
 
       console.log("branch response", response);
@@ -339,8 +340,9 @@ const Login = ({ navigation }) => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={tw`flex-1`}>
-          <View style={tw`h-[40%] rounded-b-[45px]  overflow-hidden`}>
-            <ImageBackground source={logo} resizeMode="cover" style={tw`flex-1 h-45`}>
+          <View style={tw`h-[50%] rounded-b-[45px]  overflow-hidden`}>
+            <LoginMap />
+            {/* <ImageBackground source={logo} resizeMode="cover" style={tw`flex-1 h-45`}>
               <LinearGradient
                 colors={[
                   'rgba(10,70,55,0.90)',
@@ -363,61 +365,72 @@ const Login = ({ navigation }) => {
                   Select your branch and continue
                 </Text>
               </LinearGradient>
-            </ImageBackground>
+            </ImageBackground> */}
           </View>
 
-          <View style={tw`flex-1 bg-white px-7 pt-10`}>
-            <Text style={tw`text-gray-500 text-sm mb-1`}>User ID</Text>
+          <LinearGradient
+            colors={['#075d56', '#189586', '#c7f7f0fa']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={tw`flex-1 px-7 pt-10 -mt-8 rounded-t-[45px]`}
+           >
+            <Text style={tw`text-white text-sm mb-1`}>
+              User ID
+            </Text>
+
             <TextInput
               value={username}
               onChangeText={setUsername}
               placeholder="Enter User ID"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#E5E7EB"
               autoCapitalize="none"
-              style={tw`text-black text-lg font-bold border-b border-yellow-400 pb-3 mb-5`}
+              style={tw`text-white text-lg font-bold border-b border-white pb-3 mb-5`}
             />
 
-            <Text style={tw`text-gray-500 text-sm mb-1`}>Password</Text>
+            <Text style={tw`text-white text-sm mb-1`}>
+              Password
+            </Text>
 
-            <View style={tw`flex-row items-center border-b border-gray-200 mb-4`}>
+            <View style={tw`flex-row items-center border-b border-white mb-4`}>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 placeholder="Enter Password"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#E5E7EB"
                 autoCapitalize="none"
-                style={tw`flex-1 text-black text-base pb-3`}
+                style={tw`flex-1 text-white text-base pb-3`}
               />
 
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={22}
-                  color="#6B7280"
+                  color="#FFFFFF"
                 />
               </TouchableOpacity>
             </View>
 
-            {/* Remember Me Switch */}
             <View style={tw`flex-row items-center justify-between mb-6`}>
               <TouchableOpacity
                 onPress={() => handleRememberMeToggle(!rememberMe)}
-                style={tw`flex-row items-center`}>
+                style={tw`flex-row items-center`}
+              >
                 <Switch
                   value={rememberMe}
                   onValueChange={handleRememberMeToggle}
-                  trackColor={{ false: '#D1D5DB', true: '#174B3F' }}
-                  thumbColor={rememberMe ? '#FFFFFF' : '#F3F4F6'}
+                  trackColor={{ false: '#D1D5DB', true: '#05b31c' }}
+                  thumbColor="#FFFFFF"
                 />
-                <Text style={tw`text-gray-600 ml-2 text-sm`}>
+
+                <Text style={tw`text-white ml-2 text-sm`}>
                   Remember Me
                 </Text>
               </TouchableOpacity>
 
               {hasSavedCredentials && (
                 <TouchableOpacity onPress={handleClearSavedCredentials}>
-                  <Text style={tw`text-red-500 text-xs`}>
+                  <Text style={tw`text-red-800 text-xs`}>
                     Clear Saved
                   </Text>
                 </TouchableOpacity>
@@ -428,22 +441,25 @@ const Login = ({ navigation }) => {
               onPress={getBranchList}
               disabled={loading || branchLoading}
               activeOpacity={0.85}
-              style={[themed.loginBtn]}>
+              style={[
+                tw`bg-white rounded-xl py-4 shadow-lg`
+              ]}
+            >
               {loading || branchLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#0F766E" />
               ) : (
-                <Text style={tw`text-white text-center font-extrabold text-base tracking-widest`}>
+                <Text style={tw`text-teal-700 text-center font-extrabold text-base tracking-widest`}>
                   CONTINUE
                 </Text>
               )}
             </TouchableOpacity>
 
             <View style={tw`items-center mt-10`}>
-              <Text style={tw`text-gray-500`}>
-                Gravity Web Technologies Pvt.Ltd.
+              <Text style={tw`text-white`}>
+                Gravity Web Technologies Pvt. Ltd.
               </Text>
             </View>
-          </View>
+          </LinearGradient>
         </KeyboardAvoidingView>
 
         {renderBranchModal()}

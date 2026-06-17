@@ -262,7 +262,7 @@ const SearchSelectService = ({ onClose }) => {
                 <TouchableOpacity
                   activeOpacity={0.85}
                   style={[
-                    tw`flex-1 flex-row items-center justify-center py-3 rounded-lg bg-yellow-500 mx-4 `,
+                    tw`flex-1 flex-row items-center justify-center py-3 rounded-lg bg-yellow-800/40 border border-yellow-800/40 mx-4 `,
                     
                   ]}
                   onPress={() => setModalVisible(false)}

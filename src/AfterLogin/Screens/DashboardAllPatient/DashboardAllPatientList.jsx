@@ -11,7 +11,7 @@ import tw from 'twrnc'
 import api from '../../../../Authorization/api'
 
 const DashboardAllPatientList = ({ route }) => {
-  const { loginBranchId, allBranchInfo } = useAuth()
+  const { loginBranchId, allBranchInfo, fromDateAuth, toDateAuth } = useAuth()
   const { theme } = useTheme()
   const themed = getThemeStyles(theme)
   const [branchModal, setBranchModal] = useState(false)
@@ -21,10 +21,15 @@ const DashboardAllPatientList = ({ route }) => {
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [branchSearch, setBranchSearch] = useState('')
+
+  // State for date filtering - initialize with auth dates
   const [searchData, setSearchData] = useState({
-    fromDate: new Date().toISOString().split('T')[0],
-    toDate: new Date().toISOString().split('T')[0]
+    fromDate: fromDateAuth || new Date().toISOString().split('T')[0],
+    toDate: toDateAuth || new Date().toISOString().split('T')[0]
   })
+
+  // Track if get dates are being used
+  const [isCustomDate, setIsCustomDate] = useState(false)
   const [expandedIndex, setExpandedIndex] = useState(null);
 
   // Select All / Unselect All
@@ -35,6 +40,8 @@ const DashboardAllPatientList = ({ route }) => {
       setSelectedBranches([...allBranchInfo]);
     }
   };
+
+  console.log("auth datae", fromDateAuth, toDateAuth)
 
   // Single Branch Select/Unselect
   const toggleBranchSelection = (branch) => {
@@ -113,6 +120,22 @@ const DashboardAllPatientList = ({ route }) => {
     return selectedBranches.map(b => b.branchId).join(',')
   }
 
+  // Get the actual dates to use for API call
+  const getApiDates = () => {
+    // If custom dates are set, use them; otherwise use auth dates
+    if (isCustomDate) {
+      return {
+        fromDate: searchData.fromDate,
+        toDate: searchData.toDate
+      }
+    } else {
+      return {
+        fromDate: fromDateAuth || searchData.fromDate,
+        toDate: toDateAuth || searchData.toDate
+      }
+    }
+  }
+
   // Fetch patient data from API
   const fetchPatientData = async (isRefresh = false) => {
     const branchIds = getBranchIdString()
@@ -129,12 +152,14 @@ const DashboardAllPatientList = ({ route }) => {
     }
 
     try {
+      const { fromDate, toDate } = getApiDates()
+
       const response = await api.get(`Patient/dashboard-patient-view`, {
         params: {
           StatusId: route?.params?.statusId,
           ClientIdList: branchIds,
-          FromDate: searchData.fromDate,
-          ToDate: searchData.toDate
+          FromDate: fromDate,
+          ToDate: toDate
         }
       })
       console.log("list", response)
@@ -156,7 +181,7 @@ const DashboardAllPatientList = ({ route }) => {
     }
   }
 
-  // Handle date filter save
+  // Handle date filter save - this sets custom dates
   const handleSearchFilter = (fromDateOrObject, toDate) => {
     let formattedFromDate = ''
     let formattedToDate = ''
@@ -172,11 +197,22 @@ const DashboardAllPatientList = ({ route }) => {
       formattedToDate = formatToYYYYMMDD(fromDateOrObject)
     }
 
+    // Set custom dates and mark as custom
     setSearchData({
       fromDate: formattedFromDate,
       toDate: formattedToDate
     })
+    setIsCustomDate(true)
     setFilterModal(false)
+  }
+
+  // Reset to auth dates
+  const resetToAuthDates = () => {
+    setSearchData({
+      fromDate: fromDateAuth || new Date().toISOString().split('T')[0],
+      toDate: toDateAuth || new Date().toISOString().split('T')[0]
+    })
+    setIsCustomDate(false)
   }
 
   // Handle pull-to-refresh
@@ -186,14 +222,24 @@ const DashboardAllPatientList = ({ route }) => {
     } else {
       setRefreshing(false)
     }
-  }, [selectedBranches, searchData.fromDate, searchData.toDate])
+  }, [selectedBranches, isCustomDate, searchData.fromDate, searchData.toDate])
 
-  // Fetch data when selected branches or dates change
+  // Fetch data when selected branches or custom dates change
   useEffect(() => {
     if (selectedBranches.length > 0) {
       fetchPatientData()
     }
-  }, [selectedBranches, searchData.fromDate, searchData.toDate])
+  }, [selectedBranches, isCustomDate, searchData.fromDate, searchData.toDate])
+
+  // Effect to update local dates when auth dates change (only if not using custom dates)
+  useEffect(() => {
+    if (!isCustomDate && fromDateAuth && toDateAuth) {
+      setSearchData({
+        fromDate: fromDateAuth,
+        toDate: toDateAuth
+      })
+    }
+  }, [fromDateAuth, toDateAuth, isCustomDate])
 
   // Auto-select all branches on component mount
   useEffect(() => {
@@ -277,15 +323,15 @@ const DashboardAllPatientList = ({ route }) => {
           <View style={tw`flex-row justify-between mb-3`}>
             <View>
               <Text style={[themed.labelTextXs, tw`mb-1`]}>Bill Number</Text>
-              <Text style={[themed.labelTextXs, tw`font-medium text-sm`]}>{item.BillNo || 'N/A'}</Text>
+              <Text style={[themed.labelTextXs, tw`font-medium `]}>{item.BillNo || 'N/A'}</Text>
             </View>
             <View>
-              <Text style={[themed.labelTextXs, tw`text-xs mb-1`]}>Receipt Number</Text>
-              <Text style={[themed.labelTextXs, tw`font-medium text-sm`]}>{item.ReceiptNo || 'N/A'}</Text>
+              <Text style={[themed.labelTextXs, tw`mb-1`]}>Receipt Number</Text>
+              <Text style={[themed.labelTextXs, tw`font-medium `]}>{item.ReceiptNo || 'N/A'}</Text>
             </View>
           </View>
 
-          <View style={[tw`mt-2 pt-2 border-t border-gray-100`, tw`flex-row justify-between mb-2`]}>
+          <View style={[tw`flex-row justify-between mb-2`]}>
             <View style={tw`items-center flex-1`}>
               <Text style={[themed.inputLabel, tw`text-xs mb-1`]}>Gross</Text>
               <Text style={[themed.inputText, tw`font-semibold text-sm`]}>{formatCurrency(item?.TotalBillAmount)}</Text>
@@ -304,7 +350,7 @@ const DashboardAllPatientList = ({ route }) => {
             </View>
           </View>
 
-          <View style={tw`mt-2 pt-2 border-t border-gray-100`}>
+          <View style={tw`mt-2 pt-2 `}>
             <Text style={tw`text-gray-400 text-xs`}>
               Created by: {item.CreatedBy || 'N/A'}
             </Text>
@@ -350,7 +396,7 @@ const DashboardAllPatientList = ({ route }) => {
               </View>
 
               {/* Search */}
-              <View style={[themed.searchContainer,tw`mx-2`]}>
+              <View style={[themed.searchContainer, tw`mx-2`]}>
                 <View style={themed.searchBox}>
                   <MaterialIcons name="search" size={20} color={themed.iconColor} />
                   <TextInput
@@ -473,11 +519,19 @@ const DashboardAllPatientList = ({ route }) => {
     </Modal>
   )
 
+  // Helper to display current date range
+  const getDisplayDateRange = () => {
+    if (isCustomDate) {
+      return `${searchData.fromDate} → ${searchData.toDate}`
+    }
+    return `${fromDateAuth || searchData.fromDate} → ${toDateAuth || searchData.toDate}`
+  }
+
   return (
     <View style={[themed.childScreen2, tw`flex-1 p-4`]}>
       {/* Filter Section */}
       <View style={[themed.border_b, tw`flex-col justify-between items-start pb-3 mb-3`]}>
-        <View style={tw`flex-row`}>
+        <View style={tw`flex-row w-full`}>
           <View style={tw`flex-1`}>
             <TouchableOpacity
               style={[
@@ -507,13 +561,33 @@ const DashboardAllPatientList = ({ route }) => {
             <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon} />
             <Text style={[themed.filterButtonText, tw`ml-1`]}>Date</Text>
           </TouchableOpacity>
+
+          {/* Reset button - only show when using custom dates */}
+          {isCustomDate && (
+            <TouchableOpacity
+              style={[themed.filterButton, tw`ml-2 px-3 py-2 rounded-lg flex-row items-center`]}
+              onPress={resetToAuthDates}
+            >
+              <MaterialIcons name="refresh" size={18} color={themed.filterButtonIcon} />
+              <Text style={[themed.filterButtonText, tw`ml-1`]}>Reset</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={tw`flex-row mt-2 justify-start items-center`}>
           <Icon name="calendar" size={14} color="#9ca3af" />
           <Text style={[themed.dateText, tw`ml-1`]}>
-            {searchData.fromDate} → {searchData.toDate}
+            {getDisplayDateRange()}
           </Text>
+          {isCustomDate && (
+            <View style={tw`ml-2 bg-blue-600/40 px-2 py-0.5 rounded-full border border-blue-600`}>
+              <Text style={tw`text-blue-400 text-xs`}>Custom</Text>
+            </View>
+          )}
+          <View style={tw`ml-2 bg-green-600/40 px-2 py-0.5 rounded-full`}>
+            <Text style={tw`text-green-400 text-xs`}>{patientData.length}</Text>
+          </View>
+
         </View>
       </View>
 

@@ -106,7 +106,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
 
             setPatientList(response?.data?.data || []);
         } catch (error) {
-            console.log('error', error);
+            // console.log('error', error);
             setPatientList([]);
         } finally {
             setLoading(false);

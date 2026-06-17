@@ -38,7 +38,7 @@ const PatientInformationList = () => {
     const { showToast } = useToast();
 
     const payload = route?.params?.payload;
-    console.log(payload)
+    // console.log(payload)
 
     const [viewAllUpdateTestModal, setViewAllUpdateTestModal] = useState(false);
     const [list, setList] = useState([]);

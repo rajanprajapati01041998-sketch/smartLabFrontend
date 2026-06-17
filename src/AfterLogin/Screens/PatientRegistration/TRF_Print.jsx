@@ -19,7 +19,7 @@ const TRF_Print = () => {
     const route = useRoute();
     const { item } = route.params || {};
     const { showToast } = useToast()
-    console.log("trf",item)
+    // console.log("trf",item)
     const ftId = item?.FTId || item?.ftId || item?.FTID ;
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
