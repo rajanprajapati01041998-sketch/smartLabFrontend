@@ -60,7 +60,7 @@ const ReceiptReprintHome = () => {
   React.useEffect(() => {
     if (allBranchInfo && allBranchInfo.length > 0) {
       const currentBranch = allBranchInfo.find(
-        branch => branch.branchId === loginBranchId
+        branch => branch.BranchId === loginBranchId
       );
       if (currentBranch) {
         setSelectedBranches([currentBranch]);
@@ -91,9 +91,9 @@ const ReceiptReprintHome = () => {
       setSelectAll(false);
       setSelectedBranches([branch]);
     } else {
-      const isSelected = selectedBranches.some(b => b.branchId === branch.branchId);
+      const isSelected = selectedBranches.some(b => b.BranchId === branch.BranchId);
       if (isSelected) {
-        setSelectedBranches(selectedBranches.filter(b => b.branchId !== branch.branchId));
+        setSelectedBranches(selectedBranches.filter(b => b.BranchId !== branch.BranchId));
       } else {
         setSelectedBranches([...selectedBranches, branch]);
       }
@@ -110,7 +110,7 @@ const ReceiptReprintHome = () => {
       // If multiple branches selected, fetch data for all branches
       const allPromises = selectedBranches.map(branch =>
         getBillReceiptReprint(
-          branch.branchId.toString(),
+          branch.BranchId.toString(),
           searchData.uhid,
           searchData.name,
           0,
@@ -130,9 +130,9 @@ const ReceiptReprintHome = () => {
         // Add branch information to each receipt
         const dataWithBranch = data.map(item => ({
           ...item,
-          branchId: selectedBranches[index].branchId,
-          branchName: selectedBranches[index].branchName,
-          branchCode: selectedBranches[index].branchCode,
+          BranchId: selectedBranches[index].BranchId,
+          BranchName: selectedBranches[index].BranchName,
+          BranchCode: selectedBranches[index].BranchCode,
         }));
         combinedData = [...combinedData, ...dataWithBranch];
       });
@@ -165,7 +165,7 @@ const ReceiptReprintHome = () => {
   };
 
   const renderBranchItem = ({ item }) => {
-    const isSelected = selectedBranches.some(b => b.branchId === item.branchId);
+    const isSelected = selectedBranches.some(b => b.BranchId === item.BranchId);
 
     return (
       <TouchableOpacity
@@ -182,7 +182,7 @@ const ReceiptReprintHome = () => {
             tw`font-semibold`,
             isSelected && tw`text-white`
           ]}>
-            {item.branchName} - ({item.branchId})
+            {item.BranchName} - ({item.BranchId})
           </Text>
 
         </View>
@@ -218,7 +218,7 @@ const ReceiptReprintHome = () => {
                     {selectedBranches.length === 0
                       ? 'Select Branches'
                       : selectedBranches.length === 1
-                        ? selectedBranches[0].branchName
+                        ? selectedBranches[0].BranchName
                         : `${selectedBranches.length} Branches Selected`}
                   </Text>
                 </View>
@@ -252,11 +252,11 @@ const ReceiptReprintHome = () => {
               <View style={tw`flex-row flex-wrap`}>
                 {selectedBranches.map(branch => (
                   <View
-                    key={branch.branchId}
+                    key={branch.BranchId}
                     style={tw`mr-2 mb-2 px-3 py-1 rounded-full flex-row items-center bg-red-300/30 border border-[#ea0c0c]`}
                   >
                     <Text style={tw`text-xs font-medium text-red-400`}>
-                      {branch.branchName}
+                      {branch.BranchName}
                     </Text>
 
                     <TouchableOpacity
@@ -390,10 +390,10 @@ const ReceiptReprintHome = () => {
                   </TouchableOpacity>
                 </View>
 
-                <FlatList
+                <FlatList 
                   data={allBranchInfo}
                   renderItem={renderBranchItem}
-                  keyExtractor={(item) => item.branchId.toString()}
+                  keyExtractor={(item) => item.BranchId.toString()}
                   contentContainerStyle={tw`p-4`}
                   showsVerticalScrollIndicator={false}
                 />

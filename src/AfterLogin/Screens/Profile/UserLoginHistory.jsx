@@ -78,7 +78,7 @@ const UserLoginHistory = () => {
         if (userId) {
             getAllLocation()
         }
-    }, [userId, getAllLocation])
+    }, [userId])
 
     const formatDate = useCallback((dateString) => {
         if (!dateString) return 'N/A'

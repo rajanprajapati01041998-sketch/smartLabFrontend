@@ -5,9 +5,12 @@ import Pdf from 'react-native-pdf'
 import RNFS from 'react-native-fs'
 import api, { API_BASE_URL } from '../../../../Authorization/api'
 import { useAuth } from '../../../../Authorization/AuthContext'
+import { useTheme } from '../../../../Authorization/ThemeContext'
+import tw from 'twrnc'
 
 const ViewTebularReport = ({ route, navigation }) => {
   const { item, isPrintHeader, loginHeader, mainHeader } = route.params || {};
+  const { theme } = useTheme()
 
   const [loading, setLoading] = useState(false)
   const [pdfPath, setPdfPath] = useState(null)
@@ -17,19 +20,21 @@ const ViewTebularReport = ({ route, navigation }) => {
   // console.log('API Base URL:', loginBranchId, userId)
 
   const getTebularReport = async () => {
-    console.log('PatientInvestigationId:', item?.PatientInvestigationId);
-    console.log('isPrintHeader:', isPrintHeader);
-    console.log('userId:', userId);
-    console.log('loginBranchId:', loginBranchId); 
+    // console.log('PatientInvestigationId:', item?.PatientInvestigationId);
+    // console.log('isPrintHeader:', isPrintHeader);
+    // console.log('userId:', userId);
+    // console.log('loginBranchId:', loginBranchId);
+    // console.log('main:', mainHeader);
     try {
       setLoading(true)
       setErrorMessage('')
       setPdfPath(null)
+      // console.log("isprint headre", isPrintHeader)
       // http://103.217.247.236/LabApp/api/DeltaReport/download-delta-report?PatientInvestigationIdList=10352&isHeaderPNG=0&PrintBy=1&branchId=1&ViewReport=true
       const response = await api.get(
         `DeltaReport/download-delta-report?PatientInvestigationIdList=${item?.
-          PatientInvestigationId}&isHeaderPNG=${isPrintHeader ? 0 : 1
-        }&PrintBy=${userId}&branchId=${loginBranchId}&ViewReport=true`,
+          PatientInvestigationId}&isHeaderPNG=${isPrintHeader ? 1 : 0
+        }&PrintBy=${userId}&branchId=${mainHeader ? 1 : loginBranchId}&ViewReport=true`,
       );
 
       console.log('API response for Tebular Report:', response?.data)
@@ -75,7 +80,7 @@ const ViewTebularReport = ({ route, navigation }) => {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 10 }}>Loading report...</Text>
+        <Text style={[tw`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`]}>Loading report...</Text>
       </View>
     )
   }

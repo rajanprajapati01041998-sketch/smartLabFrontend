@@ -257,14 +257,15 @@ const TestRefundDetails = ({ data, onRefundsUpdate }) => {
                           )}
                         </View>
 
-                        <View style={tw`flex-row justify-end mt-2`}>
-                          <Text>
+                        <View style={tw`flex-row justify-between mt-2`}>
+                         
+                          <Text style={[themed.labelText, tw`text-xs`]}>
+                            Qty: {Number(item?.Qty || 0)}
+                          </Text>
+                           <Text style={[themed.labelText, tw`text-xs`]}>
                             {`${Number(item?.Qty || 0)} x ${formatAmount(item?.Rate)}`}
                           </Text>
                           {/* <Text style={[themed.labelText, tw`text-xs`]}>
-                            Qty: {Number(item?.Qty || 0)}
-                          </Text>
-                          <Text style={[themed.labelText, tw`text-xs`]}>
                             Rate: ₹ {formatAmount(item?.Rate)}
                           </Text> */}
 

@@ -31,11 +31,11 @@ import { useTheme } from '../../../../Authorization/ThemeContext';
 import { getThemeStyles } from '../../../utils/themeStyles';
 import { useDispatch } from 'react-redux';
 import { increment } from '../../../Redux/features/counterSlice';
-  import { getAllBranchList } from '../../../utils/getBranchList';
+import { getAllBranchList } from '../../../utils/getBranchList';
 
 
 const LabDashboard = () => {
-  const { userData, deviceData, loginBranchId, updateFlag, latitude, longitude,userId,setFromDateAuth,setToDateAuth } = useAuth();
+  const { userData, deviceData, setAllBranchInfo, loginBranchId, latitude, longitude, userId, setFromDateAuth, setToDateAuth } = useAuth();
   const { dashboardWallet, walletData } = useDash();
   const { theme } = useTheme();
   const themed = getThemeStyles(theme);
@@ -46,35 +46,48 @@ const LabDashboard = () => {
   const [filetrModal, setFilterModal] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [allBranchInfo,setAllBranchInfo] = useState([])
+  const [allBranchInfos, setallBranchInfos] = useState([])
   const [branchModal, setBranchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectAll, setSelectAll] = useState(false);
   const [selectedBranches, setSelectedBranches] = useState([]);
   const [roleId, setRoleId] = useState(2);
+  const [selectedBranchshow, setSelectedBranchShow] = useState(false)
 
 
 
   useFocusEffect(
     useCallback(() => {
-      const today = new Date();
-      const formattedDate = today.toISOString().split('T')[0];
-      setFromDate(formattedDate);
-      setToDate(formattedDate);
-      setToDateAuth(formattedDate)
-      setFromDateAuth(formattedDate)
+
       dashboardWallet(loginBranchId);
       getAllBranchListCAllApi()
     }, [])
   );
 
+  useEffect(() => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    setFromDate(formattedDate);
+    setToDate(formattedDate);
+    setToDateAuth(formattedDate)
+    setFromDateAuth(formattedDate)
+  }, [])
+
+  // When branch modal opens, select all branches
+  useEffect(() => {
+    if (branchModal && allBranchInfos.length > 0) {
+      setSelectedBranches(allBranchInfos);
+    }
+  }, [branchModal, allBranchInfos]);
+
   const getAllBranchListCAllApi = async () => {
     try {
-      const response = await(getAllBranchList(loginBranchId,userId))
-      console.log("all branch list:",response)
+      const response = await (getAllBranchList(loginBranchId, userId))
+      console.log("all branch list:", response)
+      setallBranchInfos(response?.data?.data)
       setAllBranchInfo(response?.data?.data)
     } catch (error) {
-      console.loh("branch list error:",error)
+      console.loh("branch list error:", error)
     }
   }
 
@@ -91,15 +104,15 @@ const LabDashboard = () => {
     setFromDate(formattedFrom);
     setToDate(formattedTo);
     setFromDateAuth(formattedFrom)
-    setToDate(formattedTo)
+    setToDateAuth(formattedTo)
     setFilterModal(false);
   };
 
   const toggleBranch = (branch) => {
-    const exists = selectedBranches.find((b) => b.branchId === branch.branchId);
+    const exists = selectedBranches.find((b) => b.BranchId === branch.BranchId);
     if (exists) {
       setSelectedBranches((prev) =>
-        prev.filter((b) => b.branchId !== branch.branchId)
+        prev.filter((b) => b.BranchId !== branch.BranchId)
       );
     } else {
       setSelectedBranches((prev) => [...prev, branch]);
@@ -108,22 +121,22 @@ const LabDashboard = () => {
 
   const filteredBranches = useMemo(() => {
     return (
-      allBranchInfo?.filter((branch) =>
+      allBranchInfos?.filter((branch) =>
         branch.BranchName?.toLowerCase().includes(searchQuery.toLowerCase())
       ) || []
     );
-  }, [allBranchInfo, searchQuery]);
+  }, [allBranchInfos, searchQuery]);
 
   const handleSelectAll = () => {
     if (selectAll) {
       filteredBranches.forEach((branch) => {
-        if (selectedBranches.some((b) => b.branchId === branch.branchId)) {
+        if (selectedBranches.some((b) => b.BranchId === branch.BranchId)) {
           toggleBranch(branch);
         }
       });
     } else {
       filteredBranches.forEach((branch) => {
-        if (!selectedBranches.some((b) => b.branchId === branch.branchId)) {
+        if (!selectedBranches.some((b) => b.BranchId === branch.BranchId)) {
           toggleBranch(branch);
         }
       });
@@ -135,7 +148,7 @@ const LabDashboard = () => {
     const allFilteredSelected =
       filteredBranches.length > 0 &&
       filteredBranches.every((branch) =>
-        selectedBranches.some((b) => b.branchId === branch.branchId)
+        selectedBranches.some((b) => b.BranchId === branch.BranchId)
       );
     setSelectAll(allFilteredSelected);
   }, [selectedBranches, filteredBranches]);
@@ -143,7 +156,7 @@ const LabDashboard = () => {
   const selectedBranchIds =
     selectedBranches.length > 0
       ? selectedBranches.map((b) => b.BranchId).join(',')
-      : allBranchInfo?.map((b) => b.BranchId).join(',');
+      : allBranchInfos?.map((b) => b.BranchId).join(',');
 
   const clearAllBranches = () => {
     setSelectedBranches([]);
@@ -178,7 +191,7 @@ const LabDashboard = () => {
       <View style={themed.header}>
         <View style={tw`flex-row justify-between items-start`}>
           <View style={tw`flex-1`}>
-            <Text style={themed.headerSubText}>
+            <Text style={[themed.headerSubText]}>
               Welcome back,
             </Text>
 
@@ -187,14 +200,14 @@ const LabDashboard = () => {
               style={tw`flex-row items-center mb-1`}
               activeOpacity={0.7}
             >
-              <Text style={themed.headerTitle}>
-                {allBranchInfo[0]?.BranchName}
+              <Text style={[themed.headerTitle,tw`text-[12px]`]}>
+                {allBranchInfos[0]?.BranchName}
               </Text>
-              
+
               <MaterialIcons
                 name="arrow-drop-down"
                 size={24}
-                color={themed.iconMuted}
+                color={themed.iconColor}
               />
             </TouchableOpacity>
 
@@ -211,7 +224,7 @@ const LabDashboard = () => {
               onPress={() => setFilterModal(true)}
               style={themed.filterButton}
             >
-              <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon}/>
+              <MaterialIcons name="calendar-month" size={18} color={themed.filterButtonIcon} />
               <Text style={themed.filterButtonText}>
                 Filter
               </Text>
@@ -221,15 +234,22 @@ const LabDashboard = () => {
       </View>
 
       {selectedBranches.length > 0 && (
-        <View style={tw`px-2 mb-2 mt-1`}>
-          <View style={themed.sectionCard}>
-            <View style={themed.sectionHeader}>
+        <View style={tw`mb-2 mt-1`}>
+          <View style={tw``}>
+            <TouchableOpacity
+              onPress={() => setSelectedBranchShow(!selectedBranchshow)}
+              style={tw`flex-row justify-start items-center mx-2`}>
               <Text style={themed.sectionHeaderText}>
                 Selected Branches
               </Text>
-            </View>
+              <MaterialIcons
+                name={selectedBranchshow?"arrow-drop-up":"arrow-drop-down"}
+                size={24}
+                color={themed.iconColor}
+              />
+            </TouchableOpacity>
 
-            <View style={tw`flex-row items-center px-3 py-2`}>
+            {selectedBranchshow&&<View style={tw`flex-row items-center px-3 py-2`}>
               <Icon name="store-marker" size={18} color="#3b82f6" style={tw`mr-2`} />
               <ScrollView
                 horizontal
@@ -239,21 +259,15 @@ const LabDashboard = () => {
               >
                 {selectedBranches.map((branch) => (
                   <TouchableOpacity
-                    key={branch.branchId}
+                    key={branch.BranchId}
                     onPress={() => toggleBranch(branch)}
-                    style={tw`flex-row items-center bg-blue-50 rounded-full px-3 py-1.5 mr-2 border border-blue-200`}
+                    style={tw`flex-row items-center bg-blue-800/40 max-w-50 rounded-full px-4 py-0.5 mr-2 border border-blue-800/40`}
                     activeOpacity={0.7}
                   >
-                    <Icon name="store" size={12} color="#3b82f6" style={tw`mr-1`} />
-                    <Text style={tw`text-xs text-blue-700 font-medium`}>
-                      {branch.branchName}
+                    <Text numberOfLines={1} style={tw`text-[8px] text-blue-300 `}>
+                      {branch.BranchName}
                     </Text>
-                    <Icon
-                      name="close-circle"
-                      size={14}
-                      color="#3b82f6"
-                      style={tw`ml-1`}
-                    />
+                    <Icon name="close-circle" size={14} color="#e4200f" style={tw`ml-1`} />
                   </TouchableOpacity>
                 ))}
 
@@ -276,7 +290,7 @@ const LabDashboard = () => {
                   {selectedBranches.length}
                 </Text>
               </View>
-            </View>
+            </View>}
           </View>
         </View>
       )}
@@ -360,7 +374,11 @@ const LabDashboard = () => {
                   </View>
 
                   <TouchableOpacity
-                    onPress={() => setBranchModal(false)}
+                    onPress={() => {
+                      setBranchModal(false);
+                      // Optionally reset to all branches when closing
+                      // setSelectedBranches(allBranchInfos);
+                    }}
                     style={themed.modalCloseButton}
                   >
                     <Feather name="x" size={20} color={themed.closeIconColor} />
@@ -371,7 +389,6 @@ const LabDashboard = () => {
                 <View style={themed.searchWrapper}>
                   <View style={themed.searchBox}>
                     <Feather name="search" size={18} color={themed.inputPlaceholder} />
-
                     <TextInput
                       style={themed.searchInput}
                       placeholder="Search branches..."
@@ -403,7 +420,6 @@ const LabDashboard = () => {
                         <Text style={themed.inputLabel}>
                           {selectAll ? 'Deselect All' : 'Select All'}
                         </Text>
-
                         <Text style={themed.inputLabel}>
                           {filteredBranches.length} branches available
                         </Text>
@@ -426,7 +442,7 @@ const LabDashboard = () => {
                 {/* LIST */}
                 <FlatList
                   data={filteredBranches}
-                  keyExtractor={(item, index) => `${item.branchId}-${index}`}
+                  keyExtractor={(item, index) => `${item.BranchId}-${index}`}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={tw`py-2`}
 
@@ -442,7 +458,7 @@ const LabDashboard = () => {
 
                   renderItem={({ item }) => {
                     const isSelected = selectedBranches.some(
-                      (b) => b.branchId === item.branchId
+                      (b) => b.BranchId === item.BranchId
                     );
 
                     return (
@@ -452,21 +468,9 @@ const LabDashboard = () => {
                         style={[themed.border, tw`flex flex-row p-2 mx-2 my-1 rounded-md`]}
                       >
                         <View style={tw`flex-row items-center flex-1`}>
-
-                          {/* ICON */}
                           <View >
-                            <Feather
-                              name="briefcase"
-                              size={18}
-                              color={
-                                isSelected
-                                  ? '#3b82f6'
-                                  : themed.iconSecondary
-                              }
-                            />
+                            <Feather name="briefcase" size={18} color={isSelected ? '#3b82f6' : themed.iconColor} />
                           </View>
-
-                          {/* NAME */}
                           <Text style={[themed.listItemText, tw`flex-1 ml-2`]}>
                             {item.BranchName}
                           </Text>
@@ -493,7 +497,11 @@ const LabDashboard = () => {
                   <View style={tw`flex-row gap-3`}>
 
                     <TouchableOpacity
-                      onPress={() => setBranchModal(false)}
+                      onPress={() => {
+                        setBranchModal(false);
+                        // Reset to all branches when cancel
+                        setSelectedBranches(allBranchInfos);
+                      }}
                       style={themed.cancelButton}
                     >
                       <Text style={themed.cancelButtonText}>Cancel</Text>

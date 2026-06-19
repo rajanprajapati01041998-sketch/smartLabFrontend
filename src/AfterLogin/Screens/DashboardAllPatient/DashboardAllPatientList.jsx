@@ -47,12 +47,12 @@ const DashboardAllPatientList = ({ route }) => {
   const toggleBranchSelection = (branch) => {
     setSelectedBranches(prev => {
       const isSelected = prev.some(
-        item => item.branchId === branch.branchId
+        item => item.BranchId === branch.BranchId
       );
 
       if (isSelected) {
         return prev.filter(
-          item => item.branchId !== branch.branchId
+          item => item.BranchId !== branch.BranchId
         );
       }
 
@@ -66,9 +66,9 @@ const DashboardAllPatientList = ({ route }) => {
 
     const searchTerm = branchSearch.toLowerCase();
     return (allBranchInfo || []).filter(branch =>
-      branch.branchName?.toLowerCase().includes(searchTerm) ||
-      branch.branchCode?.toLowerCase().includes(searchTerm) ||
-      branch.branchId?.toString().includes(searchTerm)
+      branch.BranchName?.toLowerCase().includes(searchTerm) ||
+      branch.BranchCode?.toLowerCase().includes(searchTerm) ||
+      branch.BranchId?.toString().includes(searchTerm)
     );
   }, [allBranchInfo, branchSearch]);
 
@@ -117,7 +117,7 @@ const DashboardAllPatientList = ({ route }) => {
   // Get branch IDs string for API
   const getBranchIdString = () => {
     if (selectedBranches.length === 0) return ''
-    return selectedBranches.map(b => b.branchId).join(',')
+    return selectedBranches.map(b => b.BranchId).join(',')
   }
 
   // Get the actual dates to use for API call
@@ -439,12 +439,12 @@ const DashboardAllPatientList = ({ route }) => {
                   const isSelected =
                     selectedBranches.some(
                       item =>
-                        item.branchId === branch.branchId
+                        item.BranchId === branch.BranchId
                     );
 
                   return (
                     <TouchableOpacity
-                      key={branch.branchId || index}
+                      key={branch.BranchId || index}
                       onPress={() =>
                         toggleBranchSelection(branch)
                       }
@@ -479,13 +479,13 @@ const DashboardAllPatientList = ({ route }) => {
                             tw`font-medium`,
                           ]}
                         >
-                          {branch.branchName}
+                          {branch.BranchName}
                         </Text>
 
                         <Text
                           style={tw`text-gray-500 text-xs mt-1`}
                         >
-                          Code : {branch.branchCode}
+                          Code : {branch.BranchCode } {"/"} Branch Id : {branch.BranchId }
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -581,11 +581,15 @@ const DashboardAllPatientList = ({ route }) => {
           </Text>
           {isCustomDate && (
             <View style={tw`ml-2 bg-blue-600/40 px-2 py-0.5 rounded-full border border-blue-600`}>
-              <Text style={tw`text-blue-400 text-xs`}>Custom</Text>
+              <Text style={tw` ${theme === 'dark' ? 'text-blue-400 ' : 'text-blue-700 '} text-xs`}>Custom</Text>
             </View>
           )}
           <View style={tw`ml-2 bg-green-600/40 px-2 py-0.5 rounded-full`}>
-            <Text style={tw`text-green-400 text-xs`}>{patientData.length}</Text>
+            <Text
+              style={tw`${theme === 'dark' ? 'text-green-400' : 'text-green-800'} text-[10px] font-bold`}
+            >
+              {patientData.length}
+            </Text>
           </View>
 
         </View>

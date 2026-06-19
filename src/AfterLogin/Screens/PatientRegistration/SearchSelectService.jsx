@@ -178,9 +178,9 @@ const SearchSelectService = ({ onClose }) => {
           >
             <View style={tw`flex-row items-center bg-red-800/20 border border-red-800/40 px-3 py-2 rounded-xl`}
             >
-              <Icons name="cart" size={18} color="#de3f0b" style={tw`mr-2`} />
+              {/* <Icons name="cart" size={18} color="#de3f0b" style={tw`mr-2`} /> */}
               <Text style={tw`text-red-600 text-xs font-semibold`}>
-                {selectedCount} selected
+               Add {selectedCount} Test
               </Text>
             </View>
           </TouchableOpacity>

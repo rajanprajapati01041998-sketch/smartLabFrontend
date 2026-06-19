@@ -1,5 +1,5 @@
 import { TextInput, View, Text, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, ScrollView, RefreshControl, ActivityIndicator, Image } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import FontAwesome from 'react-native-vector-icons/FontAwesome'
@@ -75,22 +75,63 @@ const DashboardTotalCollectionList = ({ route }) => {
         return date
     }
 
+    // Filter branches based on search query
+    const filteredBranches = useMemo(() => {
+        if (!allBranchInfo) return []
+        if (!branchSearch.trim()) return allBranchInfo
+        return allBranchInfo.filter(branch =>
+            branch.BranchName?.toLowerCase().includes(branchSearch.toLowerCase().trim()) ||
+            branch.BranchCode?.toLowerCase().includes(branchSearch.toLowerCase().trim())
+        )
+    }, [allBranchInfo, branchSearch])
+
     // Select/Deselect branch
     const toggleBranchSelection = (branch) => {
         setSelectedBranches(prev => {
-            const isSelected = prev.some(b => b.branchId === branch.branchId)
+            const isSelected = prev.some(b => b.BranchId === branch.BranchId)
             if (isSelected) {
-                return prev.filter(b => b.branchId !== branch.branchId)
+                return prev.filter(b => b.BranchId !== branch.BranchId)
             } else {
                 return [...prev, branch]
             }
         })
     }
 
+    // Handle Select All for filtered branches
+    const handleSelectAllFiltered = () => {
+        const filteredIds = new Set(filteredBranches.map(b => b.BranchId))
+        const currentlySelectedIds = new Set(selectedBranches.map(b => b.BranchId))
+        
+        // Check if all filtered branches are selected
+        const allFilteredSelected = filteredBranches.every(b => 
+            currentlySelectedIds.has(b.BranchId)
+        )
+        
+        if (allFilteredSelected) {
+            // Deselect all filtered branches
+            setSelectedBranches(prev => 
+                prev.filter(b => !filteredIds.has(b.BranchId))
+            )
+        } else {
+            // Select all filtered branches
+            const branchesToAdd = filteredBranches.filter(b => 
+                !currentlySelectedIds.has(b.BranchId)
+            )
+            setSelectedBranches(prev => [...prev, ...branchesToAdd])
+        }
+    }
+
+    // Check if all filtered branches are selected
+    const areAllFilteredSelected = useMemo(() => {
+        if (filteredBranches.length === 0) return false
+        const selectedIds = new Set(selectedBranches.map(b => b.BranchId))
+        return filteredBranches.every(b => selectedIds.has(b.BranchId))
+    }, [filteredBranches, selectedBranches])
+
     // Get branch IDs string for API
     const getBranchIdString = () => {
         if (selectedBranches.length === 0) return ''
-        return selectedBranches.map(b => b.branchId).join(',')
+        return selectedBranches.map(b => b.BranchId).join(',')
     }
 
     // Get the actual dates to use for API call
@@ -235,7 +276,7 @@ const DashboardTotalCollectionList = ({ route }) => {
             resetPagination()
             fetchPatientData(1, false)
         }
-    }, [selectedBranches, searchData.fromDate, searchData.toDate, isCustomDate]) // Added isCustomDate to dependencies
+    }, [selectedBranches, searchData.fromDate, searchData.toDate, isCustomDate])
 
     // Effect to update local dates when auth dates change (only if not using custom dates)
     useEffect(() => {
@@ -253,6 +294,13 @@ const DashboardTotalCollectionList = ({ route }) => {
             setSelectedBranches(allBranchInfo)
         }
     }, [allBranchInfo])
+
+    // When branch modal opens, clear search
+    useEffect(() => {
+        if (branchModal) {
+            setBranchSearch('')
+        }
+    }, [branchModal])
 
     // Format currency amount
     const formatCurrency = (amount) => {
@@ -334,7 +382,7 @@ const DashboardTotalCollectionList = ({ route }) => {
                 <Text style={[themed.clientNamexs]}> Service:{item.ServiceName || ''} </Text>
                 <View style={tw`items-center gap-2 flex-row justify-start mt-2`}>
                     <Text style={[themed.inputText, tw` text-sm mb-1 font-semibold text-green-500`]}>Receipt Amount :</Text>
-                    <Text style={[themed.inputText, tw`font-semibold text-sm text-green-500`]}>{formatCurrency(item?.Amount || 0)}</Text>
+                    <Text style={[themed.inputText, tw`font-semibold text-sm text-green-500`]}>{formatCurrency (item?.Amount || 0)}</Text>
                 </View>
             </View>
             <Text style={tw`text-gray-400 text-xs`}>
@@ -379,78 +427,102 @@ const DashboardTotalCollectionList = ({ route }) => {
         </View>
     )
 
-    // Render branch selection modal
+    // Render branch selection modal with search filter
     const renderBranchModal = () => (
         <Modal visible={branchModal} transparent animationType="slide">
             <TouchableWithoutFeedback onPress={() => setBranchModal(false)}>
                 <View style={tw`flex-1 justify-end items-center bg-black/60`}>
                     <TouchableWithoutFeedback>
-                        <View style={[themed.modalContainer, tw`w-full h-[60%] rounded-lg overflow-hidden`]}>
+                        <View style={[themed.modalContainer, tw`w-full h-[70%] rounded-lg overflow-hidden`]}>
                             <View style={[tw`p-4 flex-row justify-between items-center`]}>
                                 <Text style={[themed.modalHeaderSubTitle, tw`text-lg font-semibold`]}>Select Branches</Text>
                                 <TouchableOpacity onPress={() => setBranchModal(false)}>
                                     <MaterialIcons name="close" size={24} color={themed.iconColor} />
                                 </TouchableOpacity>
                             </View>
+                            
+                            {/* Search Input */}
                             <View style={[themed.searchContainer, tw`mx-2`]}>
                                 <View style={themed.searchBox}>
                                     <MaterialIcons name="search" size={20} color={themed.iconColor} />
                                     <TextInput
                                         value={branchSearch}
                                         onChangeText={setBranchSearch}
-                                        placeholder="Search Branch"
+                                        placeholder="Search Branch by name or code"
                                         placeholderTextColor={themed.inputPlaceholder}
                                         style={themed.searchInput}
                                     />
+                                    {branchSearch.length > 0 && (
+                                        <TouchableOpacity onPress={() => setBranchSearch('')}>
+                                            <MaterialIcons name="close" size={20} color={themed.iconColor} />
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             </View>
 
-                            <View style={tw`p-4 `}>
-                                <TouchableOpacity
-                                    onPress={() =>
-                                        setSelectedBranches(
-                                            selectedBranches.length === allBranchInfo.length
-                                                ? []
-                                                : [...allBranchInfo]
-                                        )
-                                    }
-                                    style={tw`flex-row items-center`}
-                                >
-                                    <MaterialIcons
-                                        name={
-                                            selectedBranches.length === allBranchInfo.length
-                                                ? 'check-box'
-                                                : 'check-box-outline-blank'
-                                        }
-                                        size={24}
-                                        color="#2563EB"
-                                    />
+                            {/* Select All for filtered branches */}
+                            {filteredBranches.length > 0 && (
+                                <View style={tw`p-4`}>
+                                    <TouchableOpacity
+                                        onPress={handleSelectAllFiltered}
+                                        style={tw`flex-row items-center`}
+                                    >
+                                        <MaterialIcons
+                                            name={areAllFilteredSelected ? 'check-box' : 'check-box-outline-blank'}
+                                            size={24}
+                                            color="#2563EB"
+                                        />
+                                        <Text style={[themed.labelText, tw`ml-2`]}>
+                                            {areAllFilteredSelected ? 'Deselect All' : 'Select All'}
+                                        </Text>
+                                        <Text style={[themed.labelTextXs, tw`ml-2 text-gray-500`]}>
+                                            ({filteredBranches.length} {filteredBranches.length === 1 ? 'branch' : 'branches'})
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
 
-                                    <Text style={[themed.labelText, tw`ml-2`]}>
-                                        Select All
-                                    </Text>
+                            {/* Branch List with search filter */}
+                            <ScrollView style={tw`flex-1`}>
+                                {filteredBranches.length > 0 ? (
+                                    filteredBranches.map((branch) => (
+                                        <TouchableOpacity
+                                            key={branch.BranchId}
+                                            onPress={() => toggleBranchSelection(branch)}
+                                            style={[themed.border, tw`p-4 flex-row items-center m-2`]}
+                                        >
+                                            <View style={tw`w-6 h-6 rounded border border-gray-400 mr-3 justify-center items-center ${selectedBranches.some(b => b.BranchId === branch.BranchId) ? 'bg-blue-500' : 'bg-white'}`}>
+                                                {selectedBranches.some(b => b.BranchId === branch.BranchId) && (
+                                                    <MaterialIcons name="check" size={16} color="white" />
+                                                )}
+                                            </View>
+                                            <View style={tw`flex-1`}>
+                                                <Text style={[themed.inputText, tw`font-medium`]}>{branch.BranchName}</Text>
+                                                <Text style={tw`text-gray-500 text-xs`}>Code: {branch.BranchCode} | ID: {branch.BranchId}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))
+                                ) : (
+                                    <View style={tw`flex-1 justify-center items-center py-10`}>
+                                        <Icon name="store-search-outline" size={50} color={themed.iconColor} />
+                                        <Text style={[themed.labelText, tw`mt-2`]}>No branches found</Text>
+                                        <Text style={[themed.labelTextXs, tw`mt-1`]}>Try a different search term</Text>
+                                    </View>
+                                )}
+                            </ScrollView>
+
+                            {/* Footer with selected count and apply button */}
+                            <View style={[themed.border_t, tw`p-4 flex-row justify-between items-center`]}>
+                                <Text style={[themed.labelText, tw`text-sm`]}>
+                                    {selectedBranches.length} {selectedBranches.length === 1 ? 'branch' : 'branches'} selected
+                                </Text>
+                                <TouchableOpacity
+                                    style={[tw`px-4 py-2 rounded-lg`, { backgroundColor: '#2563EB' }]}
+                                    onPress={() => setBranchModal(false)}
+                                >
+                                    <Text style={tw`text-white font-medium`}>Apply</Text>
                                 </TouchableOpacity>
                             </View>
-
-                            <ScrollView style={tw`flex-1`}>
-                                {allBranchInfo?.map((branch) => (
-                                    <TouchableOpacity
-                                        key={branch.branchId}
-                                        onPress={() => toggleBranchSelection(branch)}
-                                        style={[themed.border, tw`p-4 flex-row items-center m-2`]}
-                                    >
-                                        <View style={tw`w-6 h-6 rounded border border-gray-400 mr-3 justify-center items-center ${selectedBranches.some(b => b.branchId === branch.branchId) ? 'bg-blue-500' : 'bg-white'}`}>
-                                            {selectedBranches.some(b => b.branchId === branch.branchId) && (
-                                                <MaterialIcons name="check" size={16} color="white" />
-                                            )}
-                                        </View>
-                                        <View style={tw`flex-1`}>
-                                            <Text style={[themed.inputText, tw`font-medium`]}>{branch.branchName}</Text>
-                                            <Text style={tw`text-gray-500 text-xs`}>Code: {branch.branchCode} | ID: {branch.branchId}</Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
                         </View>
                     </TouchableWithoutFeedback>
                 </View>
@@ -497,7 +569,7 @@ const DashboardTotalCollectionList = ({ route }) => {
                                     {selectedBranches.length === 0
                                         ? 'Select Branches'
                                         : selectedBranches.length === 1
-                                            ? selectedBranches[0].branchName
+                                            ? selectedBranches[0].BranchName || '1 Branch'
                                             : `${selectedBranches.length} Branches Selected`}
                                 </Text>
                             </View>
@@ -531,15 +603,17 @@ const DashboardTotalCollectionList = ({ route }) => {
                         {getDisplayDateRange()}
                     </Text>
                     {isCustomDate && (
-                       <View style={tw`ml-2 bg-blue-600/40 px-2 py-0.5 rounded-full border border-blue-600`}>
-                            <Text style={tw`text-blue-400 text-xs`}>Custom</Text>
+                        <View style={tw`ml-2 bg-blue-600/40 px-2 py-0.5 rounded-full border border-blue-600`}>
+                            <Text style={tw` ${theme === 'dark' ? 'text-blue-400 ' : 'text-blue-700 '} text-xs`}>Custom</Text>
                         </View>
                     )}
 
                     <View
-                        style={tw`ml-2 bg-green-600/40 min-w-[24px] h-6 px-1 rounded-full items-center justify-center`}
+                        style={tw`ml-2 bg-green-600/40 min-w-[24px] h-6 px-1 rounded-full items-center justify-center border border-green-600/40`}
                     >
-                        <Text style={tw`text-green-400 text-[10px] font-bold`}>
+                        <Text
+                            style={tw`${theme === 'dark' ? 'text-green-400' : 'text-green-800'} text-[10px] font-bold`}
+                        >
                             {patientData.length}
                         </Text>
                     </View>
