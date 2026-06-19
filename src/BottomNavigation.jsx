@@ -49,6 +49,7 @@ const HIDE_TABS_BY_TAB = {
   Registration: new Set(['PatientInformation']),
   HelpDesk: new Set([
     'ListHelpDeskPatient',
+    'ListHelpDeskPatientNew',
     'ViewLabReport',
     'DashboardPayment',
     'DashboardPaymentHistoryDetails',

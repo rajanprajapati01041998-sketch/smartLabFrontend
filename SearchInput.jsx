@@ -74,7 +74,7 @@ const SearchInput = ({
           <AnimatedBorder>
             <View style={[themed.childScreen2, tw`flex-row items-center rounded-xl overflow-hidden`,]}>
               <View style={tw`px-3`}>
-                <Icon name="search-outline" size={20} color="#9ca3af" />
+                {/* <Icon name="search-outline" size={20} color="#9ca3af" /> */}
               </View>
 
               <TextInput
@@ -95,9 +95,7 @@ const SearchInput = ({
               )}
 
               <TouchableOpacity onPress={handleSearchPress} style={[themed.searchButton, tw`mr-2 p-2`,]}>
-                <Text style={themed.searchButtonText}>
-                  Search
-                </Text>
+                <Icon name="search-outline" size={20} color="#f4f5f7" /> 
               </TouchableOpacity>
             </View>
           </AnimatedBorder>

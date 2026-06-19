@@ -138,13 +138,13 @@ const Login = ({ navigation }) => {
         browser: "Handset",
         device: Platform.OS === "android" ? "Android Phone" : "iPhone",
         os: Platform.OS === "android" ? "Android" : "iOS",
+        latitudeApp:latitude,
+        longitudeApp:longitude
       };
       console.log("formData", formData);
       setLoading(true)
       const response = await api.post(`Login/branch-list`, formData);
-
       console.log("branch response", response);
-
       const branchList = Array.isArray(response?.data)
         ? response.data
         : [];
@@ -373,7 +373,7 @@ const Login = ({ navigation }) => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={tw`flex-1 px-7 pt-10 -mt-8 rounded-t-[45px]`}
-           >
+          >
             <Text style={tw`text-white text-sm mb-1`}>
               User ID
             </Text>

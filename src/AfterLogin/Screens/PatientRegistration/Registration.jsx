@@ -1,8 +1,8 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform, FlatList, Image } from 'react-native';
+import { PermissionsAndroid, View, Text, TextInput, ScrollView, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, ActivityIndicator, Platform, FlatList, Image } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import tw from 'twrnc';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   referLabList,
   searchInvestigation,
@@ -50,6 +50,7 @@ const RegistrationScreen = () => {
   const { showToast } = useToast()
   const { theme, colors } = useTheme();
   const themed = getThemeStyles(theme);
+  const navigation = useNavigation()
   const [error, setError] = useState(false)
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -188,7 +189,7 @@ const RegistrationScreen = () => {
     return Number.isNaN(d.getTime()) ? null : d;
   }, []);
 
-  // console.log(patientData)
+  // BrapatientData)
   useEffect(() => {
     const nextTitle = patientData?.Title || "Mr.";
     setSelectedTitle(nextTitle);
@@ -1065,6 +1066,43 @@ const RegistrationScreen = () => {
   };
 
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (e) {
+      return false;
+    }
+  };
+
+
+  const onPressScan = async () => {
+    const ok = await requestCameraPermission();
+
+    if (!ok) {
+      Alert.alert(
+        'Camera permission',
+        'Please allow camera permission to scan barcode.'
+      );
+      return;
+    }
+
+    navigation.navigate('HelpDesk', {
+      screen: 'BarcodeScanner',
+      params: {
+        onScanSuccess: (code) => {
+          console.log('Scanned barcode:', code);
+          setGroupBarcodeDraft(String(code));
+        },
+      },
+    });
+  };
+
+
+
 
   const GetReferedLabList = async () => {
     try {
@@ -1102,6 +1140,7 @@ const RegistrationScreen = () => {
       hour12: true
     });
   };
+
 
   return (
     <SafeAreaView style={themed.screen}>
@@ -2069,7 +2108,7 @@ const RegistrationScreen = () => {
             (!serviceItem?.Services?.length) && tw`bg-gray-400 opacity-50`
           ]}
           disabled={loading || !serviceItem?.Services?.length}
-         >
+        >
           {loading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
@@ -2163,7 +2202,7 @@ const RegistrationScreen = () => {
                         <MaterialCommunityIcons
                           name={expanded ? 'chevron-up' : 'chevron-down'}
                           size={22}
-                          color="#6B7280"
+                          color={themed.iconColor}
                         />
                       </TouchableOpacity>
 
@@ -2197,6 +2236,14 @@ const RegistrationScreen = () => {
                           style={[themed.inputBox, themed.inputText]}
                         />
                       </View>
+                      <TouchableOpacity
+                        style={tw`bg-blue-500 px-4 min-h-[50px] rounded-xl flex-row items-center justify-center`}
+                        activeOpacity={0.7}
+                        onPress={onPressScan}
+                      >
+                        <MaterialIcons name="qr-code-scanner" size={18} color="white" />
+                        <Text style={tw`text-white text-sm font-medium ml-2`}>Scan</Text>
+                      </TouchableOpacity>
 
                       {expanded ? (
                         <View style={tw`mt-2`}>
@@ -2225,7 +2272,7 @@ const RegistrationScreen = () => {
                                 {/* Sample Type Dropdown */}
                                 {sampleTypeOptions.length > 0 ? (
                                   <View style={tw`mb-3`}>
-                                    <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
+                                    <Text style={[themed.labelTextXs, tw`text-xs font-medium  mb-1.5 ml-1`]}>
                                       Sample Type
                                     </Text>
                                     <SelectList
@@ -2259,7 +2306,7 @@ const RegistrationScreen = () => {
 
                                 {/* Per-test barcode (optional override) */}
                                 <View style={tw`mb-3`}>
-                                  <Text style={tw`text-xs font-medium text-gray-600 mb-1.5 ml-1`}>
+                                  <Text style={[themed.labelTextXs, tw`text-xs font-medium mb-1.5 ml-1`]}>
                                     Barcode (override)
                                   </Text>
                                   <TextInput
@@ -2347,23 +2394,23 @@ const RegistrationScreen = () => {
 
               {/* Fixed Footer */}
               <View style={tw`px-4 pt-3 pb-5  `}>
-                <View style={tw`flex-row gap-3`}>
+                <View style={tw`flex-row gap-2`}>
                   <TouchableOpacity
                     onPress={() => setBarcodeModalVisible(false)}
-                    style={[themed.cancelButton]}
+                    style={[themed.closeButton, tw`w-1/2`]}
                     activeOpacity={0.7}
                   >
-                    <Text style={tw`text-gray-700 text-center font-semibold text-base`}>
+                    <Text style={[themed.closeButtonText, tw`py-1`]}>
                       Cancel
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={handleBarcodeModalSave}
-                    style={tw`flex-1 bg-blue-600 py-3.5 rounded-xl shadow-sm`}
+                    style={[themed.saveButton, tw`w-1/2`]}
                     activeOpacity={0.7}
                   >
-                    <Text style={tw`text-white text-center font-semibold text-base`}>
+                    <Text style={[themed.saveButtonText, tw`py-1`]}>
                       Save & Continue
                     </Text>
                   </TouchableOpacity>

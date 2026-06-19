@@ -243,7 +243,7 @@ const HelpDeskHome = () => {
       filter: null,
     };
 
-    navigation.navigate('ListHelpDeskPatient', { payload });
+    navigation.navigate('ListHelpDeskPatientNew', { payload });
   };
 
   const modalSlideAnim = useRef(new Animated.Value(0)).current;

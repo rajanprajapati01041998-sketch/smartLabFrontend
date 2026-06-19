@@ -409,7 +409,7 @@ const CenterInfo = ({ condition }) => {
 
   return (
     <View
-      style={[themed.card, themed.cardPadding, themed.childScreen, tw`mb-4`]}>
+      style={[themed.card, themed.cardPadding, themed.childScreen2, tw`mb-4`]}>
       <TouchableOpacity
         onPress={() => setShowCenterInfo(!showCenterInfo)}
         style={tw`flex-row justify-between items-center mb-3`}>
@@ -459,11 +459,11 @@ const CenterInfo = ({ condition }) => {
           </View>
 
           <View style={tw`my-3`}>
-            <Text style={[themed.labelText, tw`mb-2 font-bold`]}>
+            {!condition && <Text style={[themed.labelText, tw`mb-2 font-bold`]}>
               Search By
-            </Text>
+            </Text>}
 
-            <View style={tw`flex-row gap-2`}>
+            {!condition && <View style={tw`flex-row gap-2`}>
               {searchOptions.map(item => {
                 const active = selectedId === item.id;
 
@@ -519,7 +519,7 @@ const CenterInfo = ({ condition }) => {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </View>}
           </View>
 
           {!condition && (

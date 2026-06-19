@@ -41,7 +41,7 @@ const DashboardCollection = forwardRef(({ fromDate, toDate, branchId,dashboardBa
 
     const getDashboardData = useCallback(async (id) => {
         const selectedBranchId = branchId ?? loginBranchId;
-
+        // console.log("list Id",branchId)
         try {
             const response = await api.get(
                 `Dashboard/states?branchId=${loginBranchId}&userId=${id}&roleId=${user?.roles?.[0] || 1}&clientIdList=${selectedBranchId}&fromDate=${fromDate}&toDate=${toDate}`
@@ -62,7 +62,7 @@ const DashboardCollection = forwardRef(({ fromDate, toDate, branchId,dashboardBa
 
     useFocusEffect(
         useCallback(() => {
-            if (userId) {
+            if (userId && branchId ) {
                 getDashboardData(userId)
             }
         }, [branchId, fromDate, getDashboardData, toDate, userId])

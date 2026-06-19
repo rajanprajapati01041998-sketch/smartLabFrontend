@@ -43,7 +43,7 @@ export const getThemeStyles = theme => {
     ),
 
     dateText: tw.style(
-      'text-sm ml-1',
+      'text-[10px] ml-1',
       isDark ? 'text-gray-400' : 'text-gray-500',
     ),
 

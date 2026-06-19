@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HelpDeskHome from './AfterLogin/Screens/HelpDesk/HelpDeskHome';
 import ListHelpDeskPatient from './AfterLogin/Screens/HelpDesk/ListHelpDeskPatient';
+import ListHelpDeskPatientNew from './AfterLogin/Screens/HelpDesk/LstHelpDeskPatientNew.jsx';
 import ViewLabReport from './AfterLogin/Screens/HelpDesk/ViewLabReport';
 import ViewTebularReport from './AfterLogin/Screens/HelpDesk/ViewTebularReport';
 import { useTheme } from '../Authorization/ThemeContext';
@@ -35,11 +36,19 @@ export default function HelpDeskStack() {
           headerShown: false,
         }}
       />
-      <Stack.Screen
+      {/* <Stack.Screen
         name="ListHelpDeskPatient"
         component={ListHelpDeskPatient}
         options={{
           title: 'Help desk',
+          headerShown: true,
+        }}
+      /> */}
+      <Stack.Screen
+        name="ListHelpDeskPatientNew"
+        component={ListHelpDeskPatientNew}
+        options={{
+          title: 'Patient List',
           headerShown: true,
         }}
       />

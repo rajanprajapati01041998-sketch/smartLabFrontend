@@ -7,6 +7,7 @@ import {
     Alert,
     Linking,
     Modal,
+    TouchableWithoutFeedback
 } from 'react-native';
 import React, { useEffect, useState, useMemo } from 'react';
 import api from './Authorization/api';
@@ -20,9 +21,10 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Clipboard from '@react-native-clipboard/clipboard';
 import RadioGroup from 'react-native-radio-buttons-group';
+import { getAllBranchList } from './src/utils/getBranchList'
 
 const GlobalSearchPatientList = ({ onClose }) => {
-    const { allBranchInfo = [] } = useAuth();
+    const { allBranchInfo = [], loginBranchId, userId } = useAuth();
     const { theme } = useTheme();
     const themed = getThemeStyles(theme);
 
@@ -34,6 +36,9 @@ const GlobalSearchPatientList = ({ onClose }) => {
     const [currentSearchText, setCurrentSearchText] = useState('');
     const [branchModalVisible, setBranchModalVisible] = useState(false);
     const [selectedBranchIds, setSelectedBranchIds] = useState([]);
+
+
+
 
     const radioButtons = useMemo(
         () => [
@@ -79,7 +84,7 @@ const GlobalSearchPatientList = ({ onClose }) => {
 
     useEffect(() => {
         if (allBranchInfo?.length > 0) {
-            setSelectedBranchIds(allBranchInfo.map(x => x.branchId));
+            setSelectedBranchIds(allBranchInfo.map(x => x.BranchId));
         }
     }, [allBranchInfo]);
 
@@ -475,95 +480,93 @@ const GlobalSearchPatientList = ({ onClose }) => {
                 transparent
                 animationType="fade"
                 onRequestClose={() => setBranchModalVisible(false)}>
-                <View style={tw`flex-1 justify-center items-center bg-black/50 px-4`}>
-                    <View
-                        style={[
-                            themed.childScreen2,
-                            tw`w-full rounded-2xl p-4`,
-                            { maxHeight: '75%' },
-                        ]}>
-                        <View style={tw`flex-row justify-between items-center mb-4`}>
-                            <Text style={[themed.inputText, tw`text-lg font-bold`]}>
-                                Select Branch
-                            </Text>
-
-                            <TouchableOpacity onPress={() => setBranchModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#6B7280" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                if (selectedBranchIds.length === allBranchInfo.length) {
-                                    setSelectedBranchIds([]);
-                                } else {
-                                    setSelectedBranchIds(allBranchInfo.map(x => x.branchId));
-                                }
-                            }}
+                <TouchableWithoutFeedback onPress={() => setBranchModalVisible(false)}>
+                    <View style={tw`flex-1 justify-center items-center bg-black/50 px-1`}>
+                        <View
                             style={[
-                                themed.border,
-                                tw`p-3 rounded-xl mb-3 flex-row items-center justify-between`,
+                                themed.childScreen2,
+                                tw`w-full rounded-2xl p-4`,
+                                { maxHeight: '75%' },
                             ]}>
-                            <Text style={[themed.inputText, tw`font-semibold`]}>
-                                Select All
-                            </Text>
+                            <View style={tw`flex-row justify-between items-center mb-4`}>
+                                <Text style={[themed.inputText, tw`text-lg font-bold`]}>
+                                    Select Branch
+                                </Text>
 
-                            <Ionicons
-                                name={
-                                    selectedBranchIds.length === allBranchInfo.length
-                                        ? 'checkbox'
-                                        : 'square-outline'
-                                }
-                                size={24}
-                                color="#2563EB"
-                            />
-                        </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[themed.border, tw` rounded-full p-1 bg-gray-200 `]}
+                                    onPress={() => setBranchModalVisible(false)}>
+                                    <Ionicons name="close" size={16} color="#ec1f08" />
+                                </TouchableOpacity>
+                            </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {allBranchInfo?.map(item => {
-                                const checked = selectedBranchIds.includes(item.branchId);
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (selectedBranchIds.length === allBranchInfo.length) {
+                                        setSelectedBranchIds([]);
+                                    } else {
+                                        setSelectedBranchIds(allBranchInfo.map(x => x.BranchId));
+                                    }
+                                }}
+                                style={[
+                                    themed.border,
+                                    tw`p-3 rounded-xl mb-3 flex-row items-center justify-between`,
+                                ]}>
+                                <Text style={[themed.inputText, tw`font-semibold`]}>
+                                    Select All
+                                </Text>
 
-                                return (
-                                    <TouchableOpacity
-                                        key={item.branchId}
-                                        onPress={() => {
-                                            setSelectedBranchIds(prev =>
-                                                prev.includes(item.branchId)
-                                                    ? prev.filter(id => id !== item.branchId)
-                                                    : [...prev, item.branchId],
-                                            );
-                                        }}
-                                        style={[
-                                            themed.border,
-                                            tw`p-3 rounded-xl mb-2 flex-row items-center justify-between`,
-                                        ]}>
-                                        <View style={tw`flex-1`}>
-                                            <Text style={[themed.inputText, tw`font-semibold`]}>
-                                                {item.branchName}
-                                            </Text>
+                                <Ionicons
+                                    name={
+                                        selectedBranchIds.length === allBranchInfo.length
+                                            ? 'checkbox'
+                                            : 'square-outline'
+                                    }
+                                    size={24}
+                                    color="#2563EB"
+                                />
+                            </TouchableOpacity>
 
-                                            <Text style={[themed.transactionLabel, tw`text-xs mt-1`]}>
-                                                Code: {item.branchCode} | ID: {item.branchId}
-                                            </Text>
-                                        </View>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                {allBranchInfo?.map(item => {
+                                    const checked = selectedBranchIds.includes(item.BranchId);
 
-                                        <Ionicons
-                                            name={checked ? 'checkbox' : 'square-outline'}
-                                            size={24}
-                                            color={checked ? '#2563EB' : '#9CA3AF'}
-                                        />
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+                                    return (
+                                        <TouchableOpacity
+                                            key={item.BranchId}
+                                            onPress={() => {
+                                                setSelectedBranchIds(prev =>
+                                                    prev.includes(item.BranchId)
+                                                        ? prev.filter(id => id !== item.BranchId)
+                                                        : [...prev, item.BranchId],
+                                                );
+                                            }}
+                                            style={[
+                                                themed.border,
+                                                tw`p-3 rounded-xl mb-2 flex-row items-center justify-between`,
+                                            ]}>
+                                            <View style={tw`flex-1`}>
+                                                <Text style={[themed.inputText, tw`font-semibold`]}>
+                                                    {item.BranchName}
+                                                </Text>
+                                                <Text style={[themed.transactionLabel, tw`text-xs mt-1`]}>
+                                                    Code: {item.BranchCode} | ID: {item.BranchId}
+                                                </Text>
+                                            </View>
+                                            <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={24} color={checked ? '#2563EB' : '#9CA3AF'} />
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
 
-                        <TouchableOpacity
+                            {/* <TouchableOpacity
                             onPress={applyBranchFilter}
                             style={[themed.searchButton, tw`mt-4`]}>
                             <Text style={themed.searchButtonText}>Apply</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
+                        </View>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </View>
     );

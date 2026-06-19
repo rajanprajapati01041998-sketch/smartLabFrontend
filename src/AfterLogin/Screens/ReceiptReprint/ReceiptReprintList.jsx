@@ -163,13 +163,13 @@ const ReceiptReprintList = () => {
                 {/* Summary Cards */}
                 <View style={[themed.card, tw`p-4 mb-4 rounded-lg flex-row justify-between`]}>
                     <View style={tw`items-center`}>
-                        <Text style={[themed.globalCardText, tw`text-xs`]}>Total Receipts</Text>
-                        <Text style={[themed.globalCardValue, tw`text-xl`]}>{data.length}</Text>
+                        <Text style={[themed.inputLabel, tw`text-xs`]}>Total Receipts</Text>
+                        <Text style={[themed.labelTextXs, tw`text-base`]}>{data.length}</Text>
                     </View>
 
                     <View style={tw`items-center`}>
-                        <Text style={[themed.globalCardText, tw`text-xs`]}>Total Amount</Text>
-                        <Text style={[themed.globalCardValue, tw`text-xl`]}>
+                        <Text style={[themed.inputLabel, tw`text-xs`]}>Total Amount</Text>
+                        <Text style={[themed.labelTextXs, tw`text-base`]}>
                             {formatCurrency(data.reduce((sum, item) => sum + (item.NetAmount || 0), 0))}
                         </Text>
                     </View>
